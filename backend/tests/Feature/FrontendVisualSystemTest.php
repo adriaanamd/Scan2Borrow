@@ -59,6 +59,7 @@ final class FrontendVisualSystemTest extends TestCase
             '.hero-card .text-muted',
             '.auth-wrap',
             '.modal-header',
+            '.ui-icon',
             '@media (max-width: 768px)',
         ] as $selector) {
             self::assertStringContainsString($selector, $styles, $selector . ' is missing from the application shell.');
@@ -66,6 +67,28 @@ final class FrontendVisualSystemTest extends TestCase
 
         self::assertStringNotContainsString('backdrop-filter', $styles, 'The shared shell should use a deliberate flat surface, not a glass effect.');
         self::assertStringNotContainsString('var(--grad-', $styles, 'The Swiss institutional system should not depend on gradients.');
+    }
+
+    public function testEveryApplicationPageLoadsTheSharedSvgIconSystem(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages';
+        $pages = glob($root . DIRECTORY_SEPARATOR . '*.html');
+        self::assertIsArray($pages);
+
+        foreach ($pages as $page) {
+            $source = file_get_contents($page);
+            self::assertIsString($source);
+            self::assertStringContainsString(
+                'frontend/assets/js/core/icons.js',
+                $source,
+                basename($page) . ' must load the shared SVG icon system.',
+            );
+        }
+
+        $icons = $this->read('frontend/assets/js/core/icons.js');
+        foreach (['dashboard:', 'books:', 'users:', 'search:', 'settings:', 'logout:'] as $icon) {
+            self::assertStringContainsString($icon, $icons, $icon . ' is missing from the shared icon system.');
+        }
     }
 
     private function read(string $relativePath): string

@@ -29,7 +29,11 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
     public function activeApprovedCount(int $userId): int
     {
         $statement = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM borrowing WHERE user_id = :user_id AND return_date IS NULL AND approval_status = 'approved' AND status IN ('Borrowed', 'Overdue')"
+            "SELECT COUNT(*) FROM borrowing
+             WHERE user_id = :user_id
+               AND return_date IS NULL
+               AND approval_status IN ('pending', 'approved')
+               AND status IN ('Pending', 'Borrowed', 'Overdue')"
         );
         $statement->execute(['user_id' => $userId]);
 

@@ -90,4 +90,20 @@ final class PdoBorrowingRepositoryTest extends TestCase
         self::assertSame('Available', $book['status']);
         self::assertNotNull($book['return_date']);
     }
+
+    public function testActiveBorrowingCountIncludesPendingRequestsThatConsumeCapacity(): void
+    {
+        $this->pdo->exec(
+            "INSERT INTO borrowing (transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES
+            ('PENDING-1', 7, 1, 'pending', CURRENT_TIMESTAMP, '2026-09-04', NULL, 'Pending', 0),
+            ('PENDING-2', 7, 1, 'pending', CURRENT_TIMESTAMP, '2026-09-04', NULL, 'Pending', 0),
+            ('PENDING-3', 7, 1, 'pending', CURRENT_TIMESTAMP, '2026-09-04', NULL, 'Pending', 0),
+            ('REJECTED-1', 7, 1, 'rejected', CURRENT_TIMESTAMP, '2026-09-04', NULL, 'Pending', 0),
+            ('RETURNED-1', 7, 1, 'approved', CURRENT_TIMESTAMP, '2026-09-04', CURRENT_TIMESTAMP, 'Returned', 0)"
+        );
+
+        $repository = new PdoBorrowingRepository($this->pdo);
+
+        self::assertSame(3, $repository->activeApprovedCount(7));
+    }
 }

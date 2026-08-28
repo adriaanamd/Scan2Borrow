@@ -1,353 +1,287 @@
-(function () {
-    "use strict";
-
-    var API = "books_api.php";
-    var csrfMeta = document.querySelector('meta[name="csrf"]');
-    var CSRF = csrfMeta ? csrfMeta.content : '';
-
-    var state = {
-        search: "",
-        status: "",
-        archived: false,
-        sort: "created_at",
-        dir: "desc",
-        page: 1,
-        per_page: 10,
-        selected: new Set(),
-    };
-
-
-    var $ = function (id) { return document.getElementById(id); };
-    var tbody       = $("inv-body");
-    var searchInput = $("inv-search");
-    var statusFilter = $("inv-status");
-    var viewToggle  = $("inv-view");
-    var pager       = $("inv-pager");
-    var countLabel  = $("inv-count");
-    var selectAll   = $("inv-select-all");
-    var bulkBar     = $("inv-bulkbar");
-    var bulkCount   = $("inv-bulkcount");
-
-    var offcanvasEl = $("bookDrawer");
-    var drawer      = new bootstrap.Offcanvas(offcanvasEl);
-    var form        = $("book-form");
-    var coverFileInput = $("cover-file");
-    var coverPreview = $("cover-preview");
-    var coverPreviewWrap = $("cover-preview-wrap");
-    var coverObjectUrl = null;
-
-    function toast(message, ok) {
-        var host = $("toast-host");
-        var el = document.createElement("div");
-        el.className = "toast align-items-center text-white border-0 show mb-2 bg-" + (ok ? "success" : "danger");
-        el.role = "alert";
-        el.innerHTML =
-            '<div class="d-flex"><div class="toast-body">' + escapeHtml(message) +
-            '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
-        host.appendChild(el);
-        var t = new bootstrap.Toast(el, { delay: 3500 });
-        t.show();
-        el.addEventListener("hidden.bs.toast", function () { el.remove(); });
+class InventoryPageController {
+    constructor() {
+        this.api = "/scan2borrow/api/books";
+        const csrfMeta = document.querySelector('meta[name="csrf"]');
+        this.csrf = csrfMeta ? csrfMeta.content : "";
+        this.state = {
+            search: "", status: "", archived: false, sort: "created_at", dir: "desc",
+            page: 1, per_page: 10, selected: new Set()
+        };
+        this.$ = (id) => document.getElementById(id);
+        this.tbody = this.$("inv-body");
+        this.searchInput = this.$("inv-search");
+        this.statusFilter = this.$("inv-status");
+        this.viewToggle = this.$("inv-view");
+        this.pager = this.$("inv-pager");
+        this.countLabel = this.$("inv-count");
+        this.selectAll = this.$("inv-select-all");
+        this.bulkBar = this.$("inv-bulkbar");
+        this.bulkCount = this.$("inv-bulkcount");
+        this.offcanvasEl = this.$("bookDrawer");
+        this.drawer = new bootstrap.Offcanvas(this.offcanvasEl);
+        this.form = this.$("book-form");
+        this.coverFileInput = this.$("cover-file");
+        this.coverPreview = this.$("cover-preview");
+        this.coverPreviewWrap = this.$("cover-preview-wrap");
+        this.coverObjectUrl = null;
+        this.searchTimer = null;
+        this.bindEvents();
+        this.load();
     }
 
-    function resolveCoverUrl(value) {
+    escapeHtml(value) {
+        return String(value == null ? "" : value).replace(/[&<>"']/g, (character) => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[character]));
+    }
+
+    toast(message, ok) {
+        const host = this.$("toast-host");
+        const element = document.createElement("div");
+        element.className = "toast align-items-center text-white border-0 show mb-2 bg-" + (ok ? "success" : "danger");
+        element.role = "alert";
+        element.innerHTML = '<div class="d-flex"><div class="toast-body">' + this.escapeHtml(message) +
+            '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+        host.appendChild(element);
+        const toast = new bootstrap.Toast(element, { delay: 3500 });
+        toast.show();
+        element.addEventListener("hidden.bs.toast", () => element.remove());
+    }
+
+    resolveCoverUrl(value) {
         if (!value) return "";
         if (/^(https?:)?\/\//i.test(value) || value.indexOf("data:image/") === 0) return value;
-        try { return new URL(value, window.location.href).toString(); } catch (e) { return value; }
+        try { return new URL(value, window.location.href).toString(); } catch (error) { return value; }
     }
 
-    function showCoverPreview(url) {
-        if (!coverPreview || !coverPreviewWrap) return;
-        if (coverObjectUrl) {
-            URL.revokeObjectURL(coverObjectUrl);
-            coverObjectUrl = null;
+    showCoverPreview(url) {
+        if (!this.coverPreview || !this.coverPreviewWrap) return;
+        if (this.coverObjectUrl) {
+            URL.revokeObjectURL(this.coverObjectUrl);
+            this.coverObjectUrl = null;
         }
         if (url) {
-            coverPreview.src = url;
-            coverPreviewWrap.style.display = "block";
+            this.coverPreview.src = url;
+            this.coverPreviewWrap.style.display = "block";
         } else {
-            coverPreview.src = "";
-            coverPreviewWrap.style.display = "none";
+            this.coverPreview.src = "";
+            this.coverPreviewWrap.style.display = "none";
         }
     }
 
-    function previewSelectedCover(input) {
+    previewSelectedCover(input) {
         if (!input || !input.files || !input.files[0]) {
-            showCoverPreview("");
+            this.showCoverPreview("");
             return;
         }
-        var file = input.files[0];
+        const file = input.files[0];
         if (!file.type || !file.type.startsWith("image/")) {
-            showCoverPreview("");
+            this.showCoverPreview("");
             return;
         }
-        if (coverObjectUrl) {
-            URL.revokeObjectURL(coverObjectUrl);
-        }
-        coverObjectUrl = URL.createObjectURL(file);
-        showCoverPreview(coverObjectUrl);
+        if (this.coverObjectUrl) URL.revokeObjectURL(this.coverObjectUrl);
+        this.coverObjectUrl = URL.createObjectURL(file);
+        this.showCoverPreview(this.coverObjectUrl);
     }
 
-    function escapeHtml(s) {
-        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-        });
+    badge(status) {
+        const map = { Available: "success", Borrowed: "danger", Reserved: "warning text-dark" };
+        return '<span class="badge bg-' + (map[status] || "secondary") + '">' + this.escapeHtml(status) + "</span>";
     }
 
-    function badge(status) {
-        var map = { Available: "success", Borrowed: "danger", Reserved: "warning text-dark" };
-        return '<span class="badge bg-' + (map[status] || "secondary") + '">' + escapeHtml(status) + "</span>";
+    apiGet(params) {
+        const query = new URLSearchParams(params).toString();
+        return fetch(this.api + "?" + query, { headers: { "X-Requested-With": "fetch" } }).then((response) => response.json());
     }
 
-    function apiGet(params) {
-        var qs = new URLSearchParams(params).toString();
-        return fetch(API + "?" + qs, { headers: { "X-Requested-With": "fetch" } }).then(function (r) { return r.json(); });
-    }
-
-    function apiPost(action, data) {
-        var body = new FormData();
+    apiPost(action, data) {
+        const body = new FormData();
         body.append("action", action);
-        body.append("csrf", CSRF);
-        Object.keys(data).forEach(function (k) {
-            if (Array.isArray(data[k])) {
-                data[k].forEach(function (v) { body.append(k + "[]", v); });
-            } else {
-                body.append(k, data[k]);
-            }
+        body.append("csrf", this.csrf);
+        Object.keys(data).forEach((key) => {
+            if (Array.isArray(data[key])) data[key].forEach((value) => body.append(key + "[]", value));
+            else body.append(key, data[key]);
         });
-        return fetch(API, { method: "POST", body: body }).then(function (r) { return r.json(); });
+        return fetch(this.api, { method: "POST", body }).then((response) => response.json());
     }
 
-    function load() {
-        apiGet({
-            action: "list",
-            search: state.search,
-            status: state.status,
-            archived: state.archived ? 1 : 0,
-            sort: state.sort,
-            dir: state.dir,
-            page: state.page,
-            per_page: state.per_page,
-        }).then(render).catch(function (err) { 
-            console.error('Load error:', err);
-            toast("Failed to load inventory. Check console for details.", false); 
+    load() {
+        this.apiGet({
+            action: "list", search: this.state.search, status: this.state.status,
+            archived: this.state.archived ? 1 : 0, sort: this.state.sort, dir: this.state.dir,
+            page: this.state.page, per_page: this.state.per_page
+        }).then((response) => this.render(response)).catch((error) => {
+            console.error("Load error:", error);
+            this.toast("Failed to load inventory. Check console for details.", false);
         });
     }
 
-    function render(res) {
-        if (!res.ok) { toast(res.message || "Error", false); return; }
-        state.selected.clear();
-        updateBulkBar();
-        selectAll.checked = false;
-
-        tbody.innerHTML = "";
-        if (!res.data.length) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No books found.</td></tr>';
-        }
-
-        res.data.forEach(function (b) {
-            var tr = document.createElement("tr");
-            var actions = state.archived
-                ? '<button class="btn btn-success btn-sm" data-act="restore" data-id="' + b.id + '">Restore</button> ' +
-                  '<button class="btn btn-outline-danger btn-sm" data-act="delete" data-id="' + b.id + '">Delete</button>'
-                : '<button class="btn btn-outline-primary btn-sm" data-act="edit" data-id="' + b.id + '">Edit</button> ' +
-                  '<button class="btn btn-outline-warning btn-sm" data-act="archive" data-id="' + b.id + '">Archive</button>';
-
-            function createCell(content, className, style) {
-                var td = document.createElement("td");
-                if (className) td.className = className;
-                if (style) td.style.cssText = style;
-                td.innerHTML = content;
-                return td;
-            }
-
-            tr.appendChild(createCell('<input type="checkbox" class="form-check-input row-check" value="' + b.id + '">', '', 'width:38px;'));
-            tr.appendChild(createCell(escapeHtml(b.barcode || ''), '', 'min-width:110px;'));
-            tr.appendChild(createCell('<strong>' + escapeHtml(b.title || '') + '</strong>' + (b.isbn ? '<br><span class="text-muted small">ISBN ' + escapeHtml(b.isbn) + '</span>' : ''), '', 'min-width:220px;'));
-            tr.appendChild(createCell(escapeHtml(b.author || ''), '', 'min-width:160px;'));
-            tr.appendChild(createCell(b.publisher ? escapeHtml(b.publisher) : '<span class="text-muted">&mdash;</span>', '', 'min-width:140px;'));
-            tr.appendChild(createCell(escapeHtml(b.description || 'No description available'), 'text-muted small', 'min-width:220px;'));
-            tr.appendChild(createCell(b.category_name ? escapeHtml(b.category_name) : '<span class="text-muted">&mdash;</span>', '', 'min-width:120px;'));
-            tr.appendChild(createCell(badge(b.status), '', 'min-width:110px;'));
-            tr.appendChild(createCell((b.due_date ? '&#128197; Due ' + escapeHtml(b.due_date) : '<span class="text-muted">&mdash;</span>') + (b.return_date ? '<br>&#8617;&#65039; Ret ' + escapeHtml(b.return_date) : ''), 'text-muted small', 'min-width:140px;'));
-            tr.appendChild(createCell('&#128205; ' + escapeHtml(b.floor_no || '') + (b.section_name ? ' · ' + escapeHtml(b.section_name) : '') + (b.shelf_no ? ' · Shelf ' + escapeHtml(b.shelf_no) : '') + (b.row_no ? ' · Row ' + escapeHtml(b.row_no) : ''), 'text-muted small', 'min-width:180px;'));
-            tr.appendChild(createCell(actions, 'text-nowrap', 'min-width:120px;'));
-            tr.dataset.book = JSON.stringify(b);
-            tbody.appendChild(tr);
+    render(response) {
+        if (!response.ok) { this.toast(response.message || "Error", false); return; }
+        this.state.selected.clear();
+        this.updateBulkBar();
+        this.selectAll.checked = false;
+        this.tbody.innerHTML = "";
+        if (!response.data.length) this.tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No books found.</td></tr>';
+        response.data.forEach((book) => {
+            const row = document.createElement("tr");
+            const actions = this.state.archived
+                ? '<button class="btn btn-success btn-sm" data-act="restore" data-id="' + book.id + '">Restore</button> ' +
+                  '<button class="btn btn-outline-danger btn-sm" data-act="delete" data-id="' + book.id + '">Delete</button>'
+                : '<button class="btn btn-outline-primary btn-sm" data-act="edit" data-id="' + book.id + '">Edit</button> ' +
+                  '<button class="btn btn-outline-warning btn-sm" data-act="archive" data-id="' + book.id + '">Archive</button>';
+            const cell = (content, className, style) => {
+                const element = document.createElement("td");
+                if (className) element.className = className;
+                if (style) element.style.cssText = style;
+                element.innerHTML = content;
+                return element;
+            };
+            row.appendChild(cell('<input type="checkbox" class="form-check-input row-check" value="' + book.id + '">', "", "width:38px;"));
+            row.appendChild(cell(this.escapeHtml(book.barcode || ""), "", "min-width:110px;"));
+            row.appendChild(cell('<strong>' + this.escapeHtml(book.title || "") + '</strong>' + (book.isbn ? '<br><span class="text-muted small">ISBN ' + this.escapeHtml(book.isbn) + '</span>' : ""), "", "min-width:220px;"));
+            row.appendChild(cell(this.escapeHtml(book.author || ""), "", "min-width:160px;"));
+            row.appendChild(cell(book.publisher ? this.escapeHtml(book.publisher) : '<span class="text-muted">&mdash;</span>', "", "min-width:140px;"));
+            row.appendChild(cell(this.escapeHtml(book.description || "No description available"), "text-muted small", "min-width:220px;"));
+            row.appendChild(cell(book.category_name ? this.escapeHtml(book.category_name) : '<span class="text-muted">&mdash;</span>', "", "min-width:120px;"));
+            row.appendChild(cell(this.badge(book.status), "", "min-width:110px;"));
+            row.appendChild(cell((book.due_date ? '&#128197; Due ' + this.escapeHtml(book.due_date) : '<span class="text-muted">&mdash;</span>') + (book.return_date ? '<br>&#8617;&#65039; Ret ' + this.escapeHtml(book.return_date) : ""), "text-muted small", "min-width:140px;"));
+            row.appendChild(cell('&#128205; ' + this.escapeHtml(book.floor_no || "") + (book.section_name ? ' · ' + this.escapeHtml(book.section_name) : "") + (book.shelf_no ? ' · Shelf ' + this.escapeHtml(book.shelf_no) : "") + (book.row_no ? ' · Row ' + this.escapeHtml(book.row_no) : ""), "text-muted small", "min-width:180px;"));
+            row.appendChild(cell(actions, "text-nowrap", "min-width:120px;"));
+            row.dataset.book = JSON.stringify(book);
+            this.tbody.appendChild(row);
         });
-
-        countLabel.textContent = res.total + " book(s)";
-        renderPager(res.page, res.pages);
-        renderSortIndicators();
+        this.countLabel.textContent = response.total + " book(s)";
+        this.renderPager(response.page, response.pages);
+        this.renderSortIndicators();
     }
 
-    function renderPager(page, pages) {
-        pager.innerHTML = "";
+    renderPager(page, pages) {
+        this.pager.innerHTML = "";
         if (pages <= 1) return;
-        function item(label, target, disabled, active) {
-            var li = document.createElement("li");
-            li.className = "page-item" + (disabled ? " disabled" : "") + (active ? " active" : "");
-            li.innerHTML = '<a class="page-link" href="#">' + label + "</a>";
-            if (!disabled && !active) {
-                li.addEventListener("click", function (e) { e.preventDefault(); state.page = target; load(); });
-            }
-            pager.appendChild(li);
-        }
+        const item = (label, target, disabled, active) => {
+            const element = document.createElement("li");
+            element.className = "page-item" + (disabled ? " disabled" : "") + (active ? " active" : "");
+            element.innerHTML = '<a class="page-link" href="#">' + label + "</a>";
+            if (!disabled && !active) element.addEventListener("click", (event) => { event.preventDefault(); this.state.page = target; this.load(); });
+            this.pager.appendChild(element);
+        };
         item("&laquo;", page - 1, page <= 1, false);
-        for (var i = 1; i <= pages; i++) item(i, i, false, i === page);
+        for (let index = 1; index <= pages; index++) item(index, index, false, index === page);
         item("&raquo;", page + 1, page >= pages, false);
     }
 
-    function renderSortIndicators() {
-        document.querySelectorAll("th[data-sort]").forEach(function (th) {
-            var arrow = th.querySelector(".sort-arrow");
-            if (arrow) arrow.textContent = th.dataset.sort === state.sort ? (state.dir === "asc" ? " \u25B2" : " \u25BC") : "";
+    renderSortIndicators() {
+        document.querySelectorAll("th[data-sort]").forEach((header) => {
+            const arrow = header.querySelector(".sort-arrow");
+            if (arrow) arrow.textContent = header.dataset.sort === this.state.sort ? (this.state.dir === "asc" ? " \u25B2" : " \u25BC") : "";
         });
     }
 
-    function updateBulkBar() {
-        var n = state.selected.size;
-        bulkCount.textContent = n;
-        bulkBar.style.display = n ? "flex" : "none";
-        document.querySelectorAll("[data-bulk]").forEach(function (btn) {
-            var act = btn.getAttribute("data-bulk");
-            var showInArchived = act === "restore" || act === "delete";
-            btn.style.display = (state.archived === showInArchived) ? "" : "none";
+    updateBulkBar() {
+        const count = this.state.selected.size;
+        this.bulkCount.textContent = count;
+        this.bulkBar.style.display = count ? "flex" : "none";
+        document.querySelectorAll("[data-bulk]").forEach((button) => {
+            const action = button.getAttribute("data-bulk");
+            const showInArchived = action === "restore" || action === "delete";
+            button.style.display = this.state.archived === showInArchived ? "" : "none";
         });
     }
 
-    function doAction(action, ids, confirmMsg) {
-        if (confirmMsg && !window.confirm(confirmMsg)) return;
-        apiPost(action, { ids: ids }).then(function (res) {
-            toast(res.message, res.ok);
-            if (res.ok) load();
-        }).catch(function () { toast("Request failed.", false); });
+    doAction(action, ids, confirmMessage) {
+        if (confirmMessage && !window.confirm(confirmMessage)) return;
+        this.apiPost(action, { ids }).then((response) => {
+            this.toast(response.message, response.ok);
+            if (response.ok) this.load();
+        }).catch(() => this.toast("Request failed.", false));
     }
 
-    function openDrawer(book) {
-        form.reset();
-        showCoverPreview("");
-        $("book-id").value = book ? book.id : "";
-        $("drawer-title").textContent = book ? "Edit Book" : "Add New Book";
+    openDrawer(book) {
+        this.form.reset();
+        this.showCoverPreview("");
+        this.$("book-id").value = book ? book.id : "";
+        this.$("drawer-title").textContent = book ? "Edit Book" : "Add New Book";
         if (book) {
-            ["barcode", "isbn", "title", "author", "publisher", "description", "category_name", "keywords", "floor_no", "section_name", "shelf_no", "row_no", "due_date", "return_date", "status"]
-                .forEach(function (f) { if (form.elements[f]) form.elements[f].value = book[f] || ""; });
-            if (book.cover_file || book.cover_image) {
-                showCoverPreview(resolveCoverUrl(book.cover_file || book.cover_image));
-            }
-        }
-        drawer.show();
-    }
-
-    if (coverFileInput) {
-        coverFileInput.addEventListener("change", function () { previewSelectedCover(this); });
-    }
-
-    var searchTimer;
-    searchInput.addEventListener("input", function () {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(function () {
-            state.search = searchInput.value.trim();
-            state.page = 1;
-            load();
-        }, 300);
-    });
-
-    statusFilter.addEventListener("change", function () {
-        state.status = statusFilter.value;
-        state.page = 1;
-        load();
-    });
-
-    viewToggle.addEventListener("change", function () {
-        state.archived = viewToggle.checked;
-        state.page = 1;
-        load();
-    });
-
-    document.querySelectorAll("th[data-sort]").forEach(function (th) {
-        th.style.cursor = "pointer";
-        th.addEventListener("click", function () {
-            var col = th.dataset.sort;
-            if (state.sort === col) {
-                state.dir = state.dir === "asc" ? "desc" : "asc";
-            } else {
-                state.sort = col;
-                state.dir = "asc";
-            }
-            load();
-        });
-    });
-
-    selectAll.addEventListener("change", function () {
-        document.querySelectorAll(".row-check").forEach(function (cb) {
-            cb.checked = selectAll.checked;
-            if (cb.checked) state.selected.add(cb.value); else state.selected.delete(cb.value);
-        });
-        updateBulkBar();
-    });
-
-    tbody.addEventListener("change", function (e) {
-        if (e.target.classList.contains("row-check")) {
-            if (e.target.checked) state.selected.add(e.target.value); else state.selected.delete(e.target.value);
-            updateBulkBar();
-        }
-    });
-
-    tbody.addEventListener("click", function (e) {
-        var btn = e.target.closest("button[data-act]");
-        if (!btn) return;
-        var id = btn.dataset.id;
-        var act = btn.dataset.act;
-        if (act === "edit") {
-            openDrawer(JSON.parse(btn.closest("tr").dataset.book));
-        } else if (act === "archive") {
-            doAction("archive", [id], "Archive this book?");
-        } else if (act === "restore") {
-            doAction("restore", [id]);
-        } else if (act === "delete") {
-            doAction("delete", [id], "Permanently delete this archived book? This cannot be undone.");
-        }
-    });
-
-    document.querySelectorAll("[data-bulk]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            var ids = Array.from(state.selected);
-            if (!ids.length) return;
-            var act = btn.getAttribute("data-bulk");
-            var msg = act === "delete" ? "Permanently delete " + ids.length + " book(s)?" :
-                      act === "archive" ? "Archive " + ids.length + " book(s)?" : null;
-            doAction(act, ids, msg);
-        });
-    });
-
-    $("btn-add").addEventListener("click", function () { openDrawer(null); });
-
-    form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var id = $("book-id").value;
-        var data = new FormData(form);
-        data.append("action", id ? "update" : "create");
-        data.append("csrf", CSRF);
-        if (id) data.append("id", id);
-
-        fetch(API, { method: "POST", body: data }).then(function (r) {
-            return r.text().then(function (text) {
-                var payload = null;
-                try { payload = text ? JSON.parse(text) : null; } catch (e) { payload = null; }
-                if (!r.ok) {
-                    throw new Error((payload && payload.message) || text || "Save failed.");
-                }
-                if (!payload || typeof payload !== "object") {
-                    throw new Error(text || "Save failed.");
-                }
-                return payload;
+            ["barcode", "isbn", "title", "author", "publisher", "description", "category_name", "keywords", "floor_no", "section_name", "shelf_no", "row_no", "due_date", "return_date", "status"].forEach((field) => {
+                if (this.form.elements[field]) this.form.elements[field].value = book[field] || "";
             });
-        }).then(function (res) {
-            toast(res.message, res.ok);
-            if (res.ok) { drawer.hide(); load(); }
-        }).catch(function (err) { toast(err.message || "Save failed.", false); });
-    });
+            if (book.cover_file || book.cover_image) this.showCoverPreview(this.resolveCoverUrl(book.cover_file || book.cover_image));
+        }
+        this.drawer.show();
+    }
 
-    load();
-})();
+    bindEvents() {
+        if (this.coverFileInput) this.coverFileInput.addEventListener("change", () => this.previewSelectedCover(this.coverFileInput));
+        this.searchInput.addEventListener("input", () => {
+            clearTimeout(this.searchTimer);
+            this.searchTimer = setTimeout(() => { this.state.search = this.searchInput.value.trim(); this.state.page = 1; this.load(); }, 300);
+        });
+        this.statusFilter.addEventListener("change", () => { this.state.status = this.statusFilter.value; this.state.page = 1; this.load(); });
+        this.viewToggle.addEventListener("change", () => { this.state.archived = this.viewToggle.checked; this.state.page = 1; this.load(); });
+        document.querySelectorAll("th[data-sort]").forEach((header) => {
+            header.style.cursor = "pointer";
+            header.addEventListener("click", () => {
+                const column = header.dataset.sort;
+                if (this.state.sort === column) this.state.dir = this.state.dir === "asc" ? "desc" : "asc";
+                else { this.state.sort = column; this.state.dir = "asc"; }
+                this.load();
+            });
+        });
+        this.selectAll.addEventListener("change", () => {
+            document.querySelectorAll(".row-check").forEach((checkbox) => {
+                checkbox.checked = this.selectAll.checked;
+                if (checkbox.checked) this.state.selected.add(checkbox.value); else this.state.selected.delete(checkbox.value);
+            });
+            this.updateBulkBar();
+        });
+        this.tbody.addEventListener("change", (event) => {
+            if (event.target.classList.contains("row-check")) {
+                if (event.target.checked) this.state.selected.add(event.target.value); else this.state.selected.delete(event.target.value);
+                this.updateBulkBar();
+            }
+        });
+        this.tbody.addEventListener("click", (event) => {
+            const button = event.target.closest("button[data-act]");
+            if (!button) return;
+            const id = button.dataset.id;
+            const action = button.dataset.act;
+            if (action === "edit") this.openDrawer(JSON.parse(button.closest("tr").dataset.book));
+            else if (action === "archive") this.doAction("archive", [id], "Archive this book?");
+            else if (action === "restore") this.doAction("restore", [id]);
+            else if (action === "delete") this.doAction("delete", [id], "Permanently delete this archived book? This cannot be undone.");
+        });
+        document.querySelectorAll("[data-bulk]").forEach((button) => button.addEventListener("click", () => {
+            const ids = Array.from(this.state.selected);
+            if (!ids.length) return;
+            const action = button.getAttribute("data-bulk");
+            const message = action === "delete" ? "Permanently delete " + ids.length + " book(s)?" : action === "archive" ? "Archive " + ids.length + " book(s)?" : null;
+            this.doAction(action, ids, message);
+        }));
+        this.$("btn-add").addEventListener("click", () => this.openDrawer(null));
+        this.form.addEventListener("submit", (event) => this.submitForm(event));
+    }
+
+    submitForm(event) {
+        event.preventDefault();
+        const id = this.$("book-id").value;
+        const data = new FormData(this.form);
+        data.append("action", id ? "update" : "create");
+        data.append("csrf", this.csrf);
+        if (id) data.append("id", id);
+        fetch(this.api, { method: "POST", body: data }).then((response) => response.text().then((text) => {
+            let payload = null;
+            try { payload = text ? JSON.parse(text) : null; } catch (error) { payload = null; }
+            if (!response.ok) throw new Error((payload && payload.message) || text || "Save failed.");
+            if (!payload || typeof payload !== "object") throw new Error(text || "Save failed.");
+            return payload;
+        })).then((response) => {
+            this.toast(response.message, response.ok);
+            if (response.ok) { this.drawer.hide(); this.load(); }
+        }).catch((error) => this.toast(error.message || "Save failed.", false));
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById("bookDrawer")) new InventoryPageController();
+});

@@ -17,22 +17,24 @@ final class OtpServiceTest extends TestCase
     public function testStartStoresSixDigitCodeWithFiveMinuteExpiry(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:00'));
-        $repository = new FakeOtpRepository($clock);
+        $repository = new FakeOtpRepository();
         $service = new OtpService($repository, $clock, new FakeSmsSender());
 
         $code = $service->start('2024004', ['role' => 'student'], '09170000004');
+        $record = $repository->record;
+        self::assertInstanceOf(OtpRecord::class, $record);
 
         self::assertMatchesRegularExpression('/^[0-9]{6}$/', $code);
-        self::assertSame('2024004', $repository->record?->barcode());
-        self::assertSame('09170000004', $repository->record?->phoneNumber());
-        self::assertSame(['role' => 'student'], $repository->record?->payload());
-        self::assertSame('2026-08-28 10:05:00', $repository->record?->expiresAt()->format('Y-m-d H:i:s'));
+        self::assertSame('2024004', $record->barcode());
+        self::assertSame('09170000004', $record->phoneNumber());
+        self::assertSame(['role' => 'student'], $record->payload());
+        self::assertSame('2026-08-28 10:05:00', $record->expiresAt()->format('Y-m-d H:i:s'));
     }
 
     public function testVerifyMarksLatestValidCodeUsedAndReturnsPayload(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:00'));
-        $repository = new FakeOtpRepository($clock);
+        $repository = new FakeOtpRepository();
         $repository->record = OtpRecord::pending(
             7,
             '2024004',
@@ -52,7 +54,7 @@ final class OtpServiceTest extends TestCase
     public function testExpiredCodeCannotBeVerified(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:06:00'));
-        $repository = new FakeOtpRepository($clock);
+        $repository = new FakeOtpRepository();
         $repository->record = OtpRecord::pending(
             8,
             '2024004',
@@ -70,7 +72,7 @@ final class OtpServiceTest extends TestCase
     public function testResendIsBlockedForSixtySecondsThenUpdatesExistingRecord(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:30'));
-        $repository = new FakeOtpRepository($clock);
+        $repository = new FakeOtpRepository();
         $repository->record = OtpRecord::pending(
             9,
             '2024004',
@@ -119,17 +121,10 @@ final class FakeOtpRepository implements OtpRepositoryInterface
 
     public ?int $updatedId = null;
 
-    public function __construct(private readonly ClockInterface $clock)
-    {
-    }
-
     public function deleteExpired(DateTimeImmutable $now, string $barcode): void
     {
     }
 
-    /**
-     * @param array<string, string> $payload
-     */
     public function create(OtpRecord $record): void
     {
         $this->record = $record;

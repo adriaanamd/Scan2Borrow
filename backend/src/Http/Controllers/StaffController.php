@@ -26,12 +26,12 @@ final readonly class StaffController
 
     public function dashboard(ServerRequest $request): JsonResponse
     {
-        return $this->staffResponse($this->staff->dashboard());
+        return $this->staffDataResponse(fn (): array => $this->staff->dashboard());
     }
 
     public function borrowers(ServerRequest $request): JsonResponse
     {
-        return $this->staffResponse(['borrowers' => $this->staff->borrowers($this->queryString($request, 'search'))]);
+        return $this->staffDataResponse(fn (): array => ['borrowers' => $this->staff->borrowers($this->queryString($request, 'search'))]);
     }
 
     public function overdue(ServerRequest $request): JsonResponse
@@ -43,12 +43,12 @@ final readonly class StaffController
             $total += is_numeric($value) ? (float) $value : 0.0;
         }
 
-        return $this->staffResponse(['overdue' => $rows, 'total_fine' => $total]);
+        return $this->staffDataResponse(fn (): array => ['overdue' => $rows, 'total_fine' => $total]);
     }
 
     public function report(ServerRequest $request): JsonResponse
     {
-        return $this->staffResponse(['report' => $this->staff->report(
+        return $this->staffDataResponse(fn (): array => ['report' => $this->staff->report(
             $this->queryString($request, 'type'),
             $this->queryString($request, 'from'),
             $this->queryString($request, 'to'),
@@ -103,7 +103,7 @@ final readonly class StaffController
 
     public function guestRequests(ServerRequest $request): JsonResponse
     {
-        return $this->staffResponse(['requests' => $this->staff->guestRequests()]);
+        return $this->staffDataResponse(fn (): array => ['requests' => $this->staff->guestRequests()]);
     }
 
     public function adminStaff(ServerRequest $request): JsonResponse
@@ -250,9 +250,14 @@ final readonly class StaffController
     }
 
     /** @param array<string, mixed> $data */
-    private function staffResponse(array $data): JsonResponse
+    /** @param callable(): array<string, mixed> $loader */
+    private function staffDataResponse(callable $loader): JsonResponse
     {
-        return $this->isStaff() ? new JsonResponse(200, ['ok' => true, 'data' => $data]) : $this->unauthorized();
+        if (!$this->isStaff()) {
+            return $this->unauthorized();
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $loader()]);
     }
 
     /** @param array<string, mixed> $data */

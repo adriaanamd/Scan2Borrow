@@ -14,6 +14,7 @@ final readonly class PageRoute
         private string $template,
         private array $roles = [],
         private bool $guestOnly = false,
+        private bool $redirectAuthenticated = false,
     ) {
     }
 
@@ -43,5 +44,10 @@ final readonly class PageRoute
     public function isPublic(): bool
     {
         return $this->roles === [] && !$this->guestOnly;
+    }
+
+    public function redirectsAuthenticated(): bool
+    {
+        return $this->redirectAuthenticated;
     }
 }

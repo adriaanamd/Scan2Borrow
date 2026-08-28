@@ -23,7 +23,7 @@ final class SessionPageAccessAuthorizer implements PageAccessAuthorizerInterface
     public function allows(ServerRequest $request, PageRoute $route): bool
     {
         if ($route->isPublic()) {
-            return true;
+            return !$route->redirectsAuthenticated() || $this->principal() === null;
         }
 
         return $this->policy->allows(

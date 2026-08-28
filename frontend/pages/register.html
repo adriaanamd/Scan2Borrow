@@ -18,46 +18,37 @@
           <h3 class="mb-1">Library Borrower Registration</h3>
         </div>
         <div class="auth-body">
-          <div
-            class="modal fade"
-            id="roleModal"
-            tabindex="-1"
-            aria-hidden="true"
-          >
-            <div class="modal-dialog modal-sm modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-body text-center">
-                  <h5 class="mb-3">Register as</h5>
-                  <div class="d-grid gap-2">
-                    <button
-                      type="button"
-                      class="btn btn-outline-primary"
-                      id="chooseStudent"
-                    >
-                      Student
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary"
-                      id="chooseTeacher"
-                    >
-                      Teacher
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-outline-success"
-                      id="chooseGuest"
-                    >
-                      Guest / Visitor
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
           <div id="form-error" class="alert alert-danger" hidden></div>
           <form method="POST" id="reg-form" autocomplete="off">
             <input type="hidden" name="photo_data" id="photo_data" />
+            <section class="registration-role-picker" aria-labelledby="registration-role-title">
+              <div class="registration-role-kicker">Account type</div>
+              <h4 id="registration-role-title">Register as</h4>
+              <p class="registration-role-help">Choose the account type you want to create.</p>
+              <div class="registration-role-grid">
+                <button type="button" class="registration-role-choice" id="chooseStudent" data-role="student" aria-pressed="false">
+                  <span class="registration-role-mark" aria-hidden="true"></span>
+                  <span><strong>Student</strong><small>For currently enrolled students</small></span>
+                </button>
+                <button type="button" class="registration-role-choice" id="chooseTeacher" data-role="teacher" aria-pressed="false">
+                  <span class="registration-role-mark" aria-hidden="true"></span>
+                  <span><strong>Teacher</strong><small>For teaching staff</small></span>
+                </button>
+                <button type="button" class="registration-role-choice" id="chooseGuest" data-role="guest" aria-pressed="false">
+                  <span class="registration-role-mark" aria-hidden="true"></span>
+                  <span><strong>Guest / Visitor</strong><small>Continue to guest registration</small></span>
+                </button>
+              </div>
+              <div class="registration-role-current">
+                <span>Selected role</span>
+                <strong id="selected-role-label">Select a role</strong>
+              </div>
+            </section>
+            <select name="role" id="role_select" class="registration-role-native-select" aria-label="Registration role" required>
+              <option value="">Select Role</option>
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+            </select>
             <div class="text-center mb-3">
               <label class="form-label d-block fw-semibold">ID Photo</label>
               <div class="photo-capture mx-auto" style="max-width: 260px">
@@ -203,18 +194,6 @@
                   <option value="Senior High Teacher">
                     Senior High Teacher
                   </option>
-                </select>
-              </div>
-              <div class="col-12">
-                <select
-                  name="role"
-                  id="role_select"
-                  class="form-select"
-                  required
-                >
-                  <option value="">Select Role</option>
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher</option>
                 </select>
               </div>
             </div>

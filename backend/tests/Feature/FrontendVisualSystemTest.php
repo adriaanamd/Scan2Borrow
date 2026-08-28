@@ -91,6 +91,18 @@ final class FrontendVisualSystemTest extends TestCase
         }
     }
 
+    public function testRegistrationPresentsRoleSelectionInsideTheRegistrationSurface(): void
+    {
+        $registration = $this->read('frontend/pages/register.html');
+
+        self::assertStringContainsString('registration-role-picker', $registration);
+        self::assertStringContainsString('id="chooseStudent"', $registration);
+        self::assertStringContainsString('id="chooseTeacher"', $registration);
+        self::assertStringContainsString('id="chooseGuest"', $registration);
+        self::assertStringContainsString('id="role_select"', $registration);
+        self::assertStringNotContainsString('id="roleModal"', $registration);
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

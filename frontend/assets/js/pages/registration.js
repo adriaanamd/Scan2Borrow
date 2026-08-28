@@ -13,10 +13,8 @@ class RegistrationPageController {
     if (preselectedRole) {
       this.role.value = preselectedRole;
       this.toggleFields();
-    } else if (window.bootstrap) {
-      window.bootstrap.Modal.getOrCreateInstance(
-        document.getElementById("roleModal"),
-      ).show();
+    } else {
+      this.toggleFields();
     }
   }
 
@@ -36,9 +34,6 @@ class RegistrationPageController {
   selectRole(role) {
     this.role.value = role;
     this.toggleFields();
-    window.bootstrap?.Modal.getOrCreateInstance(
-      document.getElementById("roleModal"),
-    ).hide();
   }
 
   toggleFields() {
@@ -50,6 +45,15 @@ class RegistrationPageController {
     document.querySelectorAll(".teacher-only").forEach((field) => {
       field.classList.toggle("d-none", !isTeacher);
     });
+    document.querySelectorAll(".registration-role-choice").forEach((choice) => {
+      const selected = choice.dataset.role === this.role?.value;
+      choice.classList.toggle("is-selected", selected);
+      choice.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+    const label = document.getElementById("selected-role-label");
+    if (label) {
+      label.textContent = isStudent ? "Student" : isTeacher ? "Teacher" : "Select a role";
+    }
   }
 
   bindCamera() {

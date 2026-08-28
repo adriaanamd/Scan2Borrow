@@ -30,10 +30,10 @@ final class ReturnServiceTest extends TestCase
         $result = $service->return(1, 'BK-0002');
 
         self::assertTrue($result->successful());
-        self::assertSame('You returned "Clean Code". It was 3 day(s) overdue. Fine: ₱15.00.', $result->message());
+        self::assertSame('You returned "Clean Code". It was 2 day(s) overdue. Fine: ₱10.00.', $result->message());
         self::assertSame(8, $repository->completedLoanId);
         self::assertSame(4, $repository->availableBookId);
-        self::assertSame(15.0, $repository->fine);
+        self::assertSame(10.0, $repository->fine);
     }
 
     private function service(FakeReturnRepository $repository): ReturnService

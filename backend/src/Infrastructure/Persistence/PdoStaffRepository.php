@@ -27,6 +27,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             ],
             'recent' => $this->recentTransactions(),
             'pending' => $this->pendingBorrowings(),
+            'overview' => $this->dashboardOverview(),
         ];
     }
 
@@ -401,6 +402,76 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         unset($row);
 
         return $rows;
+    }
+
+    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>} */
+    private function dashboardOverview(): array
+    {
+        $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
+        if ($firstMonth === false) {
+            throw new RuntimeException('Unable to calculate dashboard overview period.');
+        }
+
+        /** @var array<string, array{month: string, label: string, count: int}> $months */
+        $months = [];
+        for ($offset = 0; $offset < 12; $offset++) {
+            $month = $firstMonth->modify('+' . $offset . ' months');
+            if ($month === false) {
+                continue;
+            }
+            $key = $month->format('Y-m');
+            $months[$key] = [
+                'month' => $key,
+                'label' => $month->format('M'),
+                'count' => 0,
+            ];
+        }
+
+        $activityStatement = $this->pdo->prepare(
+            'SELECT borrow_date FROM borrowing WHERE borrow_date IS NOT NULL AND borrow_date >= :start_date'
+        );
+        $activityStatement->execute(['start_date' => $firstMonth->format('Y-m-d')]);
+        while (($row = $activityStatement->fetch(PDO::FETCH_ASSOC)) !== false) {
+            $borrowDate = $row['borrow_date'] ?? null;
+            if (!is_string($borrowDate)) {
+                continue;
+            }
+            $monthKey = substr(trim($borrowDate), 0, 7);
+            if (isset($months[$monthKey])) {
+                $months[$monthKey]['count']++;
+            }
+        }
+
+        $topBorrowersStatement = $this->pdo->prepare(
+            'SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(br.id) AS borrowing_count '
+            . 'FROM users u JOIN borrowing br ON br.user_id = u.id '
+            . "WHERE u.role IN ('student', 'teacher') "
+            . 'GROUP BY u.id, u.barcode, u.firstname, u.lastname '
+            . 'ORDER BY borrowing_count DESC, u.lastname ASC, u.firstname ASC LIMIT 10'
+        );
+        $topBorrowersStatement->execute();
+        /** @var list<array<string, mixed>> $borrowerRows */
+        $borrowerRows = $topBorrowersStatement->fetchAll(PDO::FETCH_ASSOC);
+        $topBorrowers = [];
+        foreach ($borrowerRows as $row) {
+            $topBorrowers[] = [
+                'id' => is_numeric($row['id'] ?? null) ? (int) $row['id'] : 0,
+                'name' => trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null)),
+                'barcode' => $this->string($row['barcode'] ?? null),
+                'borrowing_count' => is_numeric($row['borrowing_count'] ?? null) ? (int) $row['borrowing_count'] : 0,
+            ];
+        }
+
+        return [
+            'borrowing_activity' => array_values($months),
+            'loan_status' => [
+                'available' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Available'"),
+                'borrowed' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Borrowed'"),
+                'overdue' => $this->count("SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL AND status = 'Overdue'"),
+                'pending' => $this->count("SELECT COUNT(*) FROM borrowing WHERE approval_status = 'pending' AND return_date IS NULL"),
+            ],
+            'top_borrowers' => $topBorrowers,
+        ];
     }
 
     private function changeBorrowing(int $borrowingId, int $staffId, bool $approve): void

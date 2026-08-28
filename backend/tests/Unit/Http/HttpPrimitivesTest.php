@@ -43,6 +43,8 @@ final class HttpPrimitivesTest extends TestCase
 
         self::assertSame('/student/dashboard', $request->path());
         self::assertSame(['tab' => 'history'], $request->query());
+        self::assertSame('/scan2borrow', $request->applicationPrefix());
+        self::assertSame('/scan2borrow/login', $request->applicationPath('/login'));
     }
 
     public function testSerializesSuccessEnvelopeAsJson(): void

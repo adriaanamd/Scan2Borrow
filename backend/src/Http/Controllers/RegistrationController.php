@@ -55,7 +55,7 @@ final readonly class RegistrationController
 
         return new JsonResponse(200, [
             'ok' => true,
-            'data' => ['redirect' => '/verify-otp', 'barcode' => $result->barcode()],
+            'data' => ['redirect' => $request->applicationPath('/verify-otp'), 'barcode' => $result->barcode()],
         ]);
     }
 
@@ -76,7 +76,7 @@ final readonly class RegistrationController
         return new JsonResponse(200, [
             'ok' => true,
             'message' => 'Registration successful! You can now use your Barcode ID to log in.',
-            'data' => ['redirect' => '/login'],
+            'data' => ['redirect' => $request->applicationPath('/login')],
         ]);
     }
 

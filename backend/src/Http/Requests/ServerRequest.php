@@ -91,6 +91,18 @@ final readonly class ServerRequest
         return $this->headers;
     }
 
+    public function applicationPrefix(): string
+    {
+        return self::applicationPrefixFromScript();
+    }
+
+    public function applicationPath(string $path): string
+    {
+        $normalizedPath = '/' . ltrim($path, '/');
+
+        return $this->applicationPrefix() . ($normalizedPath === '/' ? '' : $normalizedPath);
+    }
+
     /**
      * @param array<array-key, mixed> $input
      * @return array<string, mixed>
@@ -131,13 +143,7 @@ final readonly class ServerRequest
     {
         $scriptValue = $_SERVER['SCRIPT_NAME'] ?? '';
         $script = is_string($scriptValue) ? str_replace('\\', '/', $scriptValue) : '';
-        $marker = '/backend/public/index.php';
-        $markerPosition = strripos($script, $marker);
-        if ($markerPosition === false) {
-            return $path;
-        }
-
-        $prefix = rtrim(substr($script, 0, $markerPosition), '/');
+        $prefix = self::applicationPrefixFromScript($script);
         if ($prefix === '' || !str_starts_with($path, $prefix . '/')) {
             return $path;
         }
@@ -145,5 +151,21 @@ final readonly class ServerRequest
         $relative = substr($path, strlen($prefix));
 
         return $relative === '' ? '/' : $relative;
+    }
+
+    private static function applicationPrefixFromScript(?string $script = null): string
+    {
+        if ($script === null) {
+            $scriptValue = $_SERVER['SCRIPT_NAME'] ?? '';
+            $script = is_string($scriptValue) ? str_replace('\\', '/', $scriptValue) : '';
+        }
+
+        $marker = '/backend/public/index.php';
+        $markerPosition = strripos($script, $marker);
+        if ($markerPosition === false) {
+            return '';
+        }
+
+        return rtrim(substr($script, 0, $markerPosition), '/');
     }
 }

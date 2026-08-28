@@ -61,7 +61,7 @@ final readonly class GuestAuthController
 
         $this->sessions->setGuestOtpToken((string) $result->barcode());
 
-        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => '/guest/verify-otp']]);
+        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => $request->applicationPath('/guest/verify-otp')]]);
     }
 
     public function verify(ServerRequest $request): JsonResponse
@@ -82,12 +82,12 @@ final readonly class GuestAuthController
         if (str_starts_with($token, 'GUEST-UPD-')) {
             $this->sessions->clearRegistrationState();
 
-            return new JsonResponse(200, ['ok' => true, 'message' => 'Profile updated.', 'data' => ['redirect' => '/guest/profile']]);
+            return new JsonResponse(200, ['ok' => true, 'message' => 'Profile updated.', 'data' => ['redirect' => $request->applicationPath('/guest/profile')]]);
         }
 
         $this->sessions->clearRegistrationState();
 
-        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => '/guest/dashboard']]);
+        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => $request->applicationPath('/guest/dashboard')]]);
     }
 
     public function resend(ServerRequest $request): JsonResponse

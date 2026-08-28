@@ -39,10 +39,10 @@ final class SessionPageAccessAuthorizer implements PageAccessAuthorizerInterface
     public function denialLocation(ServerRequest $request, PageRoute $route): string
     {
         if ($route->requiresGuest()) {
-            return '/guest/registration';
+            return $request->applicationPath('/guest/registration');
         }
 
-        return $this->middleware->homeFor($this->principal());
+        return $request->applicationPath($this->middleware->homeFor($this->principal()));
     }
 
     private function principal(): ?Principal

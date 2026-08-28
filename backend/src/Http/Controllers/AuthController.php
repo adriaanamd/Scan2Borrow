@@ -53,7 +53,7 @@ final readonly class AuthController
     {
         $this->sessions->logout();
 
-        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => '/login']]);
+        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => $request->applicationPath('/login')]]);
     }
 
     public function loginBorrower(ServerRequest $request): JsonResponse
@@ -65,6 +65,7 @@ final readonly class AuthController
 
         return $this->loginResult(
             $this->authentication->loginBorrower($this->stringBodyValue($request, 'barcode')),
+            $request->applicationPrefix(),
         );
     }
 
@@ -80,6 +81,7 @@ final readonly class AuthController
                 $this->stringBodyValue($request, 'barcode'),
                 $this->stringBodyValue($request, 'password'),
             ),
+            $request->applicationPrefix(),
         );
     }
 
@@ -125,7 +127,7 @@ final readonly class AuthController
         return null;
     }
 
-    private function loginResult(AuthenticationResult $result): JsonResponse
+    private function loginResult(AuthenticationResult $result, string $prefix): JsonResponse
     {
         if (!$result->successful()) {
             if ($result->registrationRole() !== null) {
@@ -146,7 +148,7 @@ final readonly class AuthController
 
         return new JsonResponse(200, [
             'ok' => true,
-            'data' => ['redirect' => $result->redirectPath()],
+            'data' => ['redirect' => $prefix . $result->redirectPath()],
         ]);
     }
 }

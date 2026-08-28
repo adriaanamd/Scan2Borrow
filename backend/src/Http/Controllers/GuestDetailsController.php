@@ -56,7 +56,7 @@ final readonly class GuestDetailsController
         if ($result->requiresVerification()) {
             $this->sessions->setGuestOtpToken((string) $result->verificationToken());
 
-            return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => '/guest/profile-verify-otp']]);
+            return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => $request->applicationPath('/guest/profile-verify-otp')]]);
         }
 
         return new JsonResponse(200, ['ok' => true, 'message' => 'Profile updated.', 'data' => []]);

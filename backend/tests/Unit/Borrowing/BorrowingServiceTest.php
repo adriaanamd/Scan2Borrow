@@ -24,7 +24,7 @@ final class BorrowingServiceTest extends TestCase
         $service = $this->service($repository);
 
         self::assertSame(
-            'Sorry, Clean Code is currently borrowed.',
+            'Sorry, "Clean Code" is currently borrowed.',
             $service->borrow(new BorrowRequest(1, Role::STUDENT, 'BK-1'))->message(),
         );
 

@@ -14,8 +14,19 @@
   </head>
   <body>
     <div class="auth-wrap">
-      <div class="auth-card" style="max-width: 480px">
+      <div class="auth-card auth-split">
+        <aside class="auth-brand-panel" aria-label="Scan2Borrow brand">
+          <img
+            class="auth-brand-logo"
+            src="/scan2borrow/public/logo.png"
+            alt="Binalbagan Catholic College seal"
+          />
+          <div class="auth-brand-wordmark">Scan2Borrow</div>
+          <p>School Library</p>
+        </aside>
+        <main class="auth-panel">
         <div class="auth-head">
+          <div class="auth-kicker">Visitor access</div>
           <h3>Guest SMS Verification</h3>
           <p class="mb-0">Enter the OTP sent to your mobile number.</p>
         </div>
@@ -46,6 +57,7 @@
             OTP expires in <span id="expires-in">5</span> minute(s).
           </p>
         </div>
+        </main>
       </div>
     </div>
     <script src="/scan2borrow/frontend/assets/js/guest/otp.js" defer></script>

@@ -6,11 +6,37 @@ class GuestRegistrationController {
     this.purpose = document.getElementById("purpose");
     this.otherPurpose = document.getElementById("otherPurposeWrap");
     this.bindEvents();
+    this.bindStepNavigation();
+    this.showStep("details");
   }
   bindEvents() {
     this.purpose?.addEventListener("change", () => this.togglePurpose());
     this.togglePurpose();
     this.form?.addEventListener("submit", (event) => this.submit(event));
+  }
+  bindStepNavigation() {
+    document
+      .getElementById("guest-details-continue")
+      ?.addEventListener("click", () => {
+        if (!this.form || !this.form.reportValidity()) return;
+        this.showStep("photo");
+      });
+    document
+      .getElementById("guest-photo-back")
+      ?.addEventListener("click", () => {
+        this.camera.stop();
+        this.showStep("details");
+      });
+  }
+  showStep(step) {
+    document.querySelectorAll("[data-guest-registration-step]").forEach((section) => {
+      section.hidden = section.dataset.guestRegistrationStep !== step;
+    });
+    document.querySelectorAll("[data-guest-progress-step]").forEach((indicator) => {
+      const isDetails = indicator.dataset.guestProgressStep === "details";
+      indicator.classList.toggle("is-current", indicator.dataset.guestProgressStep === step);
+      indicator.classList.toggle("is-complete", step === "photo" && isDetails);
+    });
   }
   togglePurpose() {
     this.otherPurpose?.classList.toggle(

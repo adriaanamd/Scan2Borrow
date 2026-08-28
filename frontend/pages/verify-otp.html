@@ -14,8 +14,19 @@
   </head>
   <body>
     <div class="auth-wrap">
-      <div class="auth-card" style="max-width: 480px">
+      <div class="auth-card auth-split">
+        <aside class="auth-brand-panel" aria-label="Scan2Borrow brand">
+          <img
+            class="auth-brand-logo"
+            src="/scan2borrow/public/logo.png"
+            alt="Binalbagan Catholic College seal"
+          />
+          <div class="auth-brand-wordmark">Scan2Borrow</div>
+          <p>School Library</p>
+        </aside>
+        <main class="auth-panel">
         <div class="auth-head">
+          <div class="auth-kicker">Account setup</div>
           <h3 class="mb-1">OTP Verification</h3>
           <p class="text-muted mb-0">
             Enter the 6-digit code sent to your phone
@@ -81,6 +92,7 @@
             >
           </div>
         </div>
+        </main>
       </div>
     </div>
     <script src="/scan2borrow/frontend/assets/js/pages/otp.js" defer></script>

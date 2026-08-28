@@ -49,6 +49,32 @@ final class GuestMarkupParityTest extends TestCase
         }
     }
 
+    public function testGuestRegistrationSeparatesDetailsAndPhotoSteps(): void
+    {
+        $registration = file_get_contents(
+            dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'guest-registration.html',
+        );
+        self::assertIsString($registration);
+        $controller = file_get_contents(
+            dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'registration.js',
+        );
+        self::assertIsString($controller);
+
+        foreach ([
+            'guest-registration-progress',
+            'data-guest-registration-step="details"',
+            'data-guest-registration-step="photo"',
+            'id="guest-details-continue"',
+            'id="guest-photo-back"',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $registration, "Missing guest registration step marker: {$marker}");
+        }
+
+        self::assertStringContainsString('showStep', $controller);
+        self::assertStringContainsString('showStep("photo")', $controller);
+        self::assertStringContainsString('showStep("details")', $controller);
+    }
+
     public function testGuestBrowseControllerPreservesBookRequestAction(): void
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'browse.js';

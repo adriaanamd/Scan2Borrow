@@ -13,19 +13,36 @@
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
   </head>
   <body>
-    <div class="app">
-      <main class="main" style="margin-left: 0">
-        <div class="content" style="max-width: 520px; margin: 60px auto">
-          <h2>Verify New Mobile Number</h2>
+    <div class="auth-wrap">
+      <div class="auth-card auth-split">
+        <aside class="auth-brand-panel" aria-label="Scan2Borrow brand">
+          <img
+            class="auth-brand-logo"
+            src="/scan2borrow/public/logo.png"
+            alt="Binalbagan Catholic College seal"
+          />
+          <div class="auth-brand-wordmark">Scan2Borrow</div>
+          <p>School Library</p>
+        </aside>
+        <main class="auth-panel">
+          <div class="auth-head">
+            <div class="auth-kicker">Profile security</div>
+            <h2>Verify New Mobile Number</h2>
           <p class="text-muted">
             Enter the OTP sent to your new number before saving this change.
           </p>
-          <div id="form-error" class="alert alert-danger" hidden></div>
-          <div id="form-success" class="alert alert-success" hidden></div>
-          <div class="card">
-            <div class="card-body">
-              <form method="post" id="profile-otp-form">
+          </div>
+          <div class="auth-body">
+            <div id="form-error" class="alert alert-danger" hidden></div>
+            <div id="form-success" class="alert alert-success" hidden></div>
+            <div class="otp-panel-intro text-center mb-4">
+              <div class="otp-icon mb-3">&#128274;</div>
+              <p class="text-muted small mb-0">Your mobile number change will be saved after the code is verified.</p>
+            </div>
+            <form method="post" id="profile-otp-form">
+              <label class="form-label fw-semibold" for="profile-otp">Enter OTP Code</label>
                 <input
+                  id="profile-otp"
                   class="form-control form-control-lg text-center mb-3"
                   name="otp"
                   maxlength="6"
@@ -34,23 +51,18 @@
                   autocomplete="one-time-code"
                   placeholder="000000"
                   required
-                /><button class="btn btn-success w-100">
-                  Verify &amp; Save
-                </button>
-              </form>
-              <hr />
-              <form method="post" class="text-center" id="resend-form">
-                <button
-                  class="btn btn-outline-primary btn-sm"
-                  name="resend_otp"
-                >
-                  Resend OTP
-                </button>
-              </form>
-            </div>
+                />
+              <button class="btn btn-success w-100">Verify &amp; Save</button>
+            </form>
+            <hr />
+            <form method="post" class="text-center" id="resend-form">
+              <button class="btn btn-outline-primary btn-sm" name="resend_otp">
+                Resend OTP
+              </button>
+            </form>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
     <script src="/scan2borrow/frontend/assets/js/guest/otp.js" defer></script>
     <script src="/scan2borrow/frontend/assets/js/core/icons.js" defer></script>

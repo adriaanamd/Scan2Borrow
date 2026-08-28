@@ -118,7 +118,15 @@ final class FrontendVisualSystemTest extends TestCase
 
     public function testAuthScreensUseTheExistingBrandAssetsAndSplitLayout(): void
     {
-        foreach (['frontend/pages/login.html', 'frontend/pages/register.html', 'frontend/pages/staff-login.html', 'frontend/pages/guest-registration.html'] as $relativePath) {
+        foreach ([
+            'frontend/pages/login.html',
+            'frontend/pages/register.html',
+            'frontend/pages/staff-login.html',
+            'frontend/pages/guest-registration.html',
+            'frontend/pages/verify-otp.html',
+            'frontend/pages/guest-verify-otp.html',
+            'frontend/pages/guest-profile-verify-otp.html',
+        ] as $relativePath) {
             $source = $this->read($relativePath);
             self::assertStringContainsString('auth-split', $source, $relativePath . ' must use the split auth layout.');
             self::assertStringContainsString('/scan2borrow/public/logo.png', $source, $relativePath . ' must use the existing BCC logo.');

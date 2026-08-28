@@ -36,53 +36,20 @@
           <div id="form-error" class="alert alert-danger" hidden></div>
           <form method="POST" id="guest-reg-form" autocomplete="off">
             <input type="hidden" name="photo_data" id="photo_data" />
-            <div class="text-center mb-3">
-              <label class="form-label d-block fw-semibold"
-                >Visitor Photo *</label
-              ><video
-                id="cam"
-                autoplay
-                playsinline
-                muted
-                style="
-                  width: 320px;
-                  max-width: 100%;
-                  border-radius: 8px;
-                  background: #0f172a;
-                  aspect-ratio: 4/3;
-                  object-fit: cover;
-                "
-              ></video
-              ><canvas id="snap" class="d-none"></canvas
-              ><img
-                id="preview"
-                class="d-none img-fluid rounded"
-                style="width: 320px; max-width: 100%"
-                alt="Captured visitor photo"
-              />
-              <div id="cam-msg" class="small text-muted mt-1"></div>
-              <div class="mt-2">
-                <button
-                  type="button"
-                  id="btn-start"
-                  class="btn btn-outline-primary btn-sm"
-                >
-                  Start Camera</button
-                ><button
-                  type="button"
-                  id="btn-capture"
-                  class="btn btn-success btn-sm d-none"
-                >
-                  Capture</button
-                ><button
-                  type="button"
-                  id="btn-retake"
-                  class="btn btn-outline-secondary btn-sm d-none"
-                >
-                  Retake
-                </button>
+            <nav class="registration-progress guest-registration-progress" aria-label="Guest registration progress">
+              <span class="registration-progress-step is-current" data-guest-progress-step="details"><b>01</b> Your details</span>
+              <span class="registration-progress-line"></span>
+              <span class="registration-progress-step" data-guest-progress-step="photo"><b>02</b> Visitor photo</span>
+            </nav>
+
+            <section data-guest-registration-step="details" aria-labelledby="guest-details-title">
+              <div class="registration-step-heading">
+                <div>
+                  <div class="registration-role-kicker">Step 01</div>
+                  <h4 id="guest-details-title">Your details</h4>
+                  <p>Tell us who you are and why you are visiting the library.</p>
+                </div>
               </div>
-            </div>
             <h6 class="border-bottom pb-2 mb-3">Personal Information</h6>
             <div class="row g-2 mb-3">
               <div class="col-md-4">
@@ -248,12 +215,39 @@
                 />
               </div>
             </div>
-            <button
-              type="submit"
-              class="btn btn-success w-100 mt-4 py-2 fw-semibold"
-            >
-              Send SMS OTP
-            </button>
+              <div class="registration-step-actions">
+                <span></span>
+                <button type="button" id="guest-details-continue" class="btn btn-primary">
+                  Continue to photo
+                </button>
+              </div>
+            </section>
+
+            <section data-guest-registration-step="photo" aria-labelledby="guest-photo-title" hidden>
+              <div class="registration-step-heading">
+                <div>
+                  <div class="registration-role-kicker">Step 02</div>
+                  <h4 id="guest-photo-title">Visitor photo</h4>
+                  <p>Capture a clear photo before sending your registration for SMS confirmation.</p>
+                </div>
+              </div>
+              <div class="registration-camera-panel guest-registration-camera">
+                <label class="form-label d-block text-center fw-semibold" for="cam">Visitor Photo *</label>
+                <video id="cam" autoplay playsinline muted></video>
+                <canvas id="snap" class="d-none"></canvas>
+                <img id="preview" class="d-none img-fluid" alt="Captured visitor photo" />
+                <div id="cam-msg" class="small text-muted mt-2 text-center"></div>
+                <div class="d-flex flex-wrap gap-2 mt-3 justify-content-center">
+                  <button type="button" id="btn-start" class="btn btn-outline-primary btn-sm">Start Camera</button>
+                  <button type="button" id="btn-capture" class="btn btn-success btn-sm d-none">Capture</button>
+                  <button type="button" id="btn-retake" class="btn btn-outline-secondary btn-sm d-none">Retake</button>
+                </div>
+              </div>
+              <div class="registration-step-actions">
+                <button type="button" id="guest-photo-back" class="btn btn-outline-secondary">Back to details</button>
+                <button type="submit" class="btn btn-success py-2 fw-semibold">Send SMS OTP</button>
+              </div>
+            </section>
           </form>
           <hr />
           <a
@@ -265,6 +259,10 @@
         </main>
       </div>
     </div>
+    <script
+      src="/scan2borrow/frontend/assets/js/guest/camera-capture.js"
+      defer
+    ></script>
     <script
       src="/scan2borrow/frontend/assets/js/guest/registration.js"
       defer

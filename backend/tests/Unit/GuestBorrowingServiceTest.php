@@ -50,6 +50,7 @@ final class GuestBorrowingServiceTest extends TestCase
         $this->borrowings->expects(self::once())->method('activeCount')->with(7)->willReturn(0);
         $this->borrowings->expects(self::once())->method('createPending')->with(
             self::callback(static fn (GuestBorrowRequest $request): bool => $request->bookId() === 12 && $request->governmentIdBarcode() === 'GOV-777' && $request->verificationPhoto() === 'photo-data'),
+            7,
         )->willReturn(41);
         $this->notifications->expects(self::once())->method('notifyVisitor')->with(7, 'Borrow request submitted', self::stringContains('pending staff approval'));
         $this->notifications->expects(self::once())->method('notifyStaff')->with(41, self::stringContains('requested to borrow'));
@@ -75,9 +76,10 @@ final class GuestBorrowingServiceTest extends TestCase
         $unavailable = $service->submitRequest($this->visitor, new GuestBorrowRequest(12, 'GOV-777', 'photo-data'));
         self::assertSame('This book is no longer available.', $unavailable->message());
 
-        $this->borrowings->method('isBookAvailable')->willReturn(true);
-        $this->borrowings->method('activeCount')->willReturn(3);
-        $full = $service->submitRequest($this->visitor, new GuestBorrowRequest(12, 'GOV-777', 'photo-data'));
+        $fullBorrowings = $this->createMock(GuestBorrowingRepositoryInterface::class);
+        $fullBorrowings->method('isBookAvailable')->willReturn(true);
+        $fullBorrowings->method('activeCount')->willReturn(3);
+        $full = (new GuestBorrowingService($fullBorrowings, $this->notifications, 3))->submitRequest($this->visitor, new GuestBorrowRequest(12, 'GOV-777', 'photo-data'));
         self::assertSame('You have reached the borrowing limit.', $full->message());
     }
 

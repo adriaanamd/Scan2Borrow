@@ -67,7 +67,8 @@ final class GuestBorrowingControllerTest extends TestCase
 
     public function testBorrowValidatesCsrfAndUsesAuthenticatedVisitor(): void
     {
-        $this->sessionStore->method('get')->willReturn('csrf-token');
+        $csrfToken = str_repeat('a', 64);
+        $this->sessionStore->method('get')->willReturn($csrfToken);
         $this->borrowingRepository->method('isBookAvailable')->willReturn(true);
         $this->borrowingRepository->method('activeCount')->willReturn(0);
         $this->borrowingRepository->method('createPending')->willReturn(19);
@@ -76,7 +77,7 @@ final class GuestBorrowingControllerTest extends TestCase
         $controller = $this->controller(new VisitorAccount(7, 'GOV-777', 'Active', 'Visitor One'));
 
         $response = $controller->borrow($this->request('POST', [
-            'csrf' => 'csrf-token', 'book_id' => '12', 'government_id_barcode' => 'GOV-777', 'verification_photo' => 'photo-data',
+            'csrf' => $csrfToken, 'book_id' => '12', 'government_id_barcode' => 'GOV-777', 'verification_photo' => 'photo-data',
         ]));
 
         self::assertSame(200, $response->statusCode());

@@ -29,6 +29,11 @@ final class PageRouteTable
                 [],
                 true,
             ),
+            '/student/settings' => new PageRoute(
+                '/student/settings',
+                $pageRoot . DIRECTORY_SEPARATOR . 'student-settings.html',
+                ['student'],
+            ),
             '/staff/dashboard' => new PageRoute(
                 '/staff/dashboard',
                 $pageRoot . DIRECTORY_SEPARATOR . 'staff-dashboard.html',

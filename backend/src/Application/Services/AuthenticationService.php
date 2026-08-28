@@ -9,12 +9,14 @@ use App\Domain\Auth\Principal;
 use App\Domain\Auth\Role;
 use App\Domain\Auth\UserAccount;
 use App\Infrastructure\Persistence\UserRepositoryInterface;
+use App\Infrastructure\Persistence\GuestIdentityRepositoryInterface;
 
 final class AuthenticationService implements AuthenticationServiceInterface
 {
     public function __construct(
         private readonly UserRepositoryInterface $users,
         private readonly SessionService $sessions,
+        private readonly ?GuestIdentityRepositoryInterface $guests = null,
     ) {
     }
 
@@ -27,6 +29,13 @@ final class AuthenticationService implements AuthenticationServiceInterface
 
         $user = $this->users->findByBarcode($barcode);
         if ($user === null) {
+            $guest = $this->guests?->findByGovernmentId($barcode);
+            if ($guest !== null) {
+                $this->sessions->loginGuest($guest->id());
+
+                return AuthenticationResult::success('/guest/dashboard');
+            }
+
             $role = preg_match('/[A-Za-z]/', $barcode) === 1 ? Role::TEACHER : Role::STUDENT;
 
             return AuthenticationResult::registrationRequired($role);

@@ -25,7 +25,7 @@ final class GuestProfileService
             $barcode = 'GUEST-UPD-' . strtoupper(bin2hex(random_bytes(10)));
             $this->otp->start($barcode, $this->otpPayload($visitor, $request), $request->contactNo);
 
-            return GuestProfileUpdateResult::verificationRequired();
+            return GuestProfileUpdateResult::verificationRequiredFor($barcode);
         }
 
         $this->profiles->updateProfile($visitor->id(), $request);

@@ -33,7 +33,7 @@ final readonly class Application
     public function handle(ServerRequest $request): ResponseInterface
     {
         try {
-            if (str_starts_with($request->path(), '/api/')) {
+            if (str_starts_with($request->path(), '/api/') || $request->path() === '/logout') {
                 if ($this->apiRouter === null) {
                     return new JsonResponse(503, ['ok' => false, 'errors' => ['Application API is not configured.']]);
                 }

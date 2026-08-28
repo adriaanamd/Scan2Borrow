@@ -18,16 +18,102 @@
           <h3 class="mb-1">Library Borrower Registration</h3>
         </div>
         <div class="auth-body">
+          <div
+            class="modal fade"
+            id="roleModal"
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-body text-center">
+                  <h5 class="mb-3">Register as</h5>
+                  <div class="d-grid gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      id="chooseStudent"
+                    >
+                      Student
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      id="chooseTeacher"
+                    >
+                      Teacher
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-success"
+                      id="chooseGuest"
+                    >
+                      Guest / Visitor
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div id="form-error" class="alert alert-danger" hidden></div>
-          <form method="post" id="registration-form">
-            <input type="hidden" name="role" id="role" />
+          <form method="POST" id="reg-form" autocomplete="off">
+            <input type="hidden" name="photo_data" id="photo_data" />
+            <div class="text-center mb-3">
+              <label class="form-label d-block fw-semibold">ID Photo</label>
+              <div class="photo-capture mx-auto" style="max-width: 260px">
+                <video
+                  id="cam"
+                  autoplay
+                  playsinline
+                  muted
+                  style="
+                    width: 100%;
+                    border-radius: 12px;
+                    background: #0f172a;
+                    aspect-ratio: 4/3;
+                    object-fit: cover;
+                  "
+                ></video>
+                <canvas id="snap" class="d-none"></canvas>
+                <img
+                  id="preview"
+                  class="d-none img-fluid rounded"
+                  style="aspect-ratio: 4/3; object-fit: cover; width: 100%"
+                  alt="Captured photo"
+                />
+                <div id="cam-msg" class="text-muted small mt-1"></div>
+                <div class="d-flex gap-2 mt-2 justify-content-center">
+                  <button
+                    type="button"
+                    id="btn-start"
+                    class="btn btn-outline-primary btn-sm"
+                  >
+                    Start Camera
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-capture"
+                    class="btn btn-accent btn-sm d-none"
+                  >
+                    Capture
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-retake"
+                    class="btn btn-outline-secondary btn-sm d-none"
+                  >
+                    Retake
+                  </button>
+                </div>
+              </div>
+            </div>
             <div class="row g-2">
               <div class="col-12">
                 <input
                   type="text"
                   name="barcode"
                   class="form-control"
-                  placeholder="Student or Teacher Barcode ID"
+                  placeholder="School ID Number"
                   required
                 />
               </div>
@@ -57,37 +143,31 @@
                   required
                 />
               </div>
-              <div class="col-md-6">
-                <input
-                  type="text"
-                  name="department"
-                  class="form-control"
-                  placeholder="Department"
-                />
+              <div class="col-md-6 student-only">
+                <select name="course" class="form-select">
+                  <option value="">Select Course</option>
+                  <option value="Bachelor of Science in Information Technology">
+                    Bachelor of Science in Information Technology
+                  </option>
+                  <option value="Bachelor of Science in Business Management">
+                    Bachelor of Science in Business Management
+                  </option>
+                  <option value="Bachelor of Science in Education">
+                    Bachelor of Science in Education
+                  </option>
+                  <option value="Bachelor of Science in Accountancy">
+                    Bachelor of Science in Accountancy
+                  </option>
+                </select>
               </div>
-              <div class="col-md-6">
-                <input
-                  type="text"
-                  name="position"
-                  class="form-control"
-                  placeholder="Position"
-                />
-              </div>
-              <div class="col-md-6">
-                <input
-                  type="text"
-                  name="course"
-                  class="form-control"
-                  placeholder="Course"
-                />
-              </div>
-              <div class="col-md-6">
-                <input
-                  type="text"
-                  name="year_level"
-                  class="form-control"
-                  placeholder="Year Level"
-                />
+              <div class="col-md-6 student-only">
+                <select name="year_level" class="form-select">
+                  <option value="">Select Year</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
               </div>
               <div class="col-md-6">
                 <input
@@ -103,73 +183,59 @@
                   name="contact_no"
                   class="form-control"
                   placeholder="Contact Number"
-                  required
                 />
               </div>
-              <div class="col-12 text-center mt-2">
-                <label class="form-label d-block fw-semibold"
-                  >Capture ID Photo</label
-                ><video
-                  id="modal_cam"
-                  autoplay
-                  playsinline
-                  muted
-                  style="
-                    width: 320px;
-                    height: 240px;
-                    border-radius: 8px;
-                    background: #0f172a;
-                    object-fit: cover;
-                  "
-                ></video
-                ><canvas id="modal_snap" class="d-none"></canvas
-                ><img
-                  id="modal_preview"
-                  class="d-none img-fluid rounded"
-                  style="width: 320px"
-                  alt="Captured photo"
-                /><input
-                  type="hidden"
-                  name="photo_data"
-                  id="modal_photo_data"
-                />
-                <div class="mt-2">
-                  <button
-                    type="button"
-                    id="modal_start"
-                    class="btn btn-outline-primary btn-sm"
-                  >
-                    Start Camera</button
-                  ><button
-                    type="button"
-                    id="modal_capture"
-                    class="btn btn-accent btn-sm d-none"
-                  >
-                    Capture</button
-                  ><button
-                    type="button"
-                    id="modal_retake"
-                    class="btn btn-outline-secondary btn-sm d-none"
-                  >
-                    Retake
-                  </button>
-                </div>
+              <div class="col-md-6 teacher-only d-none">
+                <select name="department" class="form-select">
+                  <option value="">Select Department</option>
+                  <option value="CABAIT">CABAIT</option>
+                  <option value="EDUCATION">EDUCATION</option>
+                </select>
+              </div>
+              <div class="col-md-6 teacher-only d-none">
+                <select name="position" class="form-select">
+                  <option value="">Select Position</option>
+                  <option value="College Teacher">College Teacher</option>
+                  <option value="Part-Time Teacher">Part-Time Teacher</option>
+                  <option value="Academic Dean">Academic Dean</option>
+                  <option value="College Dean">College Dean</option>
+                  <option value="Elementary Teacher">Elementary Teacher</option>
+                  <option value="Senior High Teacher">
+                    Senior High Teacher
+                  </option>
+                </select>
+              </div>
+              <div class="col-12">
+                <select
+                  name="role"
+                  id="role_select"
+                  class="form-select"
+                  required
+                >
+                  <option value="">Select Role</option>
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                </select>
               </div>
             </div>
             <button
               type="submit"
               name="register"
-              class="btn btn-primary w-100 mt-3"
+              class="btn btn-accent w-100 mt-3 py-2 fw-semibold"
             >
-              Register
+              Register Account
             </button>
           </form>
-          <div class="text-center mt-3">
-            <a href="/scan2borrow/login">Back to Login</a>
-          </div>
+          <hr />
+          <a
+            href="/scan2borrow/login"
+            class="text-decoration-none d-block text-center"
+            >Already registered? Go to Login</a
+          >
         </div>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="frontend/assets/js/pages/registration.js" defer></script>
   </body>
 </html>

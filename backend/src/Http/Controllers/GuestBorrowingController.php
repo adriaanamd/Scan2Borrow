@@ -31,7 +31,17 @@ final readonly class GuestBorrowingController
             return $this->unauthorized();
         }
 
-        return new JsonResponse(200, ['ok' => true, 'data' => $this->portal->dashboard($visitor->id())]);
+        $dashboard = $this->portal->dashboard($visitor->id());
+        $summary = $dashboard['summary'];
+        $data = ['summary' => $summary, 'notifications' => $dashboard['notifications']];
+        foreach (['visitor', 'days_remaining', 'favorite_category', 'recent_book'] as $key) {
+            if (array_key_exists($key, $summary)) {
+                $data[$key] = $summary[$key];
+                unset($data['summary'][$key]);
+            }
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $data]);
     }
 
     public function browse(ServerRequest $request): JsonResponse
@@ -57,6 +67,18 @@ final readonly class GuestBorrowingController
                 $this->queryString($request, 'from'),
                 $this->queryString($request, 'to'),
             ),
+        ]]);
+    }
+
+    public function borrowed(ServerRequest $request): JsonResponse
+    {
+        $visitor = $this->visitor();
+        if ($visitor === null) {
+            return $this->unauthorized();
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => [
+            'books' => $this->portal->history($visitor->id(), 'Released', '', ''),
         ]]);
     }
 

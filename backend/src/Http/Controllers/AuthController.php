@@ -49,6 +49,13 @@ final readonly class AuthController
         return new JsonResponse(200, ['ok' => true, 'data' => []]);
     }
 
+    public function logoutLegacy(ServerRequest $request): JsonResponse
+    {
+        $this->sessions->logout();
+
+        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => '/login']]);
+    }
+
     public function loginBorrower(ServerRequest $request): JsonResponse
     {
         $csrfError = $this->csrfFailure($request);

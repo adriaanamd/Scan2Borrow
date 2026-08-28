@@ -18,7 +18,7 @@
 - All state-changing requests retain CSRF protection, server-side validation, prepared statements, authorization checks, and audit logging where the current behavior has it.
 - Protected pages and APIs are inaccessible without the required session and role, even when their URL is typed directly.
 - Existing CSS, markup structure, copy, emoji/icons, dimensions, Bootstrap classes, CDN versions, print styles, modals, drawers, toasts, scanner flows, and responsive behavior are compatibility requirements.
-- The existing database schema and upgrade behavior are retained unless a compatibility-preserving migration is required by the new structure.
+- The existing SQL is the database source of truth and must be preserved to the maximum possible extent: table names, columns, types, indexes, constraints, statuses, seed data, upgrade scripts, and data semantics are not redesigned. Repositories wrap the existing schema; any required SQL change must be additive, compatibility-preserving, separately tested, and explicitly documented.
 - PHPMailer remains an integration dependency; its vendored source is not rewritten as part of this refactor.
 - Every production behavior change follows TDD: write a failing test, observe the expected failure, implement the smallest passing change, rerun the full relevant suite, then refactor without changing behavior.
 - Target commit count is exactly 72 meaningful commits. Each commit below contains a testable behavior, a required boundary, a parity artifact, or a verified cutover step.
@@ -184,11 +184,11 @@
 
 ### Task 8: Book domain, inventory queries, and mutations
 
-**Files:** Create book entities/enums/query objects, book repository/service/controller, typed mutation DTOs, and Unit/Feature tests.
+**Files:** Create book entities/enums/query objects, book repository/service/controller, typed mutation DTOs, `backend/tests/Feature/SchemaContractTest.php`, and Unit/Feature tests.
 
 **Interfaces:** `BookService::list(BookQuery $query): PaginatedBooks`; `create`, `update`, `archive`, `restore`, `delete`; preserve `ok`, `data`, `total`, `page`, and `pages`.
 
-- [ ] **Step 1 / commit 29:** Write tests for allowlisted sorts, search fields, pagination, archived filtering, duplicate barcode/accession, keyword replacement, active-loan delete protection, and status values.
+- [ ] **Step 1 / commit 29:** Write `SchemaContractTest` against `scan2borrow_2_0.sql` and the existing upgrade scripts, then add tests for allowlisted sorts, search fields, pagination, archived filtering, duplicate barcode/accession, keyword replacement, active-loan delete protection, and status values. The schema test must fail if required existing tables, columns, statuses, or upgrade files disappear.
 - [ ] **Step 2 / commit 30:** Implement typed book models, allowlisted query builder, PDO repository, and service with parameterized SQL.
 - [ ] **Step 3 / commit 31:** Write mutation contract tests for FormData fields, cover path handling, bulk IDs, audit events, and exact messages.
 - [ ] **Step 4 / commit 32:** Implement inventory routes for list/create/update/archive/restore/delete and run all book tests.

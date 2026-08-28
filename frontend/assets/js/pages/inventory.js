@@ -168,7 +168,7 @@ class InventoryPageController {
     this.tbody.innerHTML = "";
     if (!response.data.length)
       this.tbody.innerHTML =
-        '<tr><td colspan="10" class="text-center text-muted py-4">No books found.</td></tr>';
+        '<tr><td colspan="12" class="text-center text-muted py-4">No books found.</td></tr>';
     response.data.forEach((book) => {
       const row = document.createElement("tr");
       const actions = this.state.archived
@@ -219,6 +219,13 @@ class InventoryPageController {
       );
       row.appendChild(
         cell(this.escapeHtml(book.author || ""), "", "min-width:160px;"),
+      );
+      row.appendChild(
+        cell(
+          this.escapeHtml(book.accession_no || ""),
+          "",
+          "min-width:140px;",
+        ),
       );
       row.appendChild(
         cell(

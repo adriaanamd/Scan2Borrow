@@ -38,4 +38,24 @@ final class InventoryBrowserParityTest extends TestCase
         self::assertStringContainsString('/api/books', $script);
         self::assertStringNotContainsString('books_api.php', $script);
     }
+
+    public function testInventoryRendererIncludesAccessionBeforeStatusAndLocationColumns(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory.js';
+        $script = file_get_contents($path);
+        self::assertIsString($script);
+
+        $accession = strpos($script, 'book.accession_no');
+        $publisher = strpos($script, 'book.publisher');
+        $status = strpos($script, 'this.badge(book.status)');
+        $location = strpos($script, 'book.floor_no');
+
+        self::assertIsInt($accession);
+        self::assertIsInt($publisher);
+        self::assertIsInt($status);
+        self::assertIsInt($location);
+        self::assertLessThan($publisher, $accession);
+        self::assertLessThan($status, $publisher);
+        self::assertLessThan($location, $status);
+    }
 }

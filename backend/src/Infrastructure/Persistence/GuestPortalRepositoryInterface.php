@@ -12,7 +12,10 @@ interface GuestPortalRepositoryInterface
     /** @return list<array<string, mixed>> */
     public function notifications(int $visitorId): array;
 
-    /** @param array<string, mixed> $filters @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     public function browse(array $filters): array;
 
     /** @return list<array<string, mixed>> */

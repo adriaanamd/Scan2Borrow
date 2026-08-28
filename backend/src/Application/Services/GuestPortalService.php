@@ -22,7 +22,10 @@ final class GuestPortalService
         ];
     }
 
-    /** @param array<string, mixed> $filters @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     public function browse(array $filters): array
     {
         return $this->portal->browse($filters);

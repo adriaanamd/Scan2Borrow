@@ -43,10 +43,9 @@ final class StaffDashboardMarkupTest extends TestCase
     {
         $styles = $this->styles();
 
-        self::assertStringContainsString('grid-template-columns: 10.75rem minmax(0, 1fr);', $styles);
-        self::assertStringContainsString('grid-template-columns: 11rem minmax(0, 1fr);', $styles);
-        self::assertStringContainsString('height: 10.5rem;', $styles);
-        self::assertStringContainsString('width: 10.5rem;', $styles);
+        self::assertStringContainsString('grid-template-columns: 12rem minmax(0, 1fr);', $styles);
+        self::assertStringContainsString('height: 12rem;', $styles);
+        self::assertStringContainsString('width: 12rem;', $styles);
     }
 
     private function page(string $filename): string

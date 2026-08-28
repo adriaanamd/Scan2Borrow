@@ -18,7 +18,7 @@ final class FrontendVisualSystemTest extends TestCase
             '--navy: #102f52;',
             '--accent: #d4a72c;',
             '--app-bg: #f4f8fb;',
-            '--border: #d9e4ec;',
+            '--border: #d4e0e8;',
         ] as $token) {
             self::assertStringContainsString($token, $styles, $token . ' is missing from the shared visual system.');
         }
@@ -43,6 +43,29 @@ final class FrontendVisualSystemTest extends TestCase
                 basename($page) . ' must keep the shared application stylesheet.',
             );
         }
+    }
+
+    public function testSharedStylesDefineACompleteHighContrastApplicationShell(): void
+    {
+        $styles = $this->read('frontend/assets/css/style.css');
+
+        foreach ([
+            '.sidebar-nav a.active::before',
+            '.topbar-title::before',
+            '.page-head',
+            '.stat-card',
+            '.table-card',
+            '.hero-card h2',
+            '.hero-card .text-muted',
+            '.auth-wrap',
+            '.modal-header',
+            '@media (max-width: 768px)',
+        ] as $selector) {
+            self::assertStringContainsString($selector, $styles, $selector . ' is missing from the application shell.');
+        }
+
+        self::assertStringNotContainsString('backdrop-filter', $styles, 'The shared shell should use a deliberate flat surface, not a glass effect.');
+        self::assertStringNotContainsString('var(--grad-', $styles, 'The Swiss institutional system should not depend on gradients.');
     }
 
     private function read(string $relativePath): string

@@ -232,7 +232,7 @@ class BorrowerDashboardController {
         margin: 0,
         height: 60,
         width: 2,
-        lineColor: "#0f172a",
+        lineColor: "#102f52",
       });
     }
   }

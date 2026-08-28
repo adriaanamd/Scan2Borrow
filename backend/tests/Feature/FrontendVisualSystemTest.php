@@ -103,6 +103,19 @@ final class FrontendVisualSystemTest extends TestCase
         self::assertStringNotContainsString('id="roleModal"', $registration);
     }
 
+    public function testRegistrationSeparatesDetailsAndCameraIntoDistinctSteps(): void
+    {
+        $registration = $this->read('frontend/pages/register.html');
+        $controller = $this->read('frontend/assets/js/pages/registration.js');
+
+        foreach (['registration-progress', 'registration-details-step', 'registration-photo-step', 'registration-continue', 'registration-back'] as $marker) {
+            self::assertStringContainsString($marker, $registration, $marker . ' is missing from registration flow.');
+        }
+
+        self::assertStringContainsString('showStep', $controller);
+        self::assertStringContainsString('showStep("photo")', $controller);
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

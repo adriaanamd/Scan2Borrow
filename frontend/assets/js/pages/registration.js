@@ -2,6 +2,7 @@ class RegistrationPageController {
   constructor() {
     this.form = document.getElementById("reg-form");
     this.role = document.getElementById("role_select");
+    this.currentStep = "role";
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.bindRoleSelection();
     this.bindCamera();
@@ -13,8 +14,10 @@ class RegistrationPageController {
     if (preselectedRole) {
       this.role.value = preselectedRole;
       this.toggleFields();
+      this.showStep("details");
     } else {
       this.toggleFields();
+      this.showStep("role");
     }
   }
 
@@ -28,6 +31,27 @@ class RegistrationPageController {
     });
     document.getElementById("chooseGuest")?.addEventListener("click", () => {
       window.location.href = "/scan2borrow/guest/registration";
+    });
+    document.getElementById("registration-continue")?.addEventListener("click", () => {
+      if (!this.role?.value) {
+        const error = document.getElementById("form-error");
+        if (error) {
+          error.hidden = false;
+          error.textContent = "Choose an account type to continue.";
+        }
+        return;
+      }
+      this.showStep("details");
+    });
+    document.getElementById("registration-back")?.addEventListener("click", () => {
+      this.showStep("role");
+    });
+    document.getElementById("registration-details-continue")?.addEventListener("click", () => {
+      if (!this.form?.reportValidity()) return;
+      this.showStep("photo");
+    });
+    document.getElementById("registration-photo-back")?.addEventListener("click", () => {
+      this.showStep("details");
     });
   }
 
@@ -53,6 +77,29 @@ class RegistrationPageController {
     const label = document.getElementById("selected-role-label");
     if (label) {
       label.textContent = isStudent ? "Student" : isTeacher ? "Teacher" : "Select a role";
+    }
+  }
+
+  showStep(step) {
+    const steps = ["role", "details", "photo"];
+    const currentIndex = steps.indexOf(step);
+    if (currentIndex < 0) return;
+    this.currentStep = step;
+
+    document.querySelectorAll("[data-registration-step]").forEach((section) => {
+      const active = section.dataset.registrationStep === step;
+      section.hidden = !active;
+      section.classList.toggle("d-none", !active);
+    });
+    document.querySelectorAll("[data-progress-step]").forEach((indicator) => {
+      const indicatorIndex = steps.indexOf(indicator.dataset.progressStep);
+      indicator.classList.toggle("is-current", indicatorIndex === currentIndex);
+      indicator.classList.toggle("is-complete", indicatorIndex < currentIndex);
+    });
+    document.getElementById("form-error")?.setAttribute("hidden", "");
+
+    if (step === "details") {
+      document.querySelector('input[name="barcode"]')?.focus({ preventScroll: true });
     }
   }
 

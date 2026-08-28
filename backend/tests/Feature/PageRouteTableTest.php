@@ -23,5 +23,6 @@ final class PageRouteTableTest extends TestCase
         self::assertTrue($table->forPath('/guest/dashboard')->requiresGuest());
         self::assertSame(['admin', 'librarian'], $table->forPath('/staff/books')->allowedRoles());
         self::assertSame(['admin'], $table->forPath('/admin/staff')->allowedRoles());
+        self::assertSame(['admin'], $table->forPath('/admin/api-docs')->allowedRoles());
     }
 }

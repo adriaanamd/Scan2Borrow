@@ -169,6 +169,11 @@ final class PageRouteTable
                 $pageRoot . DIRECTORY_SEPARATOR . 'admin-staff.html',
                 ['admin'],
             ),
+            '/admin/api-docs' => new PageRoute(
+                '/admin/api-docs',
+                $pageRoot . DIRECTORY_SEPARATOR . 'admin-api-docs.html',
+                ['admin'],
+            ),
         ];
     }
 

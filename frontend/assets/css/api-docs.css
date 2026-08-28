@@ -1,0 +1,246 @@
+.api-docs-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.api-docs-tags,
+.api-docs-main {
+  min-width: 0;
+}
+
+.api-docs-tags {
+  position: sticky;
+  top: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 14px;
+}
+
+.api-docs-tags h2 {
+  color: var(--navy);
+  font-size: .78rem;
+  letter-spacing: .09em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.api-docs-tag-list {
+  display: grid;
+  gap: 5px;
+}
+
+.api-docs-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 9px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.api-docs-tag:hover,
+.api-docs-tag.is-active {
+  background: var(--app-bg);
+  color: var(--primary);
+}
+
+.api-docs-tag-count {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.api-docs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.api-docs-toolbar .form-control {
+  max-width: 360px;
+}
+
+.api-docs-status {
+  color: var(--muted);
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+.api-docs-group {
+  scroll-margin-top: 24px;
+}
+
+.api-docs-group + .api-docs-group {
+  margin-top: 24px;
+}
+
+.api-docs-group-title {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.api-docs-group-title h2 {
+  color: var(--navy);
+  font-size: 1.08rem;
+  margin: 0;
+}
+
+.api-docs-group-title span {
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.api-docs-operation {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--method-color, var(--primary));
+  border-radius: 9px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.api-docs-operation + .api-docs-operation {
+  margin-top: 8px;
+}
+
+.api-docs-operation summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  list-style: none;
+  min-height: 56px;
+  padding: 10px 14px;
+}
+
+.api-docs-operation summary::-webkit-details-marker {
+  display: none;
+}
+
+.api-docs-operation summary::after {
+  color: var(--muted);
+  content: '+';
+  font-size: 1.2rem;
+  margin-left: auto;
+}
+
+.api-docs-operation[open] summary::after {
+  content: '−';
+}
+
+.api-docs-method {
+  border-radius: 5px;
+  color: #fff;
+  flex: 0 0 62px;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 5px 7px;
+  text-align: center;
+}
+
+.api-docs-path {
+  color: var(--navy);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .87rem;
+  overflow-wrap: anywhere;
+}
+
+.api-docs-summary {
+  color: var(--muted);
+  font-size: .86rem;
+}
+
+.api-docs-auth {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: .72rem;
+  margin-left: auto;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.api-docs-operation-body {
+  border-top: 1px solid var(--border);
+  padding: 16px 18px 18px 90px;
+}
+
+.api-docs-description {
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.api-docs-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.api-docs-detail h3 {
+  color: var(--navy);
+  font-size: .75rem;
+  letter-spacing: .08em;
+  margin: 0 0 7px;
+  text-transform: uppercase;
+}
+
+.api-docs-detail ul,
+.api-docs-response {
+  color: var(--muted);
+  font-size: .85rem;
+  margin: 0;
+}
+
+.api-docs-detail ul {
+  padding-left: 18px;
+}
+
+.api-docs-empty {
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+  color: var(--muted);
+  padding: 26px;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .api-docs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .api-docs-tags {
+    position: static;
+  }
+
+  .api-docs-tag-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .api-docs-toolbar,
+  .api-docs-detail-grid {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .api-docs-toolbar .form-control {
+    max-width: none;
+  }
+
+  .api-docs-operation-body {
+    padding-left: 18px;
+  }
+}

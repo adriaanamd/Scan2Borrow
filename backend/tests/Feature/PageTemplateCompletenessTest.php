@@ -15,6 +15,7 @@ final class PageTemplateCompletenessTest extends TestCase
             'login.html', 'staff-login.html', 'register.html', 'verify-otp.html',
             'staff-dashboard.html', 'staff-books.html', 'staff-students.html', 'staff-overdue.html',
             'staff-reports.html', 'staff-guest-requests.html', 'staff-borrower.html', 'staff-notify.html', 'admin-staff.html',
+            'admin-api-docs.html',
             'student-dashboard.html', 'student-settings.html', 'student-search.html', 'student-history.html', 'teacher-dashboard.html',
             'receipt.html', 'guest-dashboard.html', 'guest-profile.html', 'guest-browse-books.html',
             'guest-borrowed-books.html', 'guest-borrowing-history.html', 'guest-borrow-request.html',

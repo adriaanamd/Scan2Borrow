@@ -36,6 +36,7 @@ use App\Http\Controllers\GuestDetailsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\ApiDocumentationController;
 use App\Http\Middleware\AuthorizationMiddleware;
 use App\Http\Middleware\SessionPageAccessAuthorizer;
 use App\Http\Responses\ResponseEmitter;
@@ -46,6 +47,7 @@ use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
 use App\Http\Routing\Router;
 use App\Http\Routing\StaffRouteTable;
+use App\Http\Documentation\ApiEndpointCatalog;
 use App\Infrastructure\Database\DatabaseConfig;
 use App\Infrastructure\Database\PdoConnectionFactory;
 use App\Infrastructure\Persistence\PdoUserRepository;
@@ -139,12 +141,13 @@ final class ApplicationFactory
                 new NativeEmailSender(),
             ),
         );
+        $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());
         $apiRouter = new Router(array_merge(
             (new AuthRouteTable())->routes($authController, $registration),
             (new BookRouteTable())->routes($bookController),
             (new BorrowerRouteTable())->routes($borrowerController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
-            (new StaffRouteTable())->routes($staffController),
+            (new StaffRouteTable())->routes($staffController, $apiDocumentationController),
         ));
         $policy = new AuthorizationPolicy();
         $pageController = new PageController(new SessionPageAccessAuthorizer(

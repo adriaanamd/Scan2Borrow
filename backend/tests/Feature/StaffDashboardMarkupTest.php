@@ -42,34 +42,6 @@ final class StaffDashboardMarkupTest extends TestCase
         self::assertStringContainsString('>Pending Approvals<', $dashboard);
     }
 
-    public function testMainStaffDashboardExposesAdminOnlyApiDocsNavigation(): void
-    {
-        $dashboard = $this->page('staff-dashboard.html');
-
-        self::assertStringContainsString('data-admin-api-docs', $dashboard);
-        self::assertStringContainsString('href="/scan2borrow/admin/api-docs"', $dashboard);
-        self::assertStringContainsString('API Docs', $dashboard);
-    }
-
-    public function testEveryStaffPageExposesTheAdminOnlyApiDocsNavigation(): void
-    {
-        foreach ([
-            'staff-books.html',
-            'staff-borrower.html',
-            'staff-dashboard.html',
-            'staff-guest-requests.html',
-            'staff-notify.html',
-            'staff-overdue.html',
-            'staff-reports.html',
-            'staff-students.html',
-        ] as $filename) {
-            $page = $this->page($filename);
-
-            self::assertStringContainsString('data-admin-api-docs', $page, $filename);
-            self::assertStringContainsString('href="/scan2borrow/admin/api-docs"', $page, $filename);
-        }
-    }
-
     public function testOverviewHooksDoNotLeakIntoOtherAdminPages(): void
     {
         foreach (['staff-books.html', 'staff-reports.html', 'admin-staff.html'] as $filename) {

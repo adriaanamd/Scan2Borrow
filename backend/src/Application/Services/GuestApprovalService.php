@@ -31,7 +31,7 @@ final class GuestApprovalService
             sprintf('"%s" has been approved and released.', $title),
         );
 
-        return GuestReviewResult::success('Released', 'Approved â€” the guest can now view and print their receipt.');
+        return GuestReviewResult::success('Released', "Approved \u{2014} the guest can now view and print their receipt.");
     }
 
     public function reject(int $requestId, string $reason): GuestReviewResult

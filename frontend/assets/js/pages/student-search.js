@@ -64,13 +64,13 @@ class StudentSearchController {
       this.params.toString() !== "";
     document.getElementById("availability-label").innerHTML =
       this.params.get("status") === "Available"
-        ? '<span class="badge bg-success">âœ“ Available to Borrow</span>'
+        ? '<span class="badge bg-success">&#10003; Available to Borrow</span>'
         : "";
     this.renderActiveFilters();
     this.results.replaceChildren();
     if (!books.length) {
       this.results.innerHTML =
-        '<div class="text-center py-5"><div style="font-size:48px;margin-bottom:12px;">ðŸ“­</div><strong>No books found</strong><p class="text-muted small">Try adjusting your search or filters.</p></div>';
+        '<div class="text-center py-5"><div style="font-size:48px;margin-bottom:12px;">&#128233;</div><strong>No books found</strong><p class="text-muted small">Try adjusting your search or filters.</p></div>';
       return;
     }
     const grid = document.createElement("div");
@@ -92,10 +92,10 @@ class StudentSearchController {
     const host = document.getElementById("active-filters");
     host.replaceChildren();
     const labels = {
-      search: "ðŸ” ",
-      category_name: "ðŸ“š ",
+      search: "🔍 ",
+      category_name: "📚 ",
       status: "",
-      floor: "ðŸ¢ Floor ",
+      floor: "🏢 Floor ",
     };
     Object.keys(labels).forEach((name) => {
       const value = this.params.get(name);
@@ -120,7 +120,7 @@ class StudentSearchController {
       ? `<img src="${this.escapeHtml(cover)}" alt="${title}" class="book-cover-img">`
       : "";
     const action = borrowed
-      ? '<span class="badge bg-info w-100 py-2">ðŸ“– You have this</span>'
+      ? '<span class="badge bg-info w-100 py-2">&#128214; You have this</span>'
       : available
         ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-book-barcode="${this.escapeHtml(book.barcode)}" data-book-title="${title}" title="Borrow this book">Borrow Book</button>`
         : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';

@@ -36,7 +36,7 @@ final class GuestApprovalServiceTest extends TestCase
 
         self::assertTrue($result->isSuccessful());
         self::assertSame('Released', $result->status());
-        self::assertSame('Approved â€” the guest can now view and print their receipt.', $result->message());
+        self::assertSame("Approved \u{2014} the guest can now view and print their receipt.", $result->message());
     }
 
     public function testRejectRequiresReasonAndPreservesRejectedStatus(): void

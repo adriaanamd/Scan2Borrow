@@ -25,7 +25,7 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
         }
 
         $loanRows = $this->loans($userId, false);
-        $history = $this->history($userId);
+        $historySummary = $this->historySummary($userId);
         $active = 0;
         $overdue = 0;
         $fines = 0.0;
@@ -57,7 +57,10 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
                 'active' => $active,
                 'overdue' => $overdue,
                 'fines' => $fines,
-                'on_time_rate' => $this->onTimeRate($history),
+                'on_time_rate' => $this->onTimeRate(
+                    $historySummary['returned_count'],
+                    $historySummary['on_time_count'],
+                ),
             ],
             'max_books' => 3,
             'current_loans' => $loanRows,
@@ -104,24 +107,32 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
         return $rows;
     }
 
-    /** @param list<array<string, mixed>> $history */
-    private function onTimeRate(array $history): int
+    /** @return array{returned_count: int, on_time_count: int} */
+    private function historySummary(int $userId): array
     {
-        $returned = array_values(array_filter($history, static fn (array $row): bool => ($row['status'] ?? '') === 'Returned'));
-        if ($returned === []) {
+        $statement = $this->pdo->prepare(
+            "SELECT COUNT(*) AS returned_count,
+                    COALESCE(SUM(CASE WHEN COALESCE(return_date, '') <= COALESCE(due_date, '') THEN 1 ELSE 0 END), 0) AS on_time_count
+             FROM borrowing
+             WHERE user_id = :user_id AND status = 'Returned'"
+        );
+        $statement->execute(['user_id' => $userId]);
+        /** @var array<string, mixed>|false $summary */
+        $summary = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'returned_count' => is_numeric($summary['returned_count'] ?? null) ? (int) $summary['returned_count'] : 0,
+            'on_time_count' => is_numeric($summary['on_time_count'] ?? null) ? (int) $summary['on_time_count'] : 0,
+        ];
+    }
+
+    private function onTimeRate(int $returnedCount, int $onTimeCount): int
+    {
+        if ($returnedCount === 0) {
             return 100;
         }
 
-        $onTime = 0;
-        foreach ($returned as $row) {
-            $returnDate = $this->stringValue($row['return_date'] ?? null);
-            $dueDate = $this->stringValue($row['due_date'] ?? null);
-            if ($returnDate <= $dueDate) {
-                $onTime++;
-            }
-        }
-
-        return (int) round($onTime / count($returned) * 100);
+        return (int) round($onTimeCount / $returnedCount * 100);
     }
 
     /** @return list<array<string, mixed>> */

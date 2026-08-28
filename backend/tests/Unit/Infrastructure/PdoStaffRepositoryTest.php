@@ -40,6 +40,22 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame('TX-1', $repository->pendingBorrowings()[0]['transaction_code']);
     }
 
+    public function testBorrowersAggregateActiveAndOverdueLoansPerUser(): void
+    {
+        $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES
+            (2, 'TX-2', 2, 1, 'approved', '2026-08-01', '2026-08-08', NULL, 'Borrowed', 0),
+            (3, 'TX-3', 2, 1, 'approved', '2026-07-01', '2026-07-08', NULL, 'Overdue', 10),
+            (4, 'TX-4', 2, 1, 'approved', '2026-06-01', '2026-06-08', '2026-06-07', 'Returned', 0)");
+
+        /** @var list<array{name: string, active_loans: int, overdue_loans: int}> $borrowers */
+        $borrowers = (new PdoStaffRepository($this->pdo))->borrowers('');
+
+        self::assertCount(1, $borrowers);
+        self::assertSame('Grace Hopper', $borrowers[0]['name']);
+        self::assertSame(3, $borrowers[0]['active_loans']);
+        self::assertSame(1, $borrowers[0]['overdue_loans']);
+    }
+
     public function testDashboardIncludesOverviewAggregatesAndTopBorrowers(): void
     {
         $this->pdo->exec("INSERT INTO users VALUES (3, 'STU-2', 'Katherine', 'Johnson', 'Science', NULL, 'Math', '3', 'katherine@example.test', '09172222222', NULL, 'student', NULL, 'active')");

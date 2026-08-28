@@ -16,15 +16,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     public function dashboard(): array
     {
         return [
-            'stats' => [
-                'total_books' => $this->count('SELECT COUNT(*) FROM books WHERE deleted_at IS NULL'),
-                'available_books' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Available'"),
-                'borrowed_books' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Borrowed'"),
-                'borrowers' => $this->count("SELECT COUNT(*) FROM users WHERE role IN ('student','teacher')"),
-                'active_loans' => $this->count('SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL'),
-                'overdue_loans' => $this->count("SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL AND status = 'Overdue'"),
-                'pending_approvals' => $this->count("SELECT COUNT(*) FROM borrowing WHERE approval_status = 'pending' AND return_date IS NULL"),
-            ],
+            'stats' => $this->dashboardStats(),
             'recent' => $this->recentTransactions(),
             'pending' => $this->pendingBorrowings(),
             'overview' => $this->dashboardOverview(),
@@ -34,9 +26,17 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     public function borrowers(string $search): array
     {
         $sql = "SELECT u.id, u.barcode, u.firstname, u.lastname, u.role, u.department, u.position, u.course, u.year_level, u.status,
-                (SELECT COUNT(*) FROM borrowing br WHERE br.user_id = u.id AND br.return_date IS NULL) AS active_loans,
-                (SELECT COUNT(*) FROM borrowing br WHERE br.user_id = u.id AND br.return_date IS NULL AND br.status = 'Overdue') AS overdue_loans
-                FROM users u WHERE u.role IN ('student','teacher')";
+                COALESCE(loan_stats.active_loans, 0) AS active_loans,
+                COALESCE(loan_stats.overdue_loans, 0) AS overdue_loans
+                FROM users u
+                LEFT JOIN (
+                    SELECT user_id,
+                           SUM(CASE WHEN return_date IS NULL THEN 1 ELSE 0 END) AS active_loans,
+                           SUM(CASE WHEN return_date IS NULL AND status = 'Overdue' THEN 1 ELSE 0 END) AS overdue_loans
+                    FROM borrowing
+                    GROUP BY user_id
+                ) AS loan_stats ON loan_stats.user_id = u.id
+                WHERE u.role IN ('student','teacher')";
         $parameters = [];
         if (trim($search) !== '') {
             $sql .= ' AND (u.barcode LIKE :search OR u.firstname LIKE :search OR u.lastname LIKE :search OR u.course LIKE :search)';
@@ -423,42 +423,43 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
 
         $activityStatement = $this->pdo->prepare(
-            'SELECT borrow_date FROM borrowing WHERE borrow_date IS NOT NULL AND borrow_date >= :start_date'
+            "SELECT SUBSTR(TRIM(borrow_date), 1, 7) AS month, COUNT(*) AS count
+             FROM borrowing
+             WHERE borrow_date IS NOT NULL AND borrow_date >= :start_date
+             GROUP BY SUBSTR(TRIM(borrow_date), 1, 7)"
         );
         $activityStatement->execute(['start_date' => $firstMonth->format('Y-m-d')]);
         while (($row = $activityStatement->fetch(PDO::FETCH_ASSOC)) !== false) {
-            if (!is_array($row)) {
+            if (!is_array($row) || !is_string($row['month'] ?? null)) {
                 continue;
             }
-            $borrowDate = $row['borrow_date'] ?? null;
-            if (!is_string($borrowDate)) {
-                continue;
-            }
-            $monthKey = substr(trim($borrowDate), 0, 7);
+            $monthKey = trim($row['month']);
             if (isset($months[$monthKey])) {
-                $months[$monthKey]['count']++;
+                $months[$monthKey]['count'] = is_numeric($row['count'] ?? null) ? (int) $row['count'] : 0;
             }
         }
 
         /** @var array<string, array<string, int>> $categoryCounts */
         $categoryCounts = [];
         $categoryActivityStatement = $this->pdo->prepare(
-            'SELECT br.borrow_date, b.category_name
+            "SELECT SUBSTR(TRIM(br.borrow_date), 1, 7) AS month,
+                    COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized') AS category,
+                    COUNT(*) AS count
              FROM borrowing br JOIN books b ON b.id = br.book_id
-             WHERE br.borrow_date IS NOT NULL AND br.borrow_date >= :start_date'
+             WHERE br.borrow_date IS NOT NULL AND br.borrow_date >= :start_date
+             GROUP BY SUBSTR(TRIM(br.borrow_date), 1, 7), COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized')"
         );
         $categoryActivityStatement->execute(['start_date' => $firstMonth->format('Y-m-d')]);
         while (($row = $categoryActivityStatement->fetch(PDO::FETCH_ASSOC)) !== false) {
-            if (!is_array($row) || !is_string($row['borrow_date'] ?? null)) {
+            if (!is_array($row) || !is_string($row['month'] ?? null)) {
                 continue;
             }
-            $monthKey = substr(trim($row['borrow_date']), 0, 7);
+            $monthKey = trim($row['month']);
             if (!isset($months[$monthKey])) {
                 continue;
             }
-            $category = trim($this->string($row['category_name'] ?? null));
-            $category = $category === '' ? 'Uncategorized' : $category;
-            $categoryCounts[$category][$monthKey] = ($categoryCounts[$category][$monthKey] ?? 0) + 1;
+            $category = $this->string($row['category'] ?? null);
+            $categoryCounts[$category][$monthKey] = is_numeric($row['count'] ?? null) ? (int) $row['count'] : 0;
         }
 
         $categorySeries = [];
@@ -601,6 +602,54 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
 
         return (int) $statement->fetchColumn();
+    }
+
+    /** @return array{total_books: int, available_books: int, borrowed_books: int, borrowers: int, active_loans: int, overdue_loans: int, pending_approvals: int} */
+    private function dashboardStats(): array
+    {
+        $statement = $this->pdo->query(
+            "SELECT 'total_books' AS metric, COUNT(*) AS metric_count
+             FROM books WHERE deleted_at IS NULL
+             UNION ALL
+             SELECT 'available_books', COUNT(*)
+             FROM books WHERE deleted_at IS NULL AND status = 'Available'
+             UNION ALL
+             SELECT 'borrowed_books', COUNT(*)
+             FROM books WHERE deleted_at IS NULL AND status = 'Borrowed'
+             UNION ALL
+             SELECT 'borrowers', COUNT(*)
+             FROM users WHERE role IN ('student', 'teacher')
+             UNION ALL
+             SELECT 'active_loans', COUNT(*)
+             FROM borrowing WHERE return_date IS NULL
+             UNION ALL
+             SELECT 'overdue_loans', COUNT(*)
+             FROM borrowing WHERE return_date IS NULL AND status = 'Overdue'
+             UNION ALL
+             SELECT 'pending_approvals', COUNT(*)
+             FROM borrowing WHERE approval_status = 'pending' AND return_date IS NULL"
+        );
+        $stats = [
+            'total_books' => 0,
+            'available_books' => 0,
+            'borrowed_books' => 0,
+            'borrowers' => 0,
+            'active_loans' => 0,
+            'overdue_loans' => 0,
+            'pending_approvals' => 0,
+        ];
+        if ($statement === false) {
+            return $stats;
+        }
+
+        while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+            if (!is_array($row) || !is_string($row['metric'] ?? null) || !array_key_exists($row['metric'], $stats)) {
+                continue;
+            }
+            $stats[$row['metric']] = is_numeric($row['metric_count'] ?? null) ? (int) $row['metric_count'] : 0;
+        }
+
+        return $stats;
     }
 
     private function string(mixed $value): string

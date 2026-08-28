@@ -7,6 +7,8 @@ RewriteRule ^(?:frontend/pages|backend/src|backend/tests|backend/config|backend/
 RewriteRule ^(?:config|includes|sql)(?:/|$) - [F,L,NC]
 
 # The front controller is the only PHP entry point exposed by Apache.
+RewriteCond %{THE_REQUEST} \s/+scan2borrow/backend/public/index\.php(?:[?\s]) [NC]
+RewriteRule ^backend/public/index\.php$ - [F,L]
 RewriteRule ^backend/public/index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule \.php$ - [F,L,NC]

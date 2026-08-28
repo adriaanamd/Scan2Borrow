@@ -20,5 +20,7 @@ final class SourceAccessTest extends TestCase
         self::assertStringContainsString('backend/tests', $rules);
         self::assertStringContainsString('backend/config', $rules);
         self::assertStringContainsString('[F,L', $rules);
+        self::assertStringContainsString('THE_REQUEST', $rules);
+        self::assertStringContainsString('backend/public/index\\.php', $rules);
     }
 }

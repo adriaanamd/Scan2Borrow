@@ -24,6 +24,7 @@ final class CleanRouteMatrixTest extends TestCase
         foreach (['/teacher/dashboard'] as $path) {
             self::assertSame(['teacher'], $table->forPath($path)->allowedRoles(), $path);
         }
+        self::assertSame(['teacher'], $table->forPath('/teacher/settings')->allowedRoles());
         foreach (['/guest/dashboard', '/guest/profile', '/guest/browse', '/guest/borrowed', '/guest/history', '/guest/borrow-request', '/guest/return-book', '/guest/pass', '/guest/receipt'] as $path) {
             self::assertTrue($table->forPath($path)->requiresGuest(), $path);
         }

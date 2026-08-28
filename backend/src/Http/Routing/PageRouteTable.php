@@ -34,6 +34,11 @@ final class PageRouteTable
                 $pageRoot . DIRECTORY_SEPARATOR . 'student-settings.html',
                 ['student'],
             ),
+            '/teacher/settings' => new PageRoute(
+                '/teacher/settings',
+                $pageRoot . DIRECTORY_SEPARATOR . 'teacher-settings.html',
+                ['teacher'],
+            ),
             '/staff/dashboard' => new PageRoute(
                 '/staff/dashboard',
                 $pageRoot . DIRECTORY_SEPARATOR . 'staff-dashboard.html',

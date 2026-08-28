@@ -125,7 +125,7 @@ class StaffPageController {
   }
 
   approvalCard(row) {
-    const cover = row.cover_file || "";
+    const cover = this.media(row.cover_file || "");
     return `<div class="approval-card mb-3">
       <div class="infos">
         <div class="image">${cover ? `<img src="${this.escape(cover)}" alt="Book cover" />` : '<div class="no-photo">No Photo</div>'}</div>
@@ -229,7 +229,7 @@ class StaffPageController {
       if (avatar) {
         avatar.textContent = initials || "--";
         if (borrower.photo) {
-          avatar.innerHTML = `<img src="${this.escape(borrower.photo)}" alt="ID photo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`;
+          avatar.innerHTML = `<img src="${this.escape(this.media(borrower.photo))}" alt="ID photo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`;
         }
       }
       this.text("borrower-name", borrower.name || "Borrower Details");
@@ -483,12 +483,16 @@ class StaffPageController {
       body.innerHTML = rows.length
         ? rows
             .map(
-              (row) => `<tr>
-        <td>${row.visitor_photo ? `<img src="${this.escape(row.visitor_photo)}" class="rounded-circle me-2" style="width:38px;height:38px;object-fit:cover" alt="Guest photo">` : ""}<strong>${this.escape(row.name)}</strong><br><span class="text-muted small">${this.escape(row.visitor_number || "—")} · ${this.escape(row.id_barcode)}</span></td>
+              (row) => {
+                const visitorPhoto = this.media(row.visitor_photo || "");
+                const verificationPhoto = this.media(row.verification_photo || "");
+                return `<tr>
+        <td>${visitorPhoto ? `<img src="${this.escape(visitorPhoto)}" class="rounded-circle me-2" style="width:38px;height:38px;object-fit:cover" alt="Guest photo">` : ""}<strong>${this.escape(row.name)}</strong><br><span class="text-muted small">${this.escape(row.visitor_number || "—")} · ${this.escape(row.id_barcode)}</span></td>
         <td>${this.escape(row.title)}<br><span class="text-muted small">${this.escape(row.author || "—")}</span></td><td><code>${this.escape(row.accession)}</code></td>
-        <td>${this.escape(row.requested_at || row.created_at || "")}</td><td>${row.verification_photo ? `<button class="btn btn-outline-primary btn-sm" data-photo="${this.escape(row.verification_photo)}" data-name="${this.escape(row.name)}" data-book="${this.escape(row.title)}" data-photo-view>View</button>` : '<span class="text-muted">—</span>'}</td>
-        <td><button class="btn btn-success btn-sm" data-id="${row.id}" data-name="${this.escape(row.name)}" data-photo="${this.escape(row.visitor_photo || "")}" data-visno="${this.escape(row.visitor_number || "")}" data-idbarcode="${this.escape(row.id_barcode || "")}" data-title="${this.escape(row.title)}" data-author="${this.escape(row.author || "")}" data-accession="${this.escape(row.accession)}" data-verif="${this.escape(row.verification_photo || "")}" data-review-request>Review</button></td>
-      </tr>`,
+        <td>${this.escape(row.requested_at || row.created_at || "")}</td><td>${verificationPhoto ? `<button class="btn btn-outline-primary btn-sm" data-photo="${this.escape(verificationPhoto)}" data-name="${this.escape(row.name)}" data-book="${this.escape(row.title)}" data-photo-view>View</button>` : '<span class="text-muted">—</span>'}</td>
+        <td><button class="btn btn-success btn-sm" data-id="${row.id}" data-name="${this.escape(row.name)}" data-photo="${this.escape(visitorPhoto)}" data-visno="${this.escape(row.visitor_number || "")}" data-idbarcode="${this.escape(row.id_barcode || "")}" data-title="${this.escape(row.title)}" data-author="${this.escape(row.author || "")}" data-accession="${this.escape(row.accession)}" data-verif="${this.escape(verificationPhoto)}" data-review-request>Review</button></td>
+      </tr>`;
+              },
             )
             .join("")
         : '<tr><td colspan="6" class="text-center text-muted py-4">No pending guest borrow requests.</td></tr>';
@@ -515,16 +519,20 @@ class StaffPageController {
           if (node) node.textContent = button.dataset[key] || "";
         });
         document.getElementById("review-id").value = button.dataset.id || "";
-        document.getElementById("review-photo").src =
-          button.dataset.photo || "";
-        document.getElementById("review-verif").src =
-          button.dataset.verif || "";
+        document.getElementById("review-photo").src = this.media(
+          button.dataset.photo || "",
+        );
+        document.getElementById("review-verif").src = this.media(
+          button.dataset.verif || "",
+        );
         bootstrap.Modal.getOrCreateInstance(modal).show();
       }),
     );
     this.root.querySelectorAll("[data-photo-view]").forEach((button) =>
       button.addEventListener("click", () => {
-        document.getElementById("photoViewer").src = button.dataset.photo || "";
+        document.getElementById("photoViewer").src = this.media(
+          button.dataset.photo || "",
+        );
         document.getElementById("photoCaption").textContent =
           `${button.dataset.name || ""} holding "${button.dataset.book || ""}"`;
         bootstrap.Modal.getOrCreateInstance(
@@ -653,6 +661,10 @@ class StaffPageController {
 
   date(value) {
     return value ? String(value).slice(0, 10) : "";
+  }
+
+  media(value) {
+    return Scan2BorrowMedia.resolve(value);
   }
 
   escape(value) {

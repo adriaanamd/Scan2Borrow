@@ -39,7 +39,8 @@ class GuestBrowseController {
     books.forEach((book) => {
       const card = document.createElement("div");
       card.className = "col-md-6 col-xl-4";
-      card.innerHTML = `<div class="card h-100 shadow-sm">${book.cover_file ? `<img src="${this.escapeHtml(book.cover_file)}" class="card-img-top" style="height:200px;object-fit:cover" alt="Book cover">` : ""}<div class="card-body"><h5>${this.escapeHtml(book.title)}</h5><p class="small text-muted mb-2">${this.escapeHtml(book.author)}</p><p class="small mb-2">Category: ${this.escapeHtml(book.category_name)}<br>ISBN: ${this.escapeHtml(book.isbn || "—")}<br>Call no.: ${this.escapeHtml(book.call_number || "—")}</p><span class="badge bg-success">Available</span><a class="btn btn-outline-success btn-sm float-end" href="/scan2borrow/guest/borrow-request?book_id=${encodeURIComponent(book.id)}">Request to Borrow</a></div></div>`;
+      const cover = Scan2BorrowMedia.resolve(book.cover_file || "");
+      card.innerHTML = `<div class="card h-100 shadow-sm">${cover ? `<img src="${this.escapeHtml(cover)}" class="card-img-top" style="height:200px;object-fit:cover" alt="Book cover">` : ""}<div class="card-body"><h5>${this.escapeHtml(book.title)}</h5><p class="small text-muted mb-2">${this.escapeHtml(book.author)}</p><p class="small mb-2">Category: ${this.escapeHtml(book.category_name)}<br>ISBN: ${this.escapeHtml(book.isbn || "—")}<br>Call no.: ${this.escapeHtml(book.call_number || "—")}</p><span class="badge bg-success">Available</span><a class="btn btn-outline-success btn-sm float-end" href="/scan2borrow/guest/borrow-request?book_id=${encodeURIComponent(book.id)}">Request to Borrow</a></div></div>`;
       this.results.appendChild(card);
     });
     if (!books.length)

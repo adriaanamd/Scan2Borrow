@@ -67,14 +67,7 @@ class InventoryPageController {
   }
 
   resolveCoverUrl(value) {
-    if (!value) return "";
-    if (/^(https?:)?\/\//i.test(value) || value.indexOf("data:image/") === 0)
-      return value;
-    try {
-      return new URL(value, window.location.href).toString();
-    } catch (error) {
-      return value;
-    }
+    return Scan2BorrowMedia.resolve(value);
   }
 
   showCoverPreview(url) {

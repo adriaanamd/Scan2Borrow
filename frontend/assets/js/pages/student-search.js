@@ -111,7 +111,9 @@ class StudentSearchController {
   bookCard(book) {
     const column = document.createElement("div");
     column.className = "col-xl-4 col-lg-6 col-md-6";
-    const cover = book.cover_file || book.cover_image || "";
+    const cover = Scan2BorrowMedia.resolve(
+      book.cover_file || book.cover_image || "",
+    );
     const title = this.escapeHtml(book.title || "");
     const author = this.escapeHtml(book.author || "Unknown Author");
     const status = this.escapeHtml(book.status || "");

@@ -116,6 +116,51 @@ final class FrontendVisualSystemTest extends TestCase
         self::assertStringContainsString('showStep("photo")', $controller);
     }
 
+    public function testAuthScreensUseTheExistingBrandAssetsAndSplitLayout(): void
+    {
+        foreach (['frontend/pages/login.html', 'frontend/pages/register.html', 'frontend/pages/staff-login.html', 'frontend/pages/guest-registration.html'] as $relativePath) {
+            $source = $this->read($relativePath);
+            self::assertStringContainsString('auth-split', $source, $relativePath . ' must use the split auth layout.');
+            self::assertStringContainsString('/scan2borrow/public/logo.png', $source, $relativePath . ' must use the existing BCC logo.');
+            self::assertStringContainsString('/scan2borrow/public/favicon.png', $source, $relativePath . ' must use the existing favicon.');
+        }
+
+        $styles = $this->read('frontend/assets/css/style.css');
+        self::assertStringContainsString(
+            ".auth-brand-panel {\n    align-items: center;",
+            $styles,
+            'The auth brand must be centered within its split column.',
+        );
+        self::assertStringContainsString(
+            ".auth-brand-panel {\n    align-items: center;\n    background: var(--navy);",
+            $styles,
+            'The auth brand panel must center its content without changing its surface.',
+        );
+        self::assertStringContainsString(
+            ".auth-brand-panel {\n    align-items: center;\n    background: var(--navy);\n    border-right: 8px solid var(--accent);\n    color: #fff;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    min-width: 0;\n    padding: clamp(30px, 5vw, 72px);\n    position: relative;\n    text-align: center;",
+            $styles,
+            'The auth brand text must share the centered brand alignment.',
+        );
+    }
+
+    public function testEveryApplicationPageUsesTheExistingFavicon(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages';
+        $pages = glob($root . DIRECTORY_SEPARATOR . '*.html');
+        self::assertIsArray($pages);
+
+        foreach ($pages as $page) {
+            $source = file_get_contents($page);
+            self::assertIsString($source);
+            self::assertStringContainsString(
+                'rel="icon"',
+                $source,
+                basename($page) . ' must declare a favicon.',
+            );
+            self::assertStringContainsString('/scan2borrow/public/favicon.png', $source, basename($page) . ' must use the existing favicon.');
+        }
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

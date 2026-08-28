@@ -34,7 +34,7 @@ final class PageCsrfInjectionTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'scan2borrow-csrf-');
         self::assertIsString($path);
-        file_put_contents($path, '<meta name="csrf" content="">');
+        file_put_contents($path, '<meta name="csrf" content="" />');
 
         try {
             $response = (new PageController(new AllowingPageAccessAuthorizer(), new CsrfService($this->store)))->__invoke(

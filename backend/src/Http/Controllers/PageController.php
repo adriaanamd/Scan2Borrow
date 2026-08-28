@@ -37,11 +37,14 @@ final readonly class PageController
         }
 
         if ($this->csrf !== null) {
-            $html = str_replace(
-                '<meta name="csrf" content="">',
-                '<meta name="csrf" content="' . htmlspecialchars($this->csrf->token(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">',
+            $token = htmlspecialchars($this->csrf->token(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $injected = preg_replace(
+                '/<meta\s+name="csrf"\s+content="[^"]*"\s*\/?\s*>/i',
+                '<meta name="csrf" content="' . $token . '">',
                 $html,
+                1,
             );
+            $html = is_string($injected) ? $injected : $html;
         }
 
         return new HtmlResponse(200, $html);

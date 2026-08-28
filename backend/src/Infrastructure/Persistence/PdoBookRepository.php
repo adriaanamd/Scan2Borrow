@@ -21,9 +21,18 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         $parameters = [];
 
         if ($criteria->search() !== '') {
-            $where[] = '(title LIKE :search OR author LIKE :search OR publisher LIKE :search OR ' .
-                'category_name LIKE :search OR barcode LIKE :search OR accession_no LIKE :search OR isbn LIKE :search)';
-            $parameters['search'] = '%' . $criteria->search() . '%';
+            $where[] = '(title LIKE :search_title OR author LIKE :search_author OR publisher LIKE :search_publisher OR ' .
+                'category_name LIKE :search_category OR barcode LIKE :search_barcode OR accession_no LIKE :search_accession OR isbn LIKE :search_isbn)';
+            $search = '%' . $criteria->search() . '%';
+            $parameters = [
+                'search_title' => $search,
+                'search_author' => $search,
+                'search_publisher' => $search,
+                'search_category' => $search,
+                'search_barcode' => $search,
+                'search_accession' => $search,
+                'search_isbn' => $search,
+            ];
         }
 
         if ($criteria->status() !== null) {

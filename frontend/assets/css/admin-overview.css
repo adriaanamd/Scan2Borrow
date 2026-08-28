@@ -156,8 +156,8 @@
   align-items: center;
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: 8.5rem minmax(0, 1fr);
-  min-height: 9rem;
+  grid-template-columns: 10.75rem minmax(0, 1fr);
+  min-height: 10.5rem;
 }
 
 .overview-categories-chart,
@@ -166,15 +166,15 @@
   background: #e7e9ee;
   border-radius: 50%;
   display: flex;
-  height: 8.25rem;
+  height: 10.5rem;
   justify-content: center;
   position: relative;
-  width: 8.25rem;
+  width: 10.5rem;
 }
 
 .overview-status-chart {
-  height: 8.5rem;
-  width: 8.5rem;
+  height: 10.5rem;
+  width: 10.5rem;
 }
 
 .overview-categories-chart.overview-empty,
@@ -230,8 +230,8 @@
   align-items: center;
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: 9rem minmax(0, 1fr);
-  min-height: 9rem;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  min-height: 10.5rem;
 }
 
 .overview-borrowers-list {

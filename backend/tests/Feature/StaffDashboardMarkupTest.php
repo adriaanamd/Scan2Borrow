@@ -37,9 +37,28 @@ final class StaffDashboardMarkupTest extends TestCase
         }
     }
 
+    public function testOverviewPieChartsUseExpandedPanelSpace(): void
+    {
+        $styles = $this->styles();
+
+        self::assertStringContainsString('grid-template-columns: 10.75rem minmax(0, 1fr);', $styles);
+        self::assertStringContainsString('grid-template-columns: 11rem minmax(0, 1fr);', $styles);
+        self::assertStringContainsString('height: 10.5rem;', $styles);
+        self::assertStringContainsString('width: 10.5rem;', $styles);
+    }
+
     private function page(string $filename): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+        $source = file_get_contents($path);
+        self::assertIsString($source);
+
+        return $source;
+    }
+
+    private function styles(): string
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'admin-overview.css';
         $source = file_get_contents($path);
         self::assertIsString($source);
 

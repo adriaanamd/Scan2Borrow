@@ -32,14 +32,16 @@ final class BorrowerPagesParityTest extends TestCase
             'name="status"',
             'name="floor"',
             'name="sort"',
-            'book-card-shell',
-            'book-face-front',
-            'book-face-back',
             'id="borrowFormModal"',
             'id="modal-book-barcode"',
             'id="modal-book-title"',
             'Borrow Now',
         ]);
+        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'student-search.js');
+        self::assertIsString($script);
+        foreach (['book-card-shell', 'book-face-front', 'book-face-back'] as $marker) {
+            self::assertStringContainsString($marker, $script);
+        }
     }
 
     public function testHistoryPagePreservesBorrowingRecordTable(): void
@@ -63,7 +65,7 @@ final class BorrowerPagesParityTest extends TestCase
             'Teacher Profile',
             'Smart Insights',
             'name="due_date"',
-            'Teachers can borrow for up to',
+            'Teachers can borrow books for up to',
             'data-scan-target="book_barcode"',
         ]);
     }
@@ -73,11 +75,13 @@ final class BorrowerPagesParityTest extends TestCase
         $this->assertPageContains('receipt.html', [
             'Borrowing Receipt',
             'Scan2Borrow Library',
-            'Transaction',
-            'Accession Number',
-            'Validity of the Book',
             'class="no-print',
             'window.print()',
         ]);
+        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'receipt.js');
+        self::assertIsString($script);
+        foreach (['Transaction', 'Accession Number', 'Validity of the Book'] as $marker) {
+            self::assertStringContainsString($marker, $script);
+        }
     }
 }

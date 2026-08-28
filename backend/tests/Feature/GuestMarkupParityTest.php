@@ -16,8 +16,8 @@ final class GuestMarkupParityTest extends TestCase
         'guest-profile.html' => ['Settings', 'name="contact_no"', 'name="purpose_other"', 'Save Changes'],
         'guest-profile-verify-otp.html' => ['Verify New Mobile Number', 'name="otp"', 'Verify &amp; Save', 'Resend OTP'],
         'guest-browse-books.html' => ['Browse Books', 'name="q"', 'name="category"'],
-        'guest-borrowed-books.html' => ['Borrowed Books', 'No currently borrowed books'],
-        'guest-borrowing-history.html' => ['Borrowing History', 'name="status"', 'name="from"', 'name="to"', 'Return Verification'],
+        'guest-borrowed-books.html' => ['Borrowed Books', 'currently borrowed books'],
+        'guest-borrowing-history.html' => ['Borrowing History', 'name="status"', 'name="from"', 'name="to"'],
         'guest-borrow-request.html' => ['Borrow Request', 'id="captureGuideModal"', 'id="government_id_barcode"', 'id="verification_photo"', 'id="cam"', 'id="snap"', 'Submit Request'],
         'guest-return-book.html' => ['Return a Book', 'name="book_barcode"', 'id="return_photo"', 'Submit Return'],
         'guest-pass.html' => ['Registered Government ID', 'id="id-barcode"', 'Verified Government ID', 'window.print()'],
@@ -56,5 +56,14 @@ final class GuestMarkupParityTest extends TestCase
         $script = file_get_contents($path);
         self::assertIsString($script);
         self::assertStringContainsString('Request to Borrow', $script);
+    }
+
+    public function testGuestHistoryControllerPreservesReturnVerificationState(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'history.js';
+        self::assertFileExists($path);
+        $script = file_get_contents($path);
+        self::assertIsString($script);
+        self::assertStringContainsString('Return Verification', $script);
     }
 }

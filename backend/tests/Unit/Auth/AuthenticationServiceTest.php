@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Auth;
 
 use App\Application\Services\AuthenticationService;
+use App\Application\Services\SessionService;
 use App\Domain\Auth\Role;
 use App\Domain\Auth\UserAccount;
 use App\Infrastructure\Persistence\UserRepositoryInterface;
@@ -17,7 +18,7 @@ final class AuthenticationServiceTest extends TestCase
         $repository = new FakeUserRepository();
         $repository->add(new UserAccount(10, '2024001', Role::STUDENT));
         $sessions = new AuthenticationSessionStore();
-        $service = new AuthenticationService($repository, $sessions);
+        $service = new AuthenticationService($repository, new SessionService($sessions));
 
         $result = $service->loginBorrower(' 2024001 ');
 
@@ -30,7 +31,7 @@ final class AuthenticationServiceTest extends TestCase
     {
         $repository = new FakeUserRepository();
         $repository->add(new UserAccount(11, '2024002', Role::STUDENT, 'inactive'));
-        $service = new AuthenticationService($repository, new AuthenticationSessionStore());
+        $service = new AuthenticationService($repository, new SessionService(new AuthenticationSessionStore()));
 
         $result = $service->loginBorrower('2024002');
 
@@ -48,7 +49,7 @@ final class AuthenticationServiceTest extends TestCase
             'active',
             password_hash('admin123', PASSWORD_DEFAULT),
         ));
-        $service = new AuthenticationService($repository, new AuthenticationSessionStore());
+        $service = new AuthenticationService($repository, new SessionService(new AuthenticationSessionStore()));
 
         self::assertSame(
             'Invalid staff password.',
@@ -59,7 +60,7 @@ final class AuthenticationServiceTest extends TestCase
             $service->loginStaff('2024001', 'admin123')->message(),
         );
 
-        for ($attempt = 0; $attempt < 4; $attempt++) {
+        for ($attempt = 0; $attempt < 3; $attempt++) {
             $service->loginStaff('ADMIN001', 'wrong');
         }
 

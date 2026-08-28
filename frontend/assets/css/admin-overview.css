@@ -1,0 +1,286 @@
+.admin-overview {
+  margin-bottom: 2rem;
+  color: #111827;
+}
+
+.admin-overview-heading {
+  align-items: end;
+  border-bottom: 1px solid #d9dde5;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.admin-overview-kicker {
+  color: #002fa7;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.2rem;
+  text-transform: uppercase;
+}
+
+.admin-overview-heading h2 {
+  font-size: clamp(1.65rem, 2.4vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.admin-overview-period,
+.overview-panel-heading span {
+  color: #5f6878;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-overview-grid {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.85fr);
+}
+
+.overview-panel {
+  background: #fff;
+  border: 1px solid #d9dde5;
+  min-width: 0;
+  padding: 1.15rem;
+}
+
+.overview-activity-panel {
+  grid-row: span 2;
+}
+
+.overview-borrowers-panel {
+  margin-left: 1.75rem;
+}
+
+.overview-panel-heading {
+  align-items: baseline;
+  border-bottom: 1px solid #e7e9ee;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.7rem;
+}
+
+.overview-panel-heading h3 {
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.overview-activity-chart {
+  align-items: end;
+  border-bottom: 1px solid #111827;
+  display: grid;
+  gap: clamp(0.25rem, 1.2vw, 0.75rem);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  height: 15.5rem;
+  padding: 0 0.25rem;
+}
+
+.overview-activity-column {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: end;
+  min-width: 0;
+}
+
+.overview-activity-bar {
+  background: #002fa7;
+  display: block;
+  min-height: 0.2rem;
+  transition: height 220ms ease;
+  width: min(2.25rem, 100%);
+}
+
+.overview-activity-bar[data-zero="true"] {
+  background: #d9dde5;
+  height: 0.2rem !important;
+}
+
+.overview-activity-label {
+  color: #5f6878;
+  font-size: 0.68rem;
+  margin-top: 0.55rem;
+  white-space: nowrap;
+}
+
+.overview-activity-value {
+  color: #111827;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.3rem;
+  min-height: 1em;
+}
+
+.overview-empty {
+  align-items: center;
+  color: #5f6878;
+  display: flex;
+  font-size: 0.85rem;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.overview-status-layout {
+  align-items: center;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  min-height: 9rem;
+}
+
+.overview-status-ring {
+  align-items: center;
+  background: conic-gradient(#002fa7 0deg 360deg);
+  border-radius: 50%;
+  display: flex;
+  height: 8.5rem;
+  justify-content: center;
+  position: relative;
+  width: 8.5rem;
+}
+
+.overview-status-ring::after {
+  background: #fff;
+  border-radius: 50%;
+  content: "";
+  height: 5.25rem;
+  position: absolute;
+  width: 5.25rem;
+}
+
+.overview-status-ring.overview-empty::after {
+  display: none;
+}
+
+.overview-status-ring.overview-empty {
+  background: #e7e9ee;
+  color: #5f6878;
+  font-size: 0.72rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.overview-status-legend {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.overview-status-item {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 0.6rem minmax(0, 1fr) auto;
+}
+
+.overview-status-swatch {
+  background: var(--status-color);
+  height: 0.6rem;
+  width: 0.6rem;
+}
+
+.overview-status-name,
+.overview-status-count {
+  font-size: 0.78rem;
+}
+
+.overview-status-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.overview-borrowers-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.overview-borrower-row {
+  align-items: center;
+  border-bottom: 1px solid #e7e9ee;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+  padding: 0.65rem 0;
+}
+
+.overview-borrower-row:last-child {
+  border-bottom: 0;
+}
+
+.overview-borrower-rank {
+  color: #002fa7;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.overview-borrower-name {
+  font-size: 0.82rem;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-borrower-barcode {
+  color: #5f6878;
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 400;
+  margin-top: 0.1rem;
+}
+
+.overview-borrower-count {
+  color: #111827;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-activity-bar {
+    transition: none;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .admin-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview-activity-panel {
+    grid-row: auto;
+  }
+
+  .overview-borrowers-panel {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .admin-overview-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .overview-status-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .overview-status-legend {
+    justify-self: stretch;
+    width: 100%;
+  }
+}

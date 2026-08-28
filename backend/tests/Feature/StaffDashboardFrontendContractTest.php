@@ -39,4 +39,12 @@ final class StaffDashboardFrontendContractTest extends TestCase
         self::assertStringNotContainsString('echarts', strtolower($source));
         self::assertStringNotContainsString('plotly', strtolower($source));
     }
+
+    public function testTopBorrowersKeepsViewAllControlForShortRankings(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $source = (string) file_get_contents($path);
+
+        self::assertStringContainsString('toggle.hidden = !rows.length;', $source);
+    }
 }

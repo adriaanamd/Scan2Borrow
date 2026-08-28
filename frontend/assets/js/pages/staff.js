@@ -514,17 +514,21 @@ class StaffPageController {
     }
 
     if (toggle) {
-      toggle.hidden = rows.length <= 5;
+      toggle.hidden = !rows.length;
       toggle.dataset.expanded = "false";
-      toggle.textContent = rows.length > 5 ? "View all top 10 →" : "";
-      toggle.onclick = () => {
-        const expanded = toggle.dataset.expanded === "true";
-        toggle.dataset.expanded = expanded ? "false" : "true";
-        toggle.textContent = expanded ? "View all top 10 →" : "Show top 5 ↑";
-        list.querySelectorAll(".overview-borrower-row").forEach((row, index) => {
-          row.dataset.hidden = !expanded && index >= 5 ? "true" : "false";
-        });
-      };
+      toggle.textContent = "View all top 10 →";
+      if (rows.length > 5) {
+        toggle.onclick = () => {
+          const expanded = toggle.dataset.expanded === "true";
+          toggle.dataset.expanded = expanded ? "false" : "true";
+          toggle.textContent = expanded ? "View all top 10 →" : "Show top 5 ↑";
+          list.querySelectorAll(".overview-borrower-row").forEach((row, index) => {
+            row.dataset.hidden = !expanded && index >= 5 ? "true" : "false";
+          });
+        };
+      } else {
+        toggle.onclick = null;
+      }
     }
 
     rows.forEach((borrower, index) => {

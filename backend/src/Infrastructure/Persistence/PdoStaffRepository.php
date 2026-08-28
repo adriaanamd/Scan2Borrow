@@ -45,6 +45,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
         $statement = $this->pdo->prepare($sql);
         $statement->execute($parameters);
+        /** @var list<array<string, mixed>> $rows */
+        /** @var list<array<string, mixed>> $rows */
+        /** @var list<array<string, mixed>> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row['name'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
@@ -71,6 +74,8 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             return [];
         }
 
+        /** @var list<array<string, mixed>> $rows */
+        /** @var list<array<string, mixed>> $rows */
         /** @var list<array<string, mixed>> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
@@ -172,10 +177,12 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             return [];
         }
 
+        /** @var list<array<string, mixed>> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row['name'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
-            $row['accession'] = $this->string($row['accession_no'] ?? null) ?: $this->string($row['barcode'] ?? null);
+            $accession = $this->string($row['accession_no'] ?? null);
+            $row['accession'] = $accession !== '' ? $accession : $this->string($row['barcode'] ?? null);
         }
         unset($row);
 
@@ -188,6 +195,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         if ($statement === false) {
             return [];
         }
+        /** @var list<array<string, mixed>> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row['name'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
@@ -202,12 +210,13 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         $sql = "SELECT id, barcode, firstname, lastname, course FROM users WHERE role IN ('student','teacher')";
         $parameters = [];
         if (trim($search) !== '') {
-            $sql .= " AND (barcode LIKE :search OR CONCAT(firstname, ' ', lastname) LIKE :search)";
+            $sql .= ' AND (barcode LIKE :search OR firstname LIKE :search OR lastname LIKE :search)';
             $parameters['search'] = '%' . trim($search) . '%';
         }
         $sql .= ' ORDER BY lastname ASC LIMIT 25';
         $statement = $this->pdo->prepare($sql);
         $statement->execute($parameters);
+        /** @var list<array<string, mixed>> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
             $row['name'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
@@ -260,7 +269,13 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         $statement->execute(['staff_id' => $staffId]);
 
         /** @var list<array<string, mixed>> $rows */
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['borrower'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function markNotificationViewed(int $notificationId, int $staffId, string $type): void
@@ -365,7 +380,12 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
     private function count(string $sql): int
     {
-        return (int) $this->pdo->query($sql)->fetchColumn();
+        $statement = $this->pdo->query($sql);
+        if ($statement === false) {
+            return 0;
+        }
+
+        return (int) $statement->fetchColumn();
     }
 
     private function string(mixed $value): string

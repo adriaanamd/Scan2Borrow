@@ -33,7 +33,9 @@ final class PdoStaffRepositoryTest extends TestCase
     {
         $repository = new PdoStaffRepository($this->pdo);
 
-        self::assertSame(1, $repository->dashboard()['stats']['total_books']);
+        $dashboard = $repository->dashboard();
+        self::assertIsArray($dashboard['stats'] ?? null);
+        self::assertSame(1, $dashboard['stats']['total_books']);
         self::assertSame('Grace Hopper', $repository->borrowers('Grace')[0]['name']);
         self::assertSame('TX-1', $repository->pendingBorrowings()[0]['transaction_code']);
     }
@@ -44,7 +46,11 @@ final class PdoStaffRepositoryTest extends TestCase
 
         $repository->approveBorrowing(1, 1);
 
-        self::assertSame('approved', $this->pdo->query('SELECT approval_status FROM borrowing WHERE id = 1')->fetchColumn());
-        self::assertSame('Borrowed', $this->pdo->query('SELECT status FROM books WHERE id = 1')->fetchColumn());
+        $approval = $this->pdo->query('SELECT approval_status FROM borrowing WHERE id = 1');
+        $book = $this->pdo->query('SELECT status FROM books WHERE id = 1');
+        self::assertNotFalse($approval);
+        self::assertNotFalse($book);
+        self::assertSame('approved', $approval->fetchColumn());
+        self::assertSame('Borrowed', $book->fetchColumn());
     }
 }

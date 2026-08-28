@@ -6,6 +6,8 @@ namespace App\Bootstrap;
 
 use App\Application\Services\AuthenticationService;
 use App\Application\Services\BookQueryService;
+use App\Application\Services\BookArchiveService;
+use App\Application\Services\BookMutationService;
 use App\Application\Services\BorrowingService;
 use App\Application\Services\CsrfService;
 use App\Application\Services\GuestProfileCompletionService;
@@ -22,6 +24,7 @@ use App\Application\Services\SystemClock;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\AuthorizationPolicy;
 use App\Domain\Borrowing\BorrowingPolicy;
+use App\Application\Validators\BookMutationValidator;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowerController;
@@ -30,6 +33,7 @@ use App\Http\Controllers\GuestBorrowingController;
 use App\Http\Controllers\GuestDetailsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\StaffController;
 use App\Http\Middleware\AuthorizationMiddleware;
 use App\Http\Middleware\SessionPageAccessAuthorizer;
 use App\Http\Responses\ResponseEmitter;
@@ -39,6 +43,7 @@ use App\Http\Routing\BorrowerRouteTable;
 use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
 use App\Http\Routing\Router;
+use App\Http\Routing\StaffRouteTable;
 use App\Infrastructure\Database\DatabaseConfig;
 use App\Infrastructure\Database\PdoConnectionFactory;
 use App\Infrastructure\Persistence\PdoUserRepository;
@@ -79,7 +84,14 @@ final class ApplicationFactory
         $guestVisitors = new PdoVisitorRegistrationRepository($pdo);
         $authentication = new AuthenticationService(new PdoUserRepository($pdo), $sessions, new PdoGuestIdentityRepository($pdo));
         $authController = new AuthController($sessions, $csrf, $authentication);
-        $bookController = new BookController($sessions, new BookQueryService(new PdoBookRepository($pdo)));
+        $bookRepository = new PdoBookRepository($pdo);
+        $bookController = new BookController(
+            $sessions,
+            new BookQueryService($bookRepository),
+            new BookMutationService(new BookMutationValidator(), $bookRepository),
+            new BookArchiveService($bookRepository),
+            $csrf,
+        );
         $borrowings = new PdoBorrowingRepository($pdo);
         $borrowerController = new BorrowerController(
             $sessions,
@@ -111,11 +123,21 @@ final class ApplicationFactory
             $csrf,
             new GuestProfileCompletionService($otp, $visitorDetails),
         );
+        $staffController = new StaffController(
+            $sessions,
+            new \App\Infrastructure\Persistence\PdoStaffRepository($pdo),
+            $csrf,
+            new \App\Application\Services\GuestApprovalService(
+                new \App\Infrastructure\Persistence\PdoGuestApprovalRepository($pdo),
+                new \App\Infrastructure\Persistence\PdoVisitorNotificationRepository($pdo),
+            ),
+        );
         $apiRouter = new Router(array_merge(
             (new AuthRouteTable())->routes($authController, $registration),
             (new BookRouteTable())->routes($bookController),
             (new BorrowerRouteTable())->routes($borrowerController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
+            (new StaffRouteTable())->routes($staffController),
         ));
         $policy = new AuthorizationPolicy();
         $pageController = new PageController(new SessionPageAccessAuthorizer(

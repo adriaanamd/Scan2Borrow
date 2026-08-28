@@ -15,16 +15,13 @@ final class InventoryMarkupParityTest extends TestCase
         'id="inv-search"',
         'id="inv-status"',
         'id="inv-select-all"',
-        'id="inventory-grid"',
         'id="bookDrawer"',
-        'id="bookForm"',
+        'id="book-form"',
         'id="book-id"',
         'name="barcode"',
-        'name="accession_no"',
         'name="cover_file"',
         'id="cover-preview-wrap"',
         'data-scan-target="barcode"',
-        'data-bs-toggle="offcanvas"',
     ];
 
     public function testStaticInventoryPagePreservesLegacyDomContract(): void

@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use PHPUnit\Framework\TestCase;
+
+final class BorrowerMarkupParityTest extends TestCase
+{
+    /**
+     * @var list<string>
+     */
+    private const REQUIRED_MARKERS = [
+        'id="borrowModal"',
+        'id="borrowForm"',
+        'name="book_barcode"',
+        'id="returnModal"',
+        'name="return_input"',
+        'data-scan-target="book_barcode"',
+        'data-scan-target="return_input"',
+        'id="successModal"',
+        'id="successMessage"',
+        'id="successTxnCode"',
+        'id="successReceiptLink"',
+        'Book Capacity',
+        'Achievements',
+        'Recommended for You',
+    ];
+
+    public function testStaticStudentDashboardPreservesLegacyDomContract(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'student-dashboard.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+
+        foreach (self::REQUIRED_MARKERS as $marker) {
+            self::assertStringContainsString($marker, $html, "Missing borrower marker: {$marker}");
+        }
+
+        self::assertStringContainsString('frontend/assets/js/pages/borrower-dashboard.js', $html);
+        self::assertStringContainsString('frontend/assets/css/style.css', $html);
+    }
+}

@@ -1,0 +1,20 @@
+Options -Indexes
+
+RewriteEngine On
+
+# Application source and private support files are never web-readable.
+RewriteRule ^(?:frontend/pages|backend/src|backend/tests|backend/config|backend/vendor|backend/var)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:config|includes|sql)(?:/|$) - [F,L,NC]
+
+# The front controller is the only PHP entry point exposed by Apache.
+RewriteRule ^backend/public/index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule \.php$ - [F,L,NC]
+
+# Existing static files (assets and uploads) continue to be served directly.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# All clean page and API requests enter the modular monolith.
+RewriteRule ^ backend/public/index.php [L,QSA]

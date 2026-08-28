@@ -11,7 +11,7 @@ use App\Application\Services\SessionService;
 use App\Domain\Auth\SessionIdentity;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
-use App\Http\Responses\ResponseInterface;
+use App\Http\Responses\RedirectResponse;
 use InvalidArgumentException;
 
 final readonly class AuthController
@@ -49,11 +49,11 @@ final readonly class AuthController
         return new JsonResponse(200, ['ok' => true, 'data' => []]);
     }
 
-    public function logoutLegacy(ServerRequest $request): JsonResponse
+    public function logoutLegacy(ServerRequest $request): RedirectResponse
     {
         $this->sessions->logout();
 
-        return new JsonResponse(200, ['ok' => true, 'data' => ['redirect' => $request->applicationPath('/login')]]);
+        return new RedirectResponse(302, $request->applicationPath('/login'));
     }
 
     public function loginBorrower(ServerRequest $request): JsonResponse

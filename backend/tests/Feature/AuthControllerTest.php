@@ -12,6 +12,7 @@ use App\Domain\Auth\Principal;
 use App\Domain\Auth\Role;
 use App\Http\Controllers\AuthController;
 use App\Http\Requests\ServerRequest;
+use App\Http\Responses\ResponseInterface;
 use App\Infrastructure\Session\SessionStoreInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +39,7 @@ final class AuthControllerTest extends TestCase
 
     protected function tearDown(): void
     {
-        unset($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_POST);
+        unset($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME'], $_POST);
 
         parent::tearDown();
     }
@@ -80,6 +81,22 @@ final class AuthControllerTest extends TestCase
 
         self::assertSame(419, $response->statusCode());
         self::assertNotNull((new SessionService($this->store))->current());
+    }
+
+    public function testLegacyLogoutRedirectsBrowserToLogin(): void
+    {
+        $this->store->setPrincipal(new Principal(36, Role::STUDENT));
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/scan2borrow/logout';
+        $_SERVER['SCRIPT_NAME'] = '/scan2borrow/backend/public/index.php';
+
+        $response = $this->controller->logoutLegacy(ServerRequest::fromGlobals());
+
+        self::assertInstanceOf(ResponseInterface::class, $response);
+        self::assertSame(302, $response->statusCode());
+        self::assertSame('/scan2borrow/login', $response->headers()['Location']);
+        self::assertSame('', $response->toString());
+        self::assertNull((new SessionService($this->store))->current());
     }
 }
 

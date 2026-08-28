@@ -239,11 +239,14 @@ class BorrowerDashboardController {
 
   submitForm(form, action, field, onSuccess) {
     const value = form.elements[field]?.value.trim() || "";
-    const body = { action, [field]: value, csrf: this.csrf };
+    const body = new FormData();
+    body.append("action", action);
+    body.append(field, value);
+    body.append("csrf", this.csrf);
     this.request(this.api, { method: "POST", body })
       .then((response) => {
         if (!response.ok)
-          throw new Error(response.message || "Request failed.");
+          throw new Error(response.errors?.[0] || response.message || "Request failed.");
         onSuccess(response.data || response);
         this.load();
       })

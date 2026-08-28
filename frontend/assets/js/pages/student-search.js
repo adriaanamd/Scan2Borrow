@@ -1,6 +1,7 @@
 class StudentSearchController {
   constructor() {
     this.api = "/scan2borrow/api/student/books";
+    this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.form = document.getElementById("searchForm");
     this.results = document.getElementById("book-results");
     this.params = new URLSearchParams(window.location.search);
@@ -160,6 +161,7 @@ class StudentSearchController {
         button.dataset.bookBarcode;
       document.getElementById("modal-book-title").textContent =
         button.dataset.bookTitle;
+      document.getElementById("borrow-error").hidden = true;
     });
     modal.addEventListener("hidden.bs.modal", () =>
       document.getElementById("borrowFormModal").reset(),
@@ -168,12 +170,35 @@ class StudentSearchController {
       .getElementById("borrowFormModal")
       .addEventListener("submit", (event) => {
         event.preventDefault();
+        const body = new FormData(event.currentTarget);
+        body.append("action", "borrow");
+        body.append("csrf", this.csrf);
+
         fetch("/scan2borrow/api/student/borrow", {
           method: "POST",
-          body: new FormData(event.currentTarget),
-        }).then(() => {
-          window.location.href = "/scan2borrow/student/dashboard";
-        });
+          headers: { "X-Requested-With": "fetch" },
+          body,
+        })
+          .then((response) =>
+            response.json().then((payload) => ({
+              ok: response.ok && payload.ok,
+              payload,
+            })),
+          )
+          .then(({ ok, payload }) => {
+            if (!ok) {
+              throw new Error(
+                payload.errors?.[0] || payload.message || "Borrow request failed.",
+              );
+            }
+
+            window.location.href = "/scan2borrow/student/dashboard";
+          })
+          .catch((error) => {
+            const host = document.getElementById("borrow-error");
+            host.textContent = error.message || "Borrow request failed.";
+            host.hidden = false;
+          });
       });
   }
 }

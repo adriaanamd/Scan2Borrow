@@ -35,11 +35,12 @@ final class BorrowerPagesParityTest extends TestCase
             'id="borrowFormModal"',
             'id="modal-book-barcode"',
             'id="modal-book-title"',
+            'id="borrow-error"',
             'Borrow Now',
         ]);
         $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'student-search.js');
         self::assertIsString($script);
-        foreach (['book-card-shell', 'book-face-front', 'book-face-back'] as $marker) {
+        foreach (['book-card-shell', 'book-face-front', 'book-face-back', 'body.append("action", "borrow")', 'body.append("csrf"'] as $marker) {
             self::assertStringContainsString($marker, $script);
         }
     }

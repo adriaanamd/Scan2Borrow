@@ -946,29 +946,100 @@ class StaffPageController {
         to,
       });
       const report = response.data.report;
-      const table = this.root.querySelector(".table-card:last-of-type table");
-      if (table) {
-        table.querySelector("thead").innerHTML =
-          `<tr>${report.headers.map((header) => `<th>${this.escape(header)}</th>`).join("")}</tr>`;
-        table.querySelector("tbody").innerHTML = report.data.length
-          ? report.data
-              .map(
-                (row) =>
-                  `<tr>${row.map((cell) => `<td>${this.escape(cell)}</td>`).join("")}</tr>`,
-              )
-              .join("")
-          : `<tr><td colspan="${report.headers.length}" class="text-center text-muted">No records.</td></tr>`;
-        const heading = table.closest(".table-card")?.querySelector("h5");
-        if (heading)
-          heading.innerHTML = `${this.escape(report.label)} <span class="text-muted fs-6">(${report.data.length} records)</span>`;
-      }
-      const exportLink = this.root.querySelector('a[href*="export=1"]');
+      this.renderReport(report, from, to);
+
+      const reportQuery = new URLSearchParams({ type });
+      if (from) reportQuery.set("from", from);
+      if (to) reportQuery.set("to", to);
+      const exportLink = this.root.querySelector("#export-report-link");
       if (exportLink)
-        exportLink.href = `/scan2borrow/api/staff/reports/export?type=${encodeURIComponent(type)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
-      if (query.has("print")) window.setTimeout(() => window.print(), 250);
+        exportLink.href = `/scan2borrow/api/staff/reports/export?${reportQuery}`;
+      const printLink = this.root.querySelector("#generate-report-link");
+      if (printLink) {
+        const printQuery = new URLSearchParams(reportQuery);
+        printQuery.set("print", "1");
+        printLink.href = `/scan2borrow/staff/reports?${printQuery}`;
+      }
+      if (query.has("print")) {
+        this.root.classList.add("report-print-mode");
+        await this.printReportWhenReady();
+      }
     } catch (error) {
       this.showError(error);
     }
+  }
+
+  renderReport(report, from, to) {
+    const table = document.getElementById("staff-report-table");
+    const documentNode = document.getElementById("staff-report-document");
+    if (!table || !documentNode) return;
+
+    const label = String(report.label || "Library Report");
+    const headers = Array.isArray(report.headers) ? report.headers : [];
+    const rows = Array.isArray(report.data) ? report.data : [];
+    const head = table.querySelector("thead");
+    const body = table.querySelector("tbody");
+    if (!head || !body) return;
+
+    head.replaceChildren();
+    const headerRow = document.createElement("tr");
+    headers.forEach((header) => {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = String(header);
+      headerRow.appendChild(cell);
+    });
+    head.appendChild(headerRow);
+
+    body.replaceChildren();
+    if (!rows.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = Math.max(1, headers.length);
+      cell.className = "text-center text-muted";
+      cell.textContent = "No records.";
+      row.appendChild(cell);
+      body.appendChild(row);
+    } else {
+      rows.forEach((values) => {
+        const row = document.createElement("tr");
+        (Array.isArray(values) ? values : []).forEach((value) => {
+          const cell = document.createElement("td");
+          cell.textContent = String(value ?? "");
+          row.appendChild(cell);
+        });
+        body.appendChild(row);
+      });
+    }
+
+    this.text("staff-report-title", label);
+    this.text("staff-report-period", this.reportPeriod(from, to));
+    this.text("staff-report-count", `${rows.length} record${rows.length === 1 ? "" : "s"}`);
+    this.text("staff-report-generated", new Date().toLocaleString());
+    this.text(
+      "staff-report-status",
+      rows.length ? `${rows.length} records loaded` : "No records found",
+    );
+    documentNode.dataset.reportReady = "true";
+  }
+
+  reportPeriod(from, to) {
+    if (from && to) return `${this.date(from)} — ${this.date(to)}`;
+    if (from) return `From ${this.date(from)}`;
+    if (to) return `Through ${this.date(to)}`;
+    return "All available dates";
+  }
+
+  async printReportWhenReady() {
+    const report = document.getElementById("staff-report-document");
+    if (!report || report.dataset.reportReady !== "true") return;
+
+    await new Promise((resolve) => {
+      window.requestAnimationFrame(() =>
+        window.requestAnimationFrame(resolve),
+      );
+    });
+    window.print();
   }
 
   async guestRequests() {

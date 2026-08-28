@@ -1,0 +1,160 @@
+.staff-reports-page {
+  min-height: calc(100vh - 76px);
+}
+
+.report-document {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.report-document-header {
+  align-items: flex-start;
+  border-bottom: 3px solid var(--primary);
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.25rem;
+}
+
+.report-document-brand {
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.report-document-kicker {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 0.75rem 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.report-document-header h2 {
+  color: var(--text);
+  font-size: 1.7rem;
+  margin: 0;
+}
+
+.report-document-badge {
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.45rem 0.75rem;
+  white-space: nowrap;
+}
+
+.report-document-meta {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1.25rem 0;
+}
+
+.report-document-meta div {
+  border-left: 3px solid var(--border);
+  padding-left: 0.75rem;
+}
+
+.report-document-meta dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.report-document-meta dd {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 650;
+  margin: 0.25rem 0 0;
+}
+
+.report-table-card {
+  box-shadow: none;
+  padding: 0;
+}
+
+.report-table-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.report-document-footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .report-document {
+    padding: 1.25rem;
+  }
+
+  .report-document-header,
+  .report-table-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-document-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .sidebar,
+  .topbar,
+  .staff-reports-page > .page-head,
+  .staff-reports-page > .table-card.mb-4 {
+    display: none !important;
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .content.staff-reports-page {
+    padding: 0;
+  }
+
+  .report-document {
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .report-document-header h2 {
+    font-size: 1.45rem;
+  }
+
+  .report-table-card {
+    border: 0;
+  }
+
+  .report-document-footer {
+    margin-top: 1rem;
+  }
+}

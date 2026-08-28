@@ -5,3 +5,4 @@ PHPMailer/
 backend/vendor/
 backend/composer.phar
 backend/var/
+backend/.phpunit.result.cache

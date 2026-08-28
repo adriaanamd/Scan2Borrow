@@ -66,4 +66,14 @@ final class StaffDashboardFrontendContractTest extends TestCase
         self::assertStringContainsString('pending-approvals-count', $source);
         self::assertStringContainsString('pendingRows.length', $source);
     }
+
+    public function testStaffNavigationRevealsApiDocsOnlyForAnAdminSession(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $source = (string) file_get_contents($path);
+
+        self::assertStringContainsString('revealAdminDocsLink', $source);
+        self::assertStringContainsString('/scan2borrow/api/auth/session', $source);
+        self::assertStringContainsString('role === "admin"', $source);
+    }
 }

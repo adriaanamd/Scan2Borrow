@@ -38,6 +38,7 @@ class StaffPageController {
   }
 
   start() {
+    this.revealAdminDocsLink();
     switch (this.root.dataset.page) {
       case "staff-dashboard":
         return this.dashboard();
@@ -57,6 +58,22 @@ class StaffPageController {
         return this.adminStaff();
       default:
         return Promise.resolve();
+    }
+  }
+
+  async revealAdminDocsLink() {
+    const link = document.querySelector("[data-admin-api-docs]");
+    if (!link) return;
+
+    try {
+      const response = await fetch("/scan2borrow/api/auth/session", {
+        headers: { Accept: "application/json" },
+      });
+      const payload = await response.json();
+      const isAdmin = payload.data?.role === "admin";
+      link.hidden = payload.ok !== true || !isAdmin;
+    } catch {
+      link.hidden = true;
     }
   }
 

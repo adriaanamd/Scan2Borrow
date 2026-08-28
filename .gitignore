@@ -2,3 +2,6 @@
 PHPMailer/
 *.log
 .worktrees/
+backend/vendor/
+backend/composer.phar
+backend/var/

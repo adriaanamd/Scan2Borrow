@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use PHPUnit\Framework\TestCase;
+
+final class BorrowerPagesParityTest extends TestCase
+{
+    /**
+     * @param list<string> $markers
+     */
+    private function assertPageContains(string $filename, array $markers): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+
+        foreach ($markers as $marker) {
+            self::assertStringContainsString($marker, $html, "Missing {$filename} marker: {$marker}");
+        }
+    }
+
+    public function testSearchPagePreservesCatalogFiltersCardsAndBorrowModal(): void
+    {
+        $this->assertPageContains('student-search.html', [
+            'Book Catalog',
+            'id="searchForm"',
+            'name="category_name"',
+            'name="status"',
+            'name="floor"',
+            'name="sort"',
+            'book-card-shell',
+            'book-face-front',
+            'book-face-back',
+            'id="borrowFormModal"',
+            'id="modal-book-barcode"',
+            'id="modal-book-title"',
+            'Borrow Now',
+        ]);
+    }
+
+    public function testHistoryPagePreservesBorrowingRecordTable(): void
+    {
+        $this->assertPageContains('student-history.html', [
+            'Your complete borrowing record.',
+            '<th>Code</th>',
+            '<th>Returned</th>',
+            '<th>Fine</th>',
+            'No borrowing history yet.',
+        ]);
+    }
+
+    public function testTeacherDashboardPreservesTeacherSpecificPanelsAndDueDate(): void
+    {
+        $this->assertPageContains('teacher-dashboard.html', [
+            'Teacher Card',
+            'Reading Velocity',
+            'Fine Risk Prediction',
+            'Subject Expertise',
+            'Teacher Profile',
+            'Smart Insights',
+            'name="due_date"',
+            'Teachers can borrow for up to',
+            'data-scan-target="book_barcode"',
+        ]);
+    }
+
+    public function testReceiptPagePreservesPrintableReceiptContract(): void
+    {
+        $this->assertPageContains('receipt.html', [
+            'Borrowing Receipt',
+            'Scan2Borrow Library',
+            'Transaction',
+            'Accession Number',
+            'Validity of the Book',
+            'class="no-print',
+            'window.print()',
+        ]);
+    }
+}

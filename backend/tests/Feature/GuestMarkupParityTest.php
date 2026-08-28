@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use PHPUnit\Framework\TestCase;
+
+final class GuestMarkupParityTest extends TestCase
+{
+    /** @var array<string, list<string>> */
+    private const PAGE_MARKERS = [
+        'guest-registration.html' => ['Guest Registration', 'id="guest-reg-form"', 'id="photo_data"', 'id="btn-start"', 'name="id_barcode"', 'Send SMS OTP'],
+        'guest-verify-otp.html' => ['Guest SMS Verification', 'name="otp"', 'maxlength="6"', 'Resend OTP'],
+        'guest-dashboard.html' => ['Guest Dashboard', 'id="borrowModal"', 'id="returnModal"', 'guest_borrow_barcode', 'guest_return_barcode', 'Reading Activity', 'Security Log'],
+        'guest-profile.html' => ['Settings', 'name="contact_no"', 'name="purpose_other"', 'Save Changes'],
+        'guest-profile-verify-otp.html' => ['Verify New Mobile Number', 'name="otp"', 'Verify &amp; Save', 'Resend OTP'],
+        'guest-browse-books.html' => ['Browse Books', 'name="q"', 'name="category"', 'Request to Borrow'],
+        'guest-borrowed-books.html' => ['Borrowed Books', 'No currently borrowed books'],
+        'guest-borrowing-history.html' => ['Borrowing History', 'name="status"', 'name="from"', 'name="to"', 'Return Verification'],
+        'guest-borrow-request.html' => ['Borrow Request', 'id="captureGuideModal"', 'id="government_id_barcode"', 'id="verification_photo"', 'id="cam"', 'id="snap"', 'Submit Request'],
+        'guest-return-book.html' => ['Return a Book', 'name="book_barcode"', 'id="return_photo"', 'Submit Return'],
+        'guest-pass.html' => ['Registered Government ID', 'id="id-barcode"', 'Verified Government ID', 'window.print()'],
+        'guest-receipt.html' => ['Borrowing Receipt', 'Scan2Borrow Library', 'window.print()', 'class="no-print'],
+    ];
+
+    public function testAllGuestPagesPreserveLegacyMarkupContracts(): void
+    {
+        foreach (self::PAGE_MARKERS as $filename => $markers) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+            self::assertFileExists($path, "Missing guest page {$filename}");
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html, "Missing {$filename} marker: {$marker}");
+            }
+        }
+    }
+
+    public function testGuestCameraAndPageControllersAreClassBased(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'guest';
+        foreach (['camera-capture.js', 'registration.js', 'borrow-request.js', 'return-book.js'] as $filename) {
+            $path = $root . DIRECTORY_SEPARATOR . $filename;
+            self::assertFileExists($path, "Missing guest controller {$filename}");
+            $script = file_get_contents($path);
+            self::assertIsString($script);
+            self::assertStringContainsString('class ', $script);
+        }
+    }
+}

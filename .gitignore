@@ -1,3 +1,4 @@
 .env
 PHPMailer/
 *.log
+.worktrees/

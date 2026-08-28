@@ -15,7 +15,7 @@ final class GuestMarkupParityTest extends TestCase
         'guest-dashboard.html' => ['Guest Dashboard', 'id="borrowModal"', 'id="returnModal"', 'guest_borrow_barcode', 'guest_return_barcode', 'Reading Activity', 'Security Log'],
         'guest-profile.html' => ['Settings', 'name="contact_no"', 'name="purpose_other"', 'Save Changes'],
         'guest-profile-verify-otp.html' => ['Verify New Mobile Number', 'name="otp"', 'Verify &amp; Save', 'Resend OTP'],
-        'guest-browse-books.html' => ['Browse Books', 'name="q"', 'name="category"', 'Request to Borrow'],
+        'guest-browse-books.html' => ['Browse Books', 'name="q"', 'name="category"'],
         'guest-borrowed-books.html' => ['Borrowed Books', 'No currently borrowed books'],
         'guest-borrowing-history.html' => ['Borrowing History', 'name="status"', 'name="from"', 'name="to"', 'Return Verification'],
         'guest-borrow-request.html' => ['Borrow Request', 'id="captureGuideModal"', 'id="government_id_barcode"', 'id="verification_photo"', 'id="cam"', 'id="snap"', 'Submit Request'],
@@ -47,5 +47,14 @@ final class GuestMarkupParityTest extends TestCase
             self::assertIsString($script);
             self::assertStringContainsString('class ', $script);
         }
+    }
+
+    public function testGuestBrowseControllerPreservesBookRequestAction(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'browse.js';
+        self::assertFileExists($path);
+        $script = file_get_contents($path);
+        self::assertIsString($script);
+        self::assertStringContainsString('Request to Borrow', $script);
     }
 }

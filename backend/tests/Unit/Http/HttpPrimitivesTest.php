@@ -20,7 +20,7 @@ final class HttpPrimitivesTest extends TestCase
 
     protected function tearDown(): void
     {
-        unset($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
+        unset($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME']);
 
         parent::tearDown();
     }
@@ -32,6 +32,17 @@ final class HttpPrimitivesTest extends TestCase
         self::assertSame('GET', $request->method());
         self::assertSame('/api/books', $request->path());
         self::assertSame(['page' => '2'], $request->query());
+    }
+
+    public function testRemovesApplicationPrefixAfterApacheFrontControllerRewrite(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/scan2borrow/student/dashboard?tab=history';
+        $_SERVER['SCRIPT_NAME'] = '/scan2borrow/backend/public/index.php';
+
+        $request = ServerRequest::fromGlobals();
+
+        self::assertSame('/student/dashboard', $request->path());
+        self::assertSame(['tab' => 'history'], $request->query());
     }
 
     public function testSerializesSuccessEnvelopeAsJson(): void

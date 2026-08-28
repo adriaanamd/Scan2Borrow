@@ -29,6 +29,7 @@ final readonly class ServerRequest
             ? $parsedUri['path']
             : '/';
 
+        $path = self::removeApplicationPrefix($path);
         $normalizedPath = rtrim($path, '/');
         if ($normalizedPath === '') {
             $normalizedPath = '/';
@@ -124,5 +125,25 @@ final readonly class ServerRequest
         }
 
         return $normalized;
+    }
+
+    private static function removeApplicationPrefix(string $path): string
+    {
+        $scriptValue = $_SERVER['SCRIPT_NAME'] ?? '';
+        $script = is_string($scriptValue) ? str_replace('\\', '/', $scriptValue) : '';
+        $marker = '/backend/public/index.php';
+        $markerPosition = strripos($script, $marker);
+        if ($markerPosition === false) {
+            return $path;
+        }
+
+        $prefix = rtrim(substr($script, 0, $markerPosition), '/');
+        if ($prefix === '' || !str_starts_with($path, $prefix . '/')) {
+            return $path;
+        }
+
+        $relative = substr($path, strlen($prefix));
+
+        return $relative === '' ? '/' : $relative;
     }
 }

@@ -40,6 +40,40 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame('TX-1', $repository->pendingBorrowings()[0]['transaction_code']);
     }
 
+    public function testDashboardIncludesOverviewAggregatesAndTopBorrowers(): void
+    {
+        $this->pdo->exec("INSERT INTO users VALUES (3, 'STU-2', 'Katherine', 'Johnson', 'Science', NULL, 'Math', '3', 'katherine@example.test', '09172222222', NULL, 'student', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES
+            (2, 'TX-2', 2, 1, 'approved', '2026-07-10', '2026-07-17', '2026-07-18', 'Returned', 0),
+            (3, 'TX-3', 2, 1, 'approved', '2026-08-02', '2026-08-09', NULL, 'Borrowed', 0),
+            (4, 'TX-4', 3, 1, 'approved', '2026-08-03', '2026-08-10', NULL, 'Overdue', 10)");
+
+        $overview = (new PdoStaffRepository($this->pdo))->dashboard()['overview'];
+
+        self::assertCount(12, $overview['borrowing_activity']);
+        self::assertSame(['month', 'label', 'count'], array_keys($overview['borrowing_activity'][0]));
+        self::assertSame(['available', 'borrowed', 'overdue', 'pending'], array_keys($overview['loan_status']));
+        self::assertSame('Grace Hopper', $overview['top_borrowers'][0]['name']);
+        self::assertSame(3, $overview['top_borrowers'][0]['borrowing_count']);
+        self::assertSame('STU-1', $overview['top_borrowers'][0]['barcode']);
+        self::assertLessThanOrEqual(10, count($overview['top_borrowers']));
+    }
+
+    public function testDashboardOverviewHandlesEmptyBorrowingData(): void
+    {
+        $this->pdo->exec('DELETE FROM borrowing');
+
+        $overview = (new PdoStaffRepository($this->pdo))->dashboard()['overview'];
+
+        self::assertCount(12, $overview['borrowing_activity']);
+        self::assertSame(0, array_sum(array_column($overview['borrowing_activity'], 'count')));
+        self::assertSame([], $overview['top_borrowers']);
+        self::assertSame(1, $overview['loan_status']['available']);
+        self::assertSame(0, $overview['loan_status']['borrowed']);
+        self::assertSame(0, $overview['loan_status']['overdue']);
+        self::assertSame(0, $overview['loan_status']['pending']);
+    }
+
     public function testApprovalUpdatesBorrowingAndBookTogether(): void
     {
         $repository = new PdoStaffRepository($this->pdo);

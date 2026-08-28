@@ -408,17 +408,11 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     private function dashboardOverview(): array
     {
         $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
-        if ($firstMonth === false) {
-            throw new RuntimeException('Unable to calculate dashboard overview period.');
-        }
 
         /** @var array<string, array{month: string, label: string, count: int}> $months */
         $months = [];
         for ($offset = 0; $offset < 12; $offset++) {
             $month = $firstMonth->modify('+' . $offset . ' months');
-            if ($month === false) {
-                continue;
-            }
             $key = $month->format('Y-m');
             $months[$key] = [
                 'month' => $key,
@@ -432,6 +426,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         );
         $activityStatement->execute(['start_date' => $firstMonth->format('Y-m-d')]);
         while (($row = $activityStatement->fetch(PDO::FETCH_ASSOC)) !== false) {
+            if (!is_array($row)) {
+                continue;
+            }
             $borrowDate = $row['borrow_date'] ?? null;
             if (!is_string($borrowDate)) {
                 continue;

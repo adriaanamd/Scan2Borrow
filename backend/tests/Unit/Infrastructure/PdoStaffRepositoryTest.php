@@ -48,7 +48,9 @@ final class PdoStaffRepositoryTest extends TestCase
             (3, 'TX-3', 2, 1, 'approved', '2026-08-02', '2026-08-09', NULL, 'Borrowed', 0),
             (4, 'TX-4', 3, 1, 'approved', '2026-08-03', '2026-08-10', NULL, 'Overdue', 10)");
 
-        $overview = (new PdoStaffRepository($this->pdo))->dashboard()['overview'];
+        /** @var array{overview: array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>}} $dashboard */
+        $dashboard = (new PdoStaffRepository($this->pdo))->dashboard();
+        $overview = $dashboard['overview'];
 
         self::assertCount(12, $overview['borrowing_activity']);
         self::assertSame(['month', 'label', 'count'], array_keys($overview['borrowing_activity'][0]));
@@ -63,7 +65,9 @@ final class PdoStaffRepositoryTest extends TestCase
     {
         $this->pdo->exec('DELETE FROM borrowing');
 
-        $overview = (new PdoStaffRepository($this->pdo))->dashboard()['overview'];
+        /** @var array{overview: array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>}} $dashboard */
+        $dashboard = (new PdoStaffRepository($this->pdo))->dashboard();
+        $overview = $dashboard['overview'];
 
         self::assertCount(12, $overview['borrowing_activity']);
         self::assertSame(0, array_sum(array_column($overview['borrowing_activity'], 'count')));

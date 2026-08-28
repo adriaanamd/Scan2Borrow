@@ -64,6 +64,7 @@ final class StaffDashboardContractTest extends TestCase
         };
 
         $response = $this->controller($store, $repository)->dashboard($this->request());
+        /** @var array{ok: bool, data: array<string, mixed>} $payload */
         $payload = json_decode($response->toString(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $response->statusCode());

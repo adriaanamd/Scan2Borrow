@@ -43,20 +43,28 @@ final class PdoStaffRepositoryTest extends TestCase
     public function testDashboardIncludesOverviewAggregatesAndTopBorrowers(): void
     {
         $this->pdo->exec("INSERT INTO users VALUES (3, 'STU-2', 'Katherine', 'Johnson', 'Science', NULL, 'Math', '3', 'katherine@example.test', '09172222222', NULL, 'student', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO books (id, barcode, title, author, category_name, status, floor_no, section_name, shelf_no, created_at) VALUES (2, 'BK-2', 'Mathematics', 'Euler', 'Mathematics', 'Borrowed', '2', 'Math', 'B1', '2026-08-01')");
         $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES
             (2, 'TX-2', 2, 1, 'approved', '2026-07-10', '2026-07-17', '2026-07-18', 'Returned', 0),
             (3, 'TX-3', 2, 1, 'approved', '2026-08-02', '2026-08-09', NULL, 'Borrowed', 0),
-            (4, 'TX-4', 3, 1, 'approved', '2026-08-03', '2026-08-10', NULL, 'Overdue', 10)");
+            (4, 'TX-4', 3, 1, 'approved', '2026-08-03', '2026-08-10', NULL, 'Overdue', 10),
+            (5, 'TX-5', 2, 2, 'approved', '2026-06-15', '2026-06-22', '2026-06-23', 'Returned', 0)");
 
-        /** @var array{overview: array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>}} $dashboard */
+        /** @var array{overview: array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>}} $dashboard */
         $dashboard = (new PdoStaffRepository($this->pdo))->dashboard();
         $overview = $dashboard['overview'];
 
         self::assertCount(12, $overview['borrowing_activity']);
         self::assertSame(['month', 'label', 'count'], array_keys($overview['borrowing_activity'][0]));
         self::assertSame(['available', 'borrowed', 'overdue', 'pending'], array_keys($overview['loan_status']));
+        self::assertSame(['name', 'count'], array_keys($overview['category_breakdown'][0]));
+        self::assertSame('Computer Science', $overview['category_breakdown'][0]['name']);
+        self::assertSame('Computer Science', $overview['top_genres'][0]['name']);
+        self::assertSame(4, $overview['top_genres'][0]['count']);
+        self::assertSame('TX-5', $overview['recent_activity'][0]['transaction_code']);
+        self::assertCount(5, $overview['recent_activity']);
         self::assertSame('Grace Hopper', $overview['top_borrowers'][0]['name']);
-        self::assertSame(3, $overview['top_borrowers'][0]['borrowing_count']);
+        self::assertSame(4, $overview['top_borrowers'][0]['borrowing_count']);
         self::assertSame('STU-1', $overview['top_borrowers'][0]['barcode']);
         self::assertLessThanOrEqual(10, count($overview['top_borrowers']));
     }
@@ -65,13 +73,15 @@ final class PdoStaffRepositoryTest extends TestCase
     {
         $this->pdo->exec('DELETE FROM borrowing');
 
-        /** @var array{overview: array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>}} $dashboard */
+        /** @var array{overview: array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>}} $dashboard */
         $dashboard = (new PdoStaffRepository($this->pdo))->dashboard();
         $overview = $dashboard['overview'];
 
         self::assertCount(12, $overview['borrowing_activity']);
         self::assertSame(0, array_sum(array_column($overview['borrowing_activity'], 'count')));
         self::assertSame([], $overview['top_borrowers']);
+        self::assertSame([], $overview['top_genres']);
+        self::assertSame([], $overview['recent_activity']);
         self::assertSame(1, $overview['loan_status']['available']);
         self::assertSame(0, $overview['loan_status']['borrowed']);
         self::assertSame(0, $overview['loan_status']['overdue']);

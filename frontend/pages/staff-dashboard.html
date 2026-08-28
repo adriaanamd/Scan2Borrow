@@ -128,7 +128,6 @@
           >
             <div class="admin-overview-heading">
               <div>
-                <p class="admin-overview-kicker">Library activity</p>
                 <h2 id="overview-title">Overview</h2>
               </div>
               <span class="admin-overview-period">Last 12 months</span>
@@ -153,7 +152,7 @@
                 <div class="overview-status-layout">
                   <div
                     id="overview-status-ring"
-                    class="overview-status-ring"
+                    class="overview-status-ring overview-status-chart"
                     role="img"
                     aria-label="Current library status"
                   ></div>
@@ -163,52 +162,78 @@
                   ></div>
                 </div>
               </article>
+              <article class="overview-panel overview-categories-panel">
+                <div class="overview-panel-heading">
+                  <h3>Book categories</h3>
+                </div>
+                <div class="overview-category-layout">
+                  <div
+                    id="overview-categories"
+                    class="overview-categories-chart"
+                    role="img"
+                    aria-label="Book categories in the library"
+                  ></div>
+                  <div id="overview-categories-legend" class="overview-chart-legend"></div>
+                </div>
+              </article>
               <article class="overview-panel overview-borrowers-panel">
                 <div class="overview-panel-heading">
                   <h3>Top 10 borrowers</h3>
-                  <span>Total loans</span>
+                  <button
+                    id="overview-borrowers-toggle"
+                    class="overview-panel-link"
+                    type="button"
+                  >
+                    View all top 10 →
+                  </button>
                 </div>
                 <ol
                   id="overview-borrowers-list"
                   class="overview-borrowers-list"
                 ></ol>
               </article>
+              <article class="overview-panel overview-genres-panel">
+                <div class="overview-panel-heading">
+                  <h3>Top genres borrowed</h3>
+                </div>
+                <div
+                  id="overview-genres"
+                  class="overview-genres-chart"
+                  role="img"
+                  aria-label="Top genres borrowed"
+                ></div>
+              </article>
             </div>
+            <article class="overview-panel overview-recent-panel" id="overview-recent">
+              <div class="overview-panel-heading">
+                <h3>Recent activity</h3>
+                <a class="overview-panel-link" href="/scan2borrow/staff/reports?type=borrowed">
+                  View all →
+                </a>
+              </div>
+              <div class="table-responsive">
+                <table class="table overview-recent-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Borrower</th>
+                      <th>Book</th>
+                      <th>Borrowed</th>
+                      <th>Due</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody data-overview-recent-body>
+                    <tr>
+                      <td colspan="6" class="text-center text-muted">
+                        No recent activity.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
           </section>
-
-          <div class="table-card">
-            <h5 class="mb-3">Recent Transactions</h5>
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Borrower</th>
-                    <th>Book</th>
-                    <th>Borrowed</th>
-                    <th>Due</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td colspan="6" class="text-center text-muted">
-                      No transactions yet.
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td><code></code></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
 
           <script
             src="/scan2borrow/frontend/assets/js/core/media.js"

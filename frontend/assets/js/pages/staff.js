@@ -76,16 +76,15 @@ class StaffPageController {
       this.root.querySelectorAll(".stat-card .value").forEach((node, index) => {
         node.textContent = values[index] ?? 0;
       });
-      this.renderRecent(data.recent || []);
       this.renderApprovals(data.pending || []);
-      this.renderOverview(data.overview || {});
+      this.renderOverview(data.overview || {}, data.recent || []);
       window.setInterval(() => this.refreshNotifications(), 5000);
     } catch (error) {
       this.showError(error);
     }
   }
 
-  renderOverview(overview) {
+  renderOverview(overview, legacyRecent = []) {
     const activity = Array.isArray(overview.borrowing_activity)
       ? overview.borrowing_activity
       : [];
@@ -96,10 +95,22 @@ class StaffPageController {
     const borrowers = Array.isArray(overview.top_borrowers)
       ? overview.top_borrowers
       : [];
+    const categories = Array.isArray(overview.category_breakdown)
+      ? overview.category_breakdown
+      : [];
+    const genres = Array.isArray(overview.top_genres)
+      ? overview.top_genres
+      : [];
+    const recent = Array.isArray(overview.recent_activity)
+      ? overview.recent_activity
+      : legacyRecent;
 
     this.renderActivity(activity);
     this.renderStatus(status);
+    this.renderCategories(categories);
+    this.renderGenres(genres);
     this.renderTopBorrowers(borrowers);
+    this.renderRecentActivity(recent);
   }
 
   renderActivity(activity) {
@@ -107,7 +118,7 @@ class StaffPageController {
     if (!host) return;
     host.replaceChildren();
 
-    const rows = activity.map((row) => ({
+    const rows = activity.slice(0, 12).map((row) => ({
       label: String(row.label || row.month || ""),
       count: this.nonNegativeInteger(row.count),
     }));
@@ -123,28 +134,83 @@ class StaffPageController {
       return;
     }
 
+    const width = 720;
+    const height = 240;
+    const padding = { top: 18, right: 16, bottom: 34, left: 32 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
     const maximum = Math.max(1, ...rows.map((row) => row.count));
-    rows.forEach((row) => {
-      const column = document.createElement("div");
-      column.className = "overview-activity-column";
-      column.setAttribute("aria-label", `${row.label}: ${row.count} loan(s)`);
-
-      const value = document.createElement("span");
-      value.className = "overview-activity-value";
-      value.textContent = String(row.count);
-
-      const bar = document.createElement("span");
-      bar.className = "overview-activity-bar";
-      bar.dataset.zero = row.count === 0 ? "true" : "false";
-      bar.style.height = `${(row.count / maximum) * 100}%`;
-
-      const label = document.createElement("span");
-      label.className = "overview-activity-label";
-      label.textContent = row.label;
-
-      column.append(value, bar, label);
-      host.appendChild(column);
+    const xStep = rows.length > 1 ? plotWidth / (rows.length - 1) : plotWidth;
+    const points = rows.map((row, index) => ({
+      ...row,
+      x: padding.left + index * xStep,
+      y: padding.top + plotHeight - (row.count / maximum) * plotHeight,
+    }));
+    const svg = this.svg("svg", {
+      class: "overview-line-chart",
+      viewBox: `0 0 ${width} ${height}`,
+      role: "img",
+      "aria-label": `Borrowing activity: ${rows.map((row) => `${row.label} ${row.count}`).join(", ")}`,
     });
+
+    [0, 0.5, 1].forEach((ratio) => {
+      const y = padding.top + plotHeight - ratio * plotHeight;
+      const line = this.svg("line", {
+        class: "overview-line-grid",
+        x1: padding.left,
+        x2: width - padding.right,
+        y1: y,
+        y2: y,
+      });
+      const label = this.svg("text", {
+        class: "overview-line-label",
+        x: padding.left - 8,
+        y: y + 4,
+        "text-anchor": "end",
+      });
+      label.textContent = String(Math.round(maximum * ratio));
+      svg.append(line, label);
+    });
+
+    const axis = this.svg("line", {
+      class: "overview-line-axis",
+      x1: padding.left,
+      x2: width - padding.right,
+      y1: padding.top + plotHeight,
+      y2: padding.top + plotHeight,
+    });
+    svg.appendChild(axis);
+
+    const path = this.svg("path", {
+      class: "overview-line-path",
+      d: points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" "),
+    });
+    svg.appendChild(path);
+
+    points.forEach((point) => {
+      const circle = this.svg("circle", {
+        class: "overview-line-point",
+        cx: point.x,
+        cy: point.y,
+        r: 3.5,
+      });
+      const value = this.svg("text", {
+        class: "overview-line-value",
+        x: point.x,
+        y: Math.max(12, point.y - 10),
+        "text-anchor": "middle",
+      });
+      value.textContent = String(point.count);
+      const label = this.svg("text", {
+        class: "overview-line-label",
+        x: point.x,
+        y: height - 10,
+        "text-anchor": "middle",
+      });
+      label.textContent = point.label;
+      svg.append(circle, value, label);
+    });
+    host.appendChild(svg);
   }
 
   renderStatus(status) {
@@ -165,7 +231,7 @@ class StaffPageController {
     const total = entries.reduce((sum, entry) => sum + entry.count, 0);
 
     if (total === 0) {
-      ring.className = "overview-status-ring overview-empty";
+      ring.className = "overview-status-ring overview-status-chart overview-empty";
       ring.style.background = "";
       ring.textContent = "No current status data.";
       return;
@@ -178,7 +244,7 @@ class StaffPageController {
       cursor = end;
       return segment;
     });
-    ring.className = "overview-status-ring";
+    ring.className = "overview-status-ring overview-status-chart";
     ring.textContent = "";
     ring.style.background = `conic-gradient(${segments.join(", ")})`;
     ring.setAttribute(
@@ -208,18 +274,133 @@ class StaffPageController {
     });
   }
 
+  renderCategories(categories) {
+    const chart = document.getElementById("overview-categories");
+    const legend = document.getElementById("overview-categories-legend");
+    if (!chart || !legend) return;
+    chart.replaceChildren();
+    legend.replaceChildren();
+
+    const palette = ["#002fa7", "#64748b", "#b45309", "#b91c1c", "#0f766e", "#7c3aed"];
+    const entries = categories
+      .map((entry, index) => ({
+        name: String(entry.name || "Uncategorized"),
+        count: this.nonNegativeInteger(entry.count),
+        color: palette[index % palette.length],
+      }))
+      .filter((entry) => entry.count > 0);
+    const total = entries.reduce((sum, entry) => sum + entry.count, 0);
+    if (total === 0) {
+      chart.className = "overview-categories-chart overview-empty";
+      chart.style.background = "";
+      chart.textContent = "No category data.";
+      return;
+    }
+
+    let cursor = 0;
+    const segments = entries.map((entry) => {
+      const end = cursor + (entry.count / total) * 360;
+      const segment = `${entry.color} ${cursor}deg ${end}deg`;
+      cursor = end;
+      return segment;
+    });
+    chart.className = "overview-categories-chart";
+    chart.style.background = `conic-gradient(${segments.join(", ")})`;
+    chart.setAttribute(
+      "aria-label",
+      `Book categories: ${entries.map((entry) => `${entry.name} ${entry.count}`).join(", ")}`,
+    );
+
+    entries.forEach((entry) => {
+      const item = document.createElement("div");
+      item.className = "overview-chart-legend-item";
+      const swatch = document.createElement("span");
+      swatch.className = "overview-chart-swatch";
+      swatch.style.setProperty("--status-color", entry.color);
+      swatch.setAttribute("aria-hidden", "true");
+      const name = document.createElement("span");
+      name.className = "overview-chart-name";
+      name.textContent = entry.name;
+      const count = document.createElement("span");
+      count.className = "overview-chart-count";
+      count.textContent = String(entry.count);
+      item.append(swatch, name, count);
+      legend.appendChild(item);
+    });
+  }
+
+  renderGenres(genres) {
+    const host = document.getElementById("overview-genres");
+    if (!host) return;
+    host.replaceChildren();
+    const rows = genres
+      .slice(0, 5)
+      .map((entry) => ({
+        name: String(entry.name || "Uncategorized"),
+        count: this.nonNegativeInteger(entry.count),
+      }))
+      .filter((entry) => entry.count > 0);
+    if (!rows.length) {
+      const empty = document.createElement("div");
+      empty.className = "overview-empty";
+      empty.textContent = "No genre activity recorded.";
+      host.appendChild(empty);
+      return;
+    }
+
+    const maximum = Math.max(1, ...rows.map((row) => row.count));
+    rows.forEach((row) => {
+      const item = document.createElement("div");
+      item.className = "overview-genre-row";
+      const name = document.createElement("span");
+      name.className = "overview-genre-name";
+      name.textContent = row.name;
+      const track = document.createElement("span");
+      track.className = "overview-genre-track";
+      const bar = document.createElement("span");
+      bar.className = "overview-genre-bar";
+      bar.style.width = `${(row.count / maximum) * 100}%`;
+      track.appendChild(bar);
+      const count = document.createElement("span");
+      count.className = "overview-genre-count";
+      count.textContent = String(row.count);
+      item.append(name, track, count);
+      host.appendChild(item);
+    });
+    host.setAttribute(
+      "aria-label",
+      `Top genres borrowed: ${rows.map((row) => `${row.name} ${row.count}`).join(", ")}`,
+    );
+  }
+
   renderTopBorrowers(borrowers) {
     const list = document.getElementById("overview-borrowers-list");
+    const toggle = document.getElementById("overview-borrowers-toggle");
     if (!list) return;
     list.replaceChildren();
 
     const rows = borrowers.slice(0, 10);
     if (!rows.length) {
+      if (toggle) toggle.hidden = true;
       const empty = document.createElement("li");
       empty.className = "overview-empty";
       empty.textContent = "No borrowing records yet.";
       list.appendChild(empty);
       return;
+    }
+
+    if (toggle) {
+      toggle.hidden = rows.length <= 5;
+      toggle.dataset.expanded = "false";
+      toggle.textContent = rows.length > 5 ? "View all top 10 →" : "";
+      toggle.onclick = () => {
+        const expanded = toggle.dataset.expanded === "true";
+        toggle.dataset.expanded = expanded ? "false" : "true";
+        toggle.textContent = expanded ? "View all top 10 →" : "Show top 5 ↑";
+        list.querySelectorAll(".overview-borrower-row").forEach((row, index) => {
+          row.dataset.hidden = !expanded && index >= 5 ? "true" : "false";
+        });
+      };
     }
 
     rows.forEach((borrower, index) => {
@@ -242,14 +423,20 @@ class StaffPageController {
       count.className = "overview-borrower-count";
       count.textContent = String(this.nonNegativeInteger(borrower.borrowing_count));
 
+      row.dataset.hidden = index >= 5 ? "true" : "false";
       row.append(rank, identity, count);
       list.appendChild(row);
     });
   }
 
   renderRecent(rows) {
-    const body = this.root.querySelector("table tbody");
+    this.renderRecentActivity(rows);
+  }
+
+  renderRecentActivity(rows) {
+    const body = this.root.querySelector("[data-overview-recent-body]");
     if (!body) return;
+    rows = Array.isArray(rows) ? rows.slice(0, 10) : [];
     body.innerHTML = rows.length
       ? rows
           .map(
@@ -263,7 +450,15 @@ class StaffPageController {
             </tr>`,
           )
           .join("")
-      : '<tr><td colspan="6" class="text-center text-muted">No transactions yet.</td></tr>';
+      : '<tr><td colspan="6" class="text-center text-muted">No recent activity.</td></tr>';
+  }
+
+  svg(tag, attributes = {}) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.entries(attributes).forEach(([name, value]) => {
+      node.setAttribute(name, String(value));
+    });
+    return node;
   }
 
   renderApprovals(rows) {

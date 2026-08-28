@@ -19,6 +19,10 @@ final class StaffDashboardMarkupTest extends TestCase
             'overview-status-ring',
             'overview-status-legend',
             'overview-borrowers-list',
+            'overview-categories',
+            'overview-genres',
+            'overview-recent',
+            'overview-borrowers-toggle',
             'admin-overview.css',
         ] as $marker) {
             self::assertStringContainsString($marker, $dashboard, $marker . ' is missing from the dashboard.');

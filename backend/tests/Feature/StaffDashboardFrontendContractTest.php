@@ -18,10 +18,16 @@ final class StaffDashboardFrontendContractTest extends TestCase
             'renderActivity',
             'renderStatus',
             'renderTopBorrowers',
+            'renderCategories',
+            'renderGenres',
+            'renderRecentActivity',
             'borrowing_activity',
             'loan_status',
             'top_borrowers',
-            'this.renderOverview(data.overview || {})',
+            'category_breakdown',
+            'top_genres',
+            'recent_activity',
+            'this.renderOverview(data.overview || {}, data.recent || [])',
             'ring.style.background = ""',
         ] as $marker) {
             self::assertStringContainsString($marker, $source, $marker . ' is missing from staff.js.');

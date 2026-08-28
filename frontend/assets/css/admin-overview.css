@@ -1,6 +1,6 @@
 .admin-overview {
-  margin-bottom: 2rem;
   color: #111827;
+  margin-bottom: 2rem;
 }
 
 .admin-overview-heading {
@@ -10,15 +10,6 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-}
-
-.admin-overview-kicker {
-  color: #002fa7;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin: 0 0 0.2rem;
-  text-transform: uppercase;
 }
 
 .admin-overview-heading h2 {
@@ -36,9 +27,13 @@
 }
 
 .admin-overview-grid {
-  align-items: start;
+  align-items: stretch;
   display: grid;
   gap: 1rem;
+  grid-template-areas:
+    "activity status"
+    "categories borrowers"
+    "genres borrowers";
   grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.85fr);
 }
 
@@ -50,11 +45,23 @@
 }
 
 .overview-activity-panel {
-  grid-row: span 2;
+  grid-area: activity;
+}
+
+.overview-status-panel {
+  grid-area: status;
+}
+
+.overview-categories-panel {
+  grid-area: categories;
 }
 
 .overview-borrowers-panel {
-  margin-left: 1.75rem;
+  grid-area: borrowers;
+}
+
+.overview-genres-panel {
+  grid-area: genres;
 }
 
 .overview-panel-heading {
@@ -73,61 +80,145 @@
   margin: 0;
 }
 
-.overview-activity-chart {
-  align-items: end;
-  border-bottom: 1px solid #111827;
-  display: grid;
-  gap: clamp(0.25rem, 1.2vw, 0.75rem);
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  height: 15.5rem;
-  padding: 0 0.25rem;
-}
-
-.overview-activity-column {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: end;
-  min-width: 0;
-}
-
-.overview-activity-bar {
-  background: #002fa7;
-  display: block;
-  min-height: 0.2rem;
-  transition: height 220ms ease;
-  width: min(2.25rem, 100%);
-}
-
-.overview-activity-bar[data-zero="true"] {
-  background: #d9dde5;
-  height: 0.2rem !important;
-}
-
-.overview-activity-label {
-  color: #5f6878;
-  font-size: 0.68rem;
-  margin-top: 0.55rem;
+.overview-panel-link {
+  background: transparent;
+  border: 0;
+  color: #002fa7;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0;
+  text-decoration: none;
   white-space: nowrap;
 }
 
-.overview-activity-value {
-  color: #111827;
-  font-size: 0.68rem;
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 0.3rem;
-  min-height: 1em;
+.overview-panel-link:hover,
+.overview-panel-link:focus-visible {
+  color: #001f70;
+  text-decoration: underline;
 }
 
-.overview-empty {
-  align-items: center;
-  color: #5f6878;
-  display: flex;
-  font-size: 0.85rem;
+.overview-activity-chart {
+  height: 15.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.overview-line-chart {
+  display: block;
   height: 100%;
+  overflow: visible;
+  width: 100%;
+}
+
+.overview-line-grid {
+  stroke: #e7e9ee;
+  stroke-width: 1;
+}
+
+.overview-line-axis {
+  stroke: #111827;
+  stroke-width: 1;
+}
+
+.overview-line-path {
+  fill: none;
+  stroke: #002fa7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.overview-line-point {
+  fill: #fff;
+  stroke: #002fa7;
+  stroke-width: 2;
+}
+
+.overview-line-label,
+.overview-line-value {
+  fill: #5f6878;
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  font-size: 10px;
+}
+
+.overview-line-value {
+  fill: #111827;
+  font-weight: 700;
+}
+
+.overview-category-layout {
+  align-items: center;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  min-height: 9rem;
+}
+
+.overview-categories-chart,
+.overview-status-chart {
+  align-items: center;
+  background: #e7e9ee;
+  border-radius: 50%;
+  display: flex;
+  height: 8.25rem;
   justify-content: center;
+  position: relative;
+  width: 8.25rem;
+}
+
+.overview-status-chart {
+  height: 8.5rem;
+  width: 8.5rem;
+}
+
+.overview-categories-chart.overview-empty,
+.overview-status-chart.overview-empty {
+  color: #5f6878;
+  font-size: 0.72rem;
+  padding: 1rem;
   text-align: center;
+}
+
+.overview-chart-legend,
+.overview-status-legend {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.overview-chart-legend-item,
+.overview-status-item {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 0.6rem minmax(0, 1fr) auto;
+}
+
+.overview-chart-swatch,
+.overview-status-swatch {
+  background: var(--status-color);
+  height: 0.6rem;
+  width: 0.6rem;
+}
+
+.overview-chart-name,
+.overview-chart-count,
+.overview-status-name,
+.overview-status-count {
+  font-size: 0.76rem;
+}
+
+.overview-chart-name,
+.overview-status-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-chart-count,
+.overview-status-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .overview-status-layout {
@@ -136,66 +227,6 @@
   gap: 1.25rem;
   grid-template-columns: 9rem minmax(0, 1fr);
   min-height: 9rem;
-}
-
-.overview-status-ring {
-  align-items: center;
-  background: conic-gradient(#002fa7 0deg 360deg);
-  border-radius: 50%;
-  display: flex;
-  height: 8.5rem;
-  justify-content: center;
-  position: relative;
-  width: 8.5rem;
-}
-
-.overview-status-ring::after {
-  background: #fff;
-  border-radius: 50%;
-  content: "";
-  height: 5.25rem;
-  position: absolute;
-  width: 5.25rem;
-}
-
-.overview-status-ring.overview-empty::after {
-  display: none;
-}
-
-.overview-status-ring.overview-empty {
-  background: #e7e9ee;
-  color: #5f6878;
-  font-size: 0.72rem;
-  padding: 1rem;
-  text-align: center;
-}
-
-.overview-status-legend {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.overview-status-item {
-  align-items: center;
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: 0.6rem minmax(0, 1fr) auto;
-}
-
-.overview-status-swatch {
-  background: var(--status-color);
-  height: 0.6rem;
-  width: 0.6rem;
-}
-
-.overview-status-name,
-.overview-status-count {
-  font-size: 0.78rem;
-}
-
-.overview-status-count {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
 }
 
 .overview-borrowers-list {
@@ -210,11 +241,15 @@
   display: grid;
   gap: 0.7rem;
   grid-template-columns: 1.7rem minmax(0, 1fr) auto;
-  padding: 0.65rem 0;
+  padding: 0.55rem 0;
 }
 
 .overview-borrower-row:last-child {
   border-bottom: 0;
+}
+
+.overview-borrower-row[data-hidden="true"] {
+  display: none;
 }
 
 .overview-borrower-rank {
@@ -247,23 +282,95 @@
   font-weight: 700;
 }
 
+.overview-genres-chart {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.overview-genre-row {
+  align-items: center;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.5fr) auto;
+}
+
+.overview-genre-name,
+.overview-genre-count {
+  font-size: 0.76rem;
+}
+
+.overview-genre-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-genre-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.overview-genre-track {
+  background: #e7e9ee;
+  height: 0.55rem;
+  overflow: hidden;
+}
+
+.overview-genre-bar {
+  background: #002fa7;
+  display: block;
+  height: 100%;
+  min-width: 0.15rem;
+  transition: width 220ms ease;
+}
+
+.overview-recent-panel {
+  margin-top: 1rem;
+}
+
+.overview-recent-table {
+  margin-bottom: 0;
+}
+
+.overview-recent-table th {
+  color: #5f6878;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.overview-recent-table td {
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.overview-empty {
+  align-items: center;
+  color: #5f6878;
+  display: flex;
+  font-size: 0.85rem;
+  height: 100%;
+  justify-content: center;
+  min-height: 5rem;
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .overview-activity-bar {
+  .overview-genre-bar {
     transition: none;
   }
 }
 
 @media (max-width: 991.98px) {
   .admin-overview-grid {
+    grid-template-areas:
+      "activity"
+      "status"
+      "categories"
+      "borrowers"
+      "genres";
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .overview-activity-panel {
-    grid-row: auto;
-  }
-
-  .overview-borrowers-panel {
-    margin-left: 0;
   }
 }
 
@@ -274,13 +381,19 @@
     gap: 0.4rem;
   }
 
-  .overview-status-layout {
+  .overview-status-layout,
+  .overview-category-layout {
     grid-template-columns: 1fr;
     justify-items: center;
   }
 
-  .overview-status-legend {
+  .overview-status-legend,
+  .overview-chart-legend {
     justify-self: stretch;
     width: 100%;
+  }
+
+  .overview-genre-row {
+    grid-template-columns: minmax(6rem, 0.8fr) minmax(0, 1fr) auto;
   }
 }

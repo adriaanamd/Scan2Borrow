@@ -382,13 +382,14 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     }
 
     /** @return list<array<string, mixed>> */
-    private function recentTransactions(): array
+    private function recentTransactions(int $limit = 8): array
     {
+        $limit = max(1, min($limit, 10));
         $statement = $this->pdo->query(
             "SELECT br.transaction_code, br.borrow_date, br.due_date, br.status,
                     u.firstname, u.lastname, b.title
              FROM borrowing br JOIN users u ON u.id = br.user_id JOIN books b ON b.id = br.book_id
-             ORDER BY br.id DESC LIMIT 8"
+             ORDER BY br.id DESC LIMIT {$limit}"
         );
         if ($statement === false) {
             return [];
@@ -404,7 +405,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         return $rows;
     }
 
-    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>} */
+    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>} */
     private function dashboardOverview(): array
     {
         $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
@@ -467,8 +468,42 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 'overdue' => $this->count("SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL AND status = 'Overdue'"),
                 'pending' => $this->count("SELECT COUNT(*) FROM borrowing WHERE approval_status = 'pending' AND return_date IS NULL"),
             ],
+            'category_breakdown' => $this->namedCounts(
+                "SELECT COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized') AS name, COUNT(*) AS count
+                 FROM books WHERE deleted_at IS NULL
+                 GROUP BY COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized')
+                 ORDER BY count DESC, name ASC"
+            ),
+            'top_genres' => $this->namedCounts(
+                "SELECT COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized') AS name, COUNT(br.id) AS count
+                 FROM borrowing br JOIN books b ON b.id = br.book_id
+                 WHERE br.borrow_date IS NOT NULL
+                 GROUP BY COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized')
+                 ORDER BY count DESC, name ASC LIMIT 5"
+            ),
             'top_borrowers' => $topBorrowers,
+            'recent_activity' => $this->recentTransactions(10),
         ];
+    }
+
+    /** @return list<array{name: string, count: int}> */
+    private function namedCounts(string $sql): array
+    {
+        $statement = $this->pdo->query($sql);
+        if ($statement === false) {
+            return [];
+        }
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(
+            fn (array $row): array => [
+                'name' => $this->string($row['name'] ?? null),
+                'count' => is_numeric($row['count'] ?? null) ? (int) $row['count'] : 0,
+            ],
+            $rows,
+        );
     }
 
     private function changeBorrowing(int $borrowingId, int $staffId, bool $approve): void

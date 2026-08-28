@@ -21,6 +21,19 @@ final class SchemaContractTest extends TestCase
         }
     }
 
+    public function testFullDatabaseDumpRetainsRuntimeSchemaExtensions(): void
+    {
+        $sql = $this->readRootSql('scan2borrow_2_0.sql');
+        foreach ([
+            'CREATE TABLE `books`', '`accession_no`', '`category_name`',
+            'CREATE TABLE `book_keywords`', 'CREATE TABLE `search_history`',
+            'CREATE TABLE `notifications`', 'CREATE TABLE `return_notifications`',
+            'CREATE TABLE `otp_codes`', 'CREATE TABLE `sms_logs`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $sql, "Full dump SQL contract disappeared: {$marker}");
+        }
+    }
+
     public function testUpgradeSqlRetainsGuestAndSecurityExtensions(): void
     {
         $sql = $this->readSql('upgrade.sql');
@@ -51,6 +64,16 @@ final class SchemaContractTest extends TestCase
     private function readSql(string $filename): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
+        self::assertFileExists($path);
+        $contents = file_get_contents($path);
+        self::assertIsString($contents);
+
+        return $contents;
+    }
+
+    private function readRootSql(string $filename): string
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . $filename;
         self::assertFileExists($path);
         $contents = file_get_contents($path);
         self::assertIsString($contents);

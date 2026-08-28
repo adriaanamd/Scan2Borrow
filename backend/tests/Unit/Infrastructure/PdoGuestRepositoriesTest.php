@@ -25,7 +25,13 @@ final class PdoGuestRepositoriesTest extends TestCase
             'CREATE TABLE visitor_borrowing (id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_id INTEGER, book_id INTEGER, borrow_date TEXT, due_date TEXT, return_date TEXT, request_status TEXT, verification_photo TEXT, return_verification_photo TEXT, requested_at TEXT, released_at TEXT, return_requested_at TEXT, review_notes TEXT)'
         );
         $this->pdo->exec(
-            'CREATE TABLE visitors (id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_number TEXT, firstname TEXT, lastname TEXT, account_status TEXT, registration_expires_at TEXT, id_barcode TEXT)'
+            'CREATE TABLE visitors (id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_number TEXT, firstname TEXT, middlename TEXT, lastname TEXT, account_status TEXT, registration_expires_at TEXT, id_barcode TEXT)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE visitor_visit_history (id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_id INTEGER, time_in TEXT, time_out TEXT)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE visitor_security_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, visitor_id INTEGER, activity TEXT, details TEXT, created_at TEXT)'
         );
         $this->pdo->exec("INSERT INTO visitors (id, visitor_number, firstname, lastname, account_status) VALUES (7, 'VIS-2026-000007', 'Lia', 'Santos', 'Active')");
         $this->pdo->exec("INSERT INTO books (id, barcode, title, author, category_name, status) VALUES (12, 'BK-12', 'Clean Code', 'Robert Martin', 'Computer Science', 'Available')");
@@ -56,5 +62,17 @@ final class PdoGuestRepositoriesTest extends TestCase
         self::assertSame(1, $result['total']);
         self::assertSame('Clean Code', $result['books'][0]['title']);
         self::assertSame('Computer Science', $result['books'][0]['category_name']);
+    }
+
+    public function testGuestDashboardIncludesVisitAndSecurityHistory(): void
+    {
+        $this->pdo->exec("INSERT INTO visitor_visit_history (visitor_id, time_in, time_out) VALUES (7, '2026-08-01 09:00:00', NULL)");
+        $this->pdo->exec("INSERT INTO visitor_security_logs (visitor_id, activity, details, created_at) VALUES (7, 'login', 'Guest signed in.', '2026-08-01 09:00:00')");
+
+        /** @var array{visit_history: list<array<string, mixed>>, security_log: list<array<string, mixed>>} $summary */
+        $summary = (new PdoGuestPortalRepository($this->pdo))->dashboardSummary(7);
+
+        self::assertCount(1, $summary['visit_history']);
+        self::assertSame('login', $summary['security_log'][0]['activity']);
     }
 }

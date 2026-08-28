@@ -48,6 +48,16 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
         $recentBook = $recent->fetchColumn();
         $visitorData = $visitor === false ? [] : $visitor;
         $name = trim($this->string($visitorData['firstname'] ?? null) . ' ' . $this->string($visitorData['lastname'] ?? null));
+        $visitStatement = $this->pdo->prepare(
+            'SELECT time_in, time_out FROM visitor_visit_history WHERE visitor_id = :visitor_id ORDER BY time_in DESC LIMIT 10'
+        );
+        $visitStatement->execute(['visitor_id' => $visitorId]);
+        $visitHistory = $visitStatement->fetchAll(PDO::FETCH_ASSOC);
+        $securityStatement = $this->pdo->prepare(
+            'SELECT activity, details, created_at FROM visitor_security_logs WHERE visitor_id = :visitor_id ORDER BY created_at DESC LIMIT 10'
+        );
+        $securityStatement->execute(['visitor_id' => $visitorId]);
+        $securityLog = $securityStatement->fetchAll(PDO::FETCH_ASSOC);
 
         return $counts + [
             'visitor' => [
@@ -59,6 +69,8 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
             'days_remaining' => 0,
             'favorite_category' => 'No activity yet',
             'recent_book' => is_string($recentBook) ? $recentBook : 'No activity yet',
+            'visit_history' => $visitHistory,
+            'security_log' => $securityLog,
         ];
     }
 
@@ -99,6 +111,11 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
             $where[] = 'b.floor_no = :floor';
             $parameters['floor'] = $floor;
         }
+        $bookId = $this->filterString($filters, 'id');
+        if ($bookId !== '' && ctype_digit($bookId) && (int) $bookId > 0) {
+            $where[] = 'b.id = :book_id';
+            $parameters['book_id'] = (int) $bookId;
+        }
         $whereClause = implode(' AND ', $where);
         $statement = $this->pdo->prepare(
             'SELECT b.id, b.barcode, b.accession_no, b.isbn, b.title, b.author, b.publisher, b.category_name, b.cover_file, b.floor_no, b.section_name, b.shelf_no, b.row_no '
@@ -128,7 +145,7 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
             $parameters['to_date'] = $to;
         }
         $statement = $this->pdo->prepare(
-            'SELECT vb.id, vb.borrow_date, vb.due_date, vb.return_date, vb.request_status, vb.review_notes, b.title, b.author '
+            'SELECT vb.id, vb.borrow_date, vb.due_date, vb.return_date, vb.request_status, vb.review_notes, b.title, b.author, b.cover_file '
             . 'FROM visitor_borrowing vb JOIN books b ON b.id = vb.book_id WHERE ' . implode(' AND ', $where) . ' ORDER BY vb.id DESC'
         );
         $statement->execute($parameters);
@@ -137,10 +154,28 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
 
         foreach ($rows as &$row) {
             $row['status_label'] = $row['request_status'] ?? 'Pending';
+            $row['remaining_label'] = $this->remainingLabel($row['due_date'] ?? null, $row['return_date'] ?? null);
         }
         unset($row);
 
         return $rows;
+    }
+
+    private function remainingLabel(mixed $dueDate, mixed $returnDate): string
+    {
+        if ($returnDate !== null && $returnDate !== '') {
+            return 'Returned';
+        }
+        if (!is_string($dueDate) || $dueDate === '') {
+            return '';
+        }
+        $dueTimestamp = strtotime($dueDate);
+        if ($dueTimestamp === false) {
+            return '';
+        }
+        $days = (int) floor(($dueTimestamp - strtotime('today')) / 86400);
+
+        return $days < 0 ? abs($days) . ' day(s) overdue' : $days . ' day(s) remaining';
     }
 
     public function receipt(int $visitorId, int $borrowingId): ?array

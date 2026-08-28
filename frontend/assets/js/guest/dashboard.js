@@ -57,6 +57,34 @@ class GuestDashboardController {
       data.favorite_category || "No activity yet";
     document.getElementById("recent-book").textContent =
       data.recent_book || "No activity yet";
+    this.renderVisits(data.visit_history || []);
+    this.renderSecurity(data.security_log || []);
+  }
+
+  renderVisits(rows) {
+    const host = document.getElementById("visit-history");
+    if (!host) return;
+    host.innerHTML = rows.length
+      ? rows
+          .map(
+            (row) =>
+              `<p class="small mb-2"><strong>${this.escapeHtml(row.time_in || "")}</strong><br>${this.escapeHtml(row.time_out ? `Checked out: ${row.time_out}` : "Currently checked in")}</p>`,
+          )
+          .join("")
+      : '<p class="text-muted mb-0">No visit records yet.</p>';
+  }
+
+  renderSecurity(rows) {
+    const host = document.getElementById("security-log");
+    if (!host) return;
+    host.innerHTML = rows.length
+      ? rows
+          .map(
+            (row) =>
+              `<p class="small mb-2"><strong>${this.escapeHtml(row.activity || "Account activity")}</strong><br>${this.escapeHtml(row.details || "")}<br><span class="text-muted">${this.escapeHtml(row.created_at || "")}</span></p>`,
+          )
+          .join("")
+      : '<p class="text-muted mb-0">No account activity yet.</p>';
   }
 }
 window.addEventListener(

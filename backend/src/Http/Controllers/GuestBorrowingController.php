@@ -34,7 +34,7 @@ final readonly class GuestBorrowingController
         $dashboard = $this->portal->dashboard($visitor->id());
         $summary = $dashboard['summary'];
         $data = ['summary' => $summary, 'notifications' => $dashboard['notifications']];
-        foreach (['visitor', 'days_remaining', 'favorite_category', 'recent_book'] as $key) {
+        foreach (['visitor', 'days_remaining', 'favorite_category', 'recent_book', 'visit_history', 'security_log'] as $key) {
             if (array_key_exists($key, $summary)) {
                 $data[$key] = $summary[$key];
                 unset($data['summary'][$key]);
@@ -50,7 +50,14 @@ final readonly class GuestBorrowingController
             return $this->unauthorized();
         }
 
-        return new JsonResponse(200, ['ok' => true, 'data' => $this->portal->browse($request->query())]);
+        $data = $this->portal->browse($request->query());
+        $bookId = $this->queryInt($request, 'id');
+        if ($bookId > 0) {
+            $books = $data['books'] ?? [];
+            $data = ['book' => is_array($books) && isset($books[0]) && is_array($books[0]) ? $books[0] : null];
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $data]);
     }
 
     public function history(ServerRequest $request): JsonResponse

@@ -34,6 +34,10 @@ final class PdoBookRepositoryTest extends TestCase
             "INSERT INTO books (barcode, title, author, category_name, status, deleted_at, created_at) " .
             "VALUES ('BK-2', 'Archived Book', 'Someone', 'History', 'Available', '2026-08-02', '2026-08-01')"
         );
+        $this->pdo->exec(
+            'CREATE TABLE borrowing (' .
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, book_id INTEGER NOT NULL, return_date DATETIME NULL)'
+        );
     }
 
     public function testSearchUsesSchemaFieldsAndExcludesArchivedBooksByDefault(): void
@@ -86,5 +90,27 @@ final class PdoBookRepositoryTest extends TestCase
         self::assertSame('Borrowed', $row['status']);
         self::assertSame('ACC-3', $row['accession_no']);
         self::assertSame('Martin Fowler', $row['author']);
+    }
+
+    public function testArchiveRefusesBooksWithAnActiveLoan(): void
+    {
+        $this->pdo->exec("INSERT INTO borrowing (book_id, return_date) VALUES (1, NULL)");
+        $repository = new PdoBookRepository($this->pdo);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot archive books with active loans.');
+
+        $repository->archive([1]);
+    }
+
+    public function testDeleteRefusesBooksWithAnActiveLoan(): void
+    {
+        $this->pdo->exec("INSERT INTO borrowing (book_id, return_date) VALUES (1, NULL)");
+        $repository = new PdoBookRepository($this->pdo);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot delete books with active loans.');
+
+        $repository->delete([1]);
     }
 }

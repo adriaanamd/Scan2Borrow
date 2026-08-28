@@ -9,7 +9,7 @@ use App\Domain\Book\BookSearchCriteria;
 use App\Domain\Book\BookSearchResult;
 use PDO;
 
-final class PdoBookRepository implements BookRepositoryInterface, BookMutationRepositoryInterface
+final class PdoBookRepository implements BookRepositoryInterface, BookAdministrationRepositoryInterface
 {
     public function __construct(private readonly PDO $pdo)
     {
@@ -92,6 +92,32 @@ final class PdoBookRepository implements BookRepositoryInterface, BookMutationRe
         $statement->execute($parameters);
     }
 
+    /** @param list<int> $ids */
+    public function archive(array $ids): int
+    {
+        $this->assertNoActiveLoans($ids, 'archive');
+
+        return $this->setArchived($ids, true);
+    }
+
+    /** @param list<int> $ids */
+    public function restore(array $ids): int
+    {
+        return $this->setArchived($ids, false);
+    }
+
+    /** @param list<int> $ids */
+    public function delete(array $ids): int
+    {
+        $this->assertIds($ids);
+        $this->assertNoActiveLoans($ids, 'delete');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->pdo->prepare('DELETE FROM books WHERE id IN (' . $placeholders . ')');
+        $statement->execute($ids);
+
+        return $statement->rowCount();
+    }
+
     private function exists(string $column, string $value, ?int $exceptId): bool
     {
         $sql = 'SELECT 1 FROM books WHERE ' . $column . ' = :value';
@@ -133,5 +159,40 @@ final class PdoBookRepository implements BookRepositoryInterface, BookMutationRe
     private function nullable(string $value): ?string
     {
         return $value === '' ? null : $value;
+    }
+
+    /** @param list<int> $ids */
+    private function setArchived(array $ids, bool $archived): int
+    {
+        $this->assertIds($ids);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
+        $statement = $this->pdo->prepare('UPDATE books SET deleted_at = ' . $value . ' WHERE id IN (' . $placeholders . ')');
+        $statement->execute($ids);
+
+        return $statement->rowCount();
+    }
+
+    /** @param list<int> $ids */
+    private function assertIds(array $ids): void
+    {
+        if ($ids === []) {
+            throw new \InvalidArgumentException('No books selected.');
+        }
+    }
+
+    /** @param list<int> $ids */
+    private function assertNoActiveLoans(array $ids, string $operation): void
+    {
+        $this->assertIds($ids);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL AND book_id IN (' . $placeholders . ')'
+        );
+        $statement->execute($ids);
+
+        if ((int) $statement->fetchColumn() > 0) {
+            throw new \InvalidArgumentException('Cannot ' . $operation . ' books with active loans.');
+        }
     }
 }

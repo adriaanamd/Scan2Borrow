@@ -78,7 +78,9 @@ final class PdoBookRepositoryTest extends TestCase
 
         $id = $repository->create($request);
         $repository->update($id, $request->withStatus('Borrowed'));
-        $row = $this->pdo->query('SELECT * FROM books WHERE id = ' . $id)->fetch(PDO::FETCH_ASSOC);
+        $statement = $this->pdo->prepare('SELECT * FROM books WHERE id = :id');
+        $statement->execute(['id' => $id]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         self::assertIsArray($row);
         self::assertSame('Borrowed', $row['status']);

@@ -6,6 +6,7 @@ namespace App\Infrastructure\Persistence;
 
 use App\Domain\Auth\Role;
 use App\Domain\Auth\UserAccount;
+use DateTimeImmutable;
 use PDO;
 
 final class PdoUserRepository implements UserRepositoryInterface
@@ -60,10 +61,9 @@ final class PdoUserRepository implements UserRepositoryInterface
 
     public function lock(string $barcode, int $minutes): void
     {
-        $statement = $this->pdo->prepare('UPDATE users SET locked_until = DATE_ADD(NOW(), INTERVAL :minutes MINUTE) WHERE barcode = :barcode');
-        $statement->bindValue('minutes', $minutes, PDO::PARAM_INT);
-        $statement->bindValue('barcode', $barcode);
-        $statement->execute();
+        $lockedUntil = (new DateTimeImmutable())->modify('+' . max(1, $minutes) . ' minutes')->format('Y-m-d H:i:s');
+        $statement = $this->pdo->prepare('UPDATE users SET locked_until = :locked_until WHERE barcode = :barcode');
+        $statement->execute(['locked_until' => $lockedUntil, 'barcode' => $barcode]);
     }
 
     public function recordLoginSuccess(int $userId, string $barcode): void

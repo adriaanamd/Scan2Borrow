@@ -87,7 +87,7 @@
 .overview-panel-link {
   background: transparent;
   border: 0;
-  color: #002fa7;
+  color: var(--primary);
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 700;
@@ -128,7 +128,7 @@
 
 .overview-line-path {
   fill: none;
-  stroke: #002fa7;
+  stroke: var(--primary);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
@@ -136,7 +136,7 @@
 
 .overview-line-point {
   fill: #fff;
-  stroke: #002fa7;
+  stroke: var(--primary);
   stroke-width: 2;
 }
 
@@ -277,7 +277,7 @@
 }
 
 .overview-borrower-rank {
-  color: #002fa7;
+  color: var(--primary);
   font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -331,7 +331,7 @@
 }
 
 .overview-genre-rank {
-  color: #002fa7;
+  color: var(--primary);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }

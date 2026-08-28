@@ -225,7 +225,7 @@ class StaffPageController {
     host.replaceChildren();
 
     const months = Array.isArray(trend.months) ? trend.months.slice(0, 12) : [];
-    const palette = ["#002fa7", "#64748b", "#b45309", "#b91c1c", "#0f766e", "#7c3aed"];
+    const palette = ["#075985", "#1e6fa8", "#d4a72c", "#5c7186", "#2f855a", "#0b3b60"];
     const series = (Array.isArray(trend.series) ? trend.series : [])
       .slice(0, 6)
       .map((entry, index) => ({
@@ -348,10 +348,10 @@ class StaffPageController {
     legend.replaceChildren();
 
     const entries = [
-      { key: "available", label: "Available", color: "#002fa7" },
-      { key: "borrowed", label: "Borrowed", color: "#64748b" },
-      { key: "overdue", label: "Overdue", color: "#b45309" },
-      { key: "pending", label: "Pending", color: "#b91c1c" },
+      { key: "available", label: "Available", color: "#075985" },
+      { key: "borrowed", label: "Borrowed", color: "#1e6fa8" },
+      { key: "overdue", label: "Overdue", color: "#d4a72c" },
+      { key: "pending", label: "Pending", color: "#b42318" },
     ].map((entry) => ({
       ...entry,
       count: this.nonNegativeInteger(status[entry.key]),
@@ -409,7 +409,7 @@ class StaffPageController {
     chart.replaceChildren();
     legend.replaceChildren();
 
-    const palette = ["#002fa7", "#64748b", "#b45309", "#b91c1c", "#0f766e", "#7c3aed"];
+    const palette = ["#075985", "#1e6fa8", "#d4a72c", "#5c7186", "#2f855a", "#0b3b60"];
     const entries = categories
       .map((entry, index) => ({
         name: String(entry.name || "Uncategorized"),

@@ -10,7 +10,7 @@ use App\Domain\Auth\Role;
 use App\Domain\Auth\UserAccount;
 use App\Infrastructure\Persistence\UserRepositoryInterface;
 
-final class AuthenticationService
+final class AuthenticationService implements AuthenticationServiceInterface
 {
     public function __construct(
         private readonly UserRepositoryInterface $users,

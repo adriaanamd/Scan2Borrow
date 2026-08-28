@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Application\Services\CsrfService;
+use App\Application\DTO\AuthenticationResult;
+use App\Application\Services\AuthenticationServiceInterface;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Principal;
 use App\Domain\Auth\Role;
@@ -25,7 +27,11 @@ final class AuthControllerTest extends TestCase
 
         $this->store = new AuthControllerSessionStore();
         $sessions = new SessionService($this->store);
-        $this->controller = new AuthController($sessions, new CsrfService($this->store));
+        $this->controller = new AuthController(
+            $sessions,
+            new CsrfService($this->store),
+            new AuthControllerAuthenticationService(),
+        );
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI'] = '/api/auth/logout';
     }
@@ -118,5 +124,18 @@ final class AuthControllerSessionStore implements SessionStoreInterface
     public function setPrincipal(Principal $principal): void
     {
         (new SessionService($this))->login($principal);
+    }
+}
+
+final class AuthControllerAuthenticationService implements AuthenticationServiceInterface
+{
+    public function loginBorrower(string $barcode): AuthenticationResult
+    {
+        return AuthenticationResult::failure('not used in this test');
+    }
+
+    public function loginStaff(string $barcode, string $password): AuthenticationResult
+    {
+        return AuthenticationResult::failure('not used in this test');
     }
 }

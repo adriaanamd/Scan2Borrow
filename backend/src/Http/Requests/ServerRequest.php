@@ -44,7 +44,8 @@ final readonly class ServerRequest
 
         $methodValue = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $method = is_string($methodValue) ? strtoupper($methodValue) : 'GET';
-        $post = $_POST;
+        $postValue = $GLOBALS['_POST'] ?? [];
+        $post = is_array($postValue) ? $postValue : [];
 
         return new self(
             $method,

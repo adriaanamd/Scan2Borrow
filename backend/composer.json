@@ -24,6 +24,14 @@
         "sort-packages": true,
         "allow-plugins": {}
     },
+    "scripts": {
+        "test": "@php vendor/bin/phpunit",
+        "analyse": "@php vendor/bin/phpstan analyse --configuration=phpstan.neon",
+        "quality": [
+            "@test",
+            "@analyse"
+        ]
+    },
     "minimum-stability": "stable",
     "prefer-stable": true
 }

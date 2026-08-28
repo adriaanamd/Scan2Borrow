@@ -22,4 +22,14 @@ final class StudentSettingsMarkupTest extends TestCase
         self::assertStringNotContainsString('/scan2borrow/settings', $html);
         self::assertStringNotContainsString('/scan2borrow/guest/registration', $html);
     }
+
+    public function testStudentSearchSettingsLinkStaysInStudentContext(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'student-search.html';
+        self::assertFileExists($path);
+        $html = (string) file_get_contents($path);
+
+        self::assertStringContainsString('href="/scan2borrow/student/settings"', $html);
+        self::assertStringNotContainsString('href="/scan2borrow/settings"', $html);
+    }
 }

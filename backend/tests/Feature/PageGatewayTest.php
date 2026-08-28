@@ -75,6 +75,11 @@ final class DenyingPageAccessAuthorizer implements PageAccessAuthorizerInterface
     {
         return false;
     }
+
+    public function denialLocation(ServerRequest $request, PageRoute $route): string
+    {
+        return '/login';
+    }
 }
 
 final class AllowingPageAccessAuthorizer implements PageAccessAuthorizerInterface
@@ -82,5 +87,10 @@ final class AllowingPageAccessAuthorizer implements PageAccessAuthorizerInterfac
     public function allows(ServerRequest $request, PageRoute $route): bool
     {
         return true;
+    }
+
+    public function denialLocation(ServerRequest $request, PageRoute $route): string
+    {
+        return '/login';
     }
 }

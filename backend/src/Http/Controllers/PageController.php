@@ -22,7 +22,7 @@ final readonly class PageController
     public function __invoke(ServerRequest $request, PageRoute $route): ResponseInterface
     {
         if (!$this->authorizer->allows($request, $route)) {
-            return new RedirectResponse(302, '/login');
+            return new RedirectResponse(302, $this->authorizer->denialLocation($request, $route));
         }
 
         if (!is_file($route->templatePath()) || !is_readable($route->templatePath())) {

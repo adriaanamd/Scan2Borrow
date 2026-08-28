@@ -72,6 +72,7 @@ class StaffPageController {
         stats.borrowers,
         stats.active_loans,
         stats.overdue_loans,
+        stats.pending_approvals,
       ];
       this.root.querySelectorAll(".stat-card .value").forEach((node, index) => {
         node.textContent = values[index] ?? 0;
@@ -607,14 +608,18 @@ class StaffPageController {
   renderApprovals(rows) {
     const list = document.getElementById("approvalList");
     if (!list) return;
-    list.innerHTML = rows.length
-      ? rows.map((row) => this.approvalCard(row)).join("")
+    const pendingRows = Array.isArray(rows) ? rows : [];
+    list.innerHTML = pendingRows.length
+      ? pendingRows.map((row) => this.approvalCard(row)).join("")
       : `<div class="text-center text-muted py-5">
           <div style="font-size: 48px">&#9989;</div>
           <p class="mt-3">No pending approval requests at this time.</p>
         </div>`;
+    const count = pendingRows.length;
+    const countNode = document.getElementById("pending-approvals-count");
+    if (countNode) countNode.textContent = String(count);
     this.root.querySelectorAll("#approvalModal .badge").forEach((badge) => {
-      badge.textContent = rows.length;
+      badge.textContent = String(count);
     });
     this.root
       .querySelectorAll(

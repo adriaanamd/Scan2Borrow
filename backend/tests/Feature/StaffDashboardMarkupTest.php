@@ -32,6 +32,16 @@ final class StaffDashboardMarkupTest extends TestCase
         }
     }
 
+    public function testDashboardExposesPendingApprovalControl(): void
+    {
+        $dashboard = $this->page('staff-dashboard.html');
+
+        self::assertStringContainsString('id="pending-approvals-trigger"', $dashboard);
+        self::assertStringContainsString('data-bs-target="#approvalModal"', $dashboard);
+        self::assertStringContainsString('id="pending-approvals-count"', $dashboard);
+        self::assertStringContainsString('>Pending Approvals<', $dashboard);
+    }
+
     public function testOverviewHooksDoNotLeakIntoOtherAdminPages(): void
     {
         foreach (['staff-books.html', 'staff-reports.html', 'admin-staff.html'] as $filename) {

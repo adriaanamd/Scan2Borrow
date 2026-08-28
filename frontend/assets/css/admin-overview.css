@@ -32,7 +32,7 @@
   gap: 1rem;
   grid-template-areas:
     "activity status"
-    "categories borrowers"
+    "category-trend categories"
     "genres borrowers";
   grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.85fr);
 }
@@ -50,6 +50,10 @@
 
 .overview-status-panel {
   grid-area: status;
+}
+
+.overview-category-trend-panel {
+  grid-area: category-trend;
 }
 
 .overview-categories-panel {
@@ -98,7 +102,8 @@
   text-decoration: underline;
 }
 
-.overview-activity-chart {
+.overview-activity-chart,
+.overview-category-trend-chart {
   height: 15.5rem;
   overflow: hidden;
   position: relative;
@@ -289,14 +294,27 @@
 
 .overview-genre-row {
   align-items: center;
+  border-bottom: 1px solid #e7e9ee;
   display: grid;
   gap: 0.7rem;
-  grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.5fr) auto;
+  grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+  padding: 0.55rem 0;
 }
 
+.overview-genre-row:last-child {
+  border-bottom: 0;
+}
+
+.overview-genre-rank,
 .overview-genre-name,
 .overview-genre-count {
   font-size: 0.76rem;
+}
+
+.overview-genre-rank {
+  color: #002fa7;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .overview-genre-name {
@@ -308,20 +326,6 @@
 .overview-genre-count {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-}
-
-.overview-genre-track {
-  background: #e7e9ee;
-  height: 0.55rem;
-  overflow: hidden;
-}
-
-.overview-genre-bar {
-  background: #002fa7;
-  display: block;
-  height: 100%;
-  min-width: 0.15rem;
-  transition: width 220ms ease;
 }
 
 .overview-recent-panel {
@@ -356,17 +360,12 @@
   text-align: center;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .overview-genre-bar {
-    transition: none;
-  }
-}
-
 @media (max-width: 991.98px) {
   .admin-overview-grid {
     grid-template-areas:
       "activity"
       "status"
+      "category-trend"
       "categories"
       "borrowers"
       "genres";
@@ -393,7 +392,4 @@
     width: 100%;
   }
 
-  .overview-genre-row {
-    grid-template-columns: minmax(6rem, 0.8fr) minmax(0, 1fr) auto;
-  }
 }

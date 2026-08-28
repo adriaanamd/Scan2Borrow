@@ -98,6 +98,11 @@ class StaffPageController {
     const categories = Array.isArray(overview.category_breakdown)
       ? overview.category_breakdown
       : [];
+    const categoryTrend =
+      overview.category_borrowing_activity &&
+      typeof overview.category_borrowing_activity === "object"
+        ? overview.category_borrowing_activity
+        : {};
     const genres = Array.isArray(overview.top_genres)
       ? overview.top_genres
       : [];
@@ -106,6 +111,7 @@ class StaffPageController {
       : legacyRecent;
 
     this.renderActivity(activity);
+    this.renderCategoryTrend(categoryTrend);
     this.renderStatus(status);
     this.renderCategories(categories);
     this.renderGenres(genres);
@@ -209,6 +215,128 @@ class StaffPageController {
       });
       label.textContent = point.label;
       svg.append(circle, value, label);
+    });
+    host.appendChild(svg);
+  }
+
+  renderCategoryTrend(trend) {
+    const host = document.getElementById("overview-category-trend");
+    if (!host) return;
+    host.replaceChildren();
+
+    const months = Array.isArray(trend.months) ? trend.months.slice(0, 12) : [];
+    const palette = ["#002fa7", "#64748b", "#b45309", "#b91c1c", "#0f766e", "#7c3aed"];
+    const series = (Array.isArray(trend.series) ? trend.series : [])
+      .slice(0, 6)
+      .map((entry, index) => ({
+        name: String(entry.name || "Uncategorized"),
+        color: palette[index % palette.length],
+        counts: months.map((_, monthIndex) =>
+          this.nonNegativeInteger(entry.counts?.[monthIndex]),
+        ),
+      }))
+      .filter((entry) => entry.counts.some((count) => count > 0));
+
+    if (!months.length || !series.length) {
+      const empty = document.createElement("div");
+      empty.className = "overview-empty";
+      empty.textContent = "No category activity recorded.";
+      host.appendChild(empty);
+      return;
+    }
+
+    const width = 720;
+    const height = 240;
+    const padding = { top: 42, right: 16, bottom: 32, left: 32 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+    const maximum = Math.max(1, ...series.flatMap((entry) => entry.counts));
+    const xStep = months.length > 1 ? plotWidth / (months.length - 1) : plotWidth;
+    const svg = this.svg("svg", {
+      class: "overview-line-chart",
+      viewBox: `0 0 ${width} ${height}`,
+      role: "img",
+      "aria-label": `Categories borrowed over time: ${series.map((entry) => entry.name).join(", ")}`,
+    });
+
+    [0, 0.5, 1].forEach((ratio) => {
+      const y = padding.top + plotHeight - ratio * plotHeight;
+      const line = this.svg("line", {
+        class: "overview-line-grid",
+        x1: padding.left,
+        x2: width - padding.right,
+        y1: y,
+        y2: y,
+      });
+      const label = this.svg("text", {
+        class: "overview-line-label",
+        x: padding.left - 8,
+        y: y + 4,
+        "text-anchor": "end",
+      });
+      label.textContent = String(Math.round(maximum * ratio));
+      svg.append(line, label);
+    });
+
+    const axis = this.svg("line", {
+      class: "overview-line-axis",
+      x1: padding.left,
+      x2: width - padding.right,
+      y1: padding.top + plotHeight,
+      y2: padding.top + plotHeight,
+    });
+    svg.appendChild(axis);
+
+    series.forEach((entry, seriesIndex) => {
+      const points = entry.counts.map((count, monthIndex) => ({
+        x: padding.left + monthIndex * xStep,
+        y: padding.top + plotHeight - (count / maximum) * plotHeight,
+      }));
+      const path = this.svg("path", {
+        class: "overview-line-path",
+        d: points
+          .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+          .join(" "),
+        stroke: entry.color,
+      });
+      svg.appendChild(path);
+      points.forEach((point) => {
+        svg.appendChild(
+          this.svg("circle", {
+            class: "overview-line-point",
+            cx: point.x,
+            cy: point.y,
+            r: 3,
+            stroke: entry.color,
+          }),
+        );
+      });
+      const legendLine = this.svg("line", {
+        x1: padding.left + (seriesIndex % 3) * 220,
+        x2: padding.left + 14 + (seriesIndex % 3) * 220,
+        y1: 15 + Math.floor(seriesIndex / 3) * 18,
+        y2: 15 + Math.floor(seriesIndex / 3) * 18,
+        stroke: entry.color,
+        "stroke-width": 2.5,
+      });
+      const legendLabel = this.svg("text", {
+        class: "overview-line-label",
+        x: padding.left + 20 + (seriesIndex % 3) * 220,
+        y: 19 + Math.floor(seriesIndex / 3) * 18,
+      });
+      legendLabel.textContent = entry.name;
+      svg.append(legendLine, legendLabel);
+    });
+
+    months.forEach((month, index) => {
+      const label = this.svg("text", {
+        class: "overview-line-label",
+        x: padding.left + index * xStep,
+        y: height - 10,
+        "text-anchor": "middle",
+      });
+      label.textContent = String(month.label || month.month || "");
+      svg.appendChild(label);
     });
     host.appendChild(svg);
   }
@@ -348,23 +476,19 @@ class StaffPageController {
       return;
     }
 
-    const maximum = Math.max(1, ...rows.map((row) => row.count));
-    rows.forEach((row) => {
+    rows.forEach((row, index) => {
       const item = document.createElement("div");
       item.className = "overview-genre-row";
+      const rank = document.createElement("span");
+      rank.className = "overview-genre-rank";
+      rank.textContent = String(index + 1).padStart(2, "0");
       const name = document.createElement("span");
       name.className = "overview-genre-name";
       name.textContent = row.name;
-      const track = document.createElement("span");
-      track.className = "overview-genre-track";
-      const bar = document.createElement("span");
-      bar.className = "overview-genre-bar";
-      bar.style.width = `${(row.count / maximum) * 100}%`;
-      track.appendChild(bar);
       const count = document.createElement("span");
       count.className = "overview-genre-count";
       count.textContent = String(row.count);
-      item.append(name, track, count);
+      item.append(rank, name, count);
       host.appendChild(item);
     });
     host.setAttribute(

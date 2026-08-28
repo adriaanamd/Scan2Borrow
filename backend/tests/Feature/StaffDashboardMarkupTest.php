@@ -15,6 +15,7 @@ final class StaffDashboardMarkupTest extends TestCase
         foreach ([
             'data-overview',
             'overview-activity',
+            'overview-category-trend',
             'overview-status',
             'overview-status-ring',
             'overview-status-legend',

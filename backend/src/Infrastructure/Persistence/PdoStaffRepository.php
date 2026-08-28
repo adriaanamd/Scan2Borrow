@@ -405,7 +405,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         return $rows;
     }
 
-    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>} */
+    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, category_borrowing_activity: array{months: list<array{month: string, label: string}>, series: list<array{name: string, counts: list<int>}>}, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>} */
     private function dashboardOverview(): array
     {
         $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
@@ -440,6 +440,49 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             }
         }
 
+        /** @var array<string, array<string, int>> $categoryCounts */
+        $categoryCounts = [];
+        $categoryActivityStatement = $this->pdo->prepare(
+            'SELECT br.borrow_date, b.category_name
+             FROM borrowing br JOIN books b ON b.id = br.book_id
+             WHERE br.borrow_date IS NOT NULL AND br.borrow_date >= :start_date'
+        );
+        $categoryActivityStatement->execute(['start_date' => $firstMonth->format('Y-m-d')]);
+        while (($row = $categoryActivityStatement->fetch(PDO::FETCH_ASSOC)) !== false) {
+            if (!is_array($row) || !is_string($row['borrow_date'] ?? null)) {
+                continue;
+            }
+            $monthKey = substr(trim($row['borrow_date']), 0, 7);
+            if (!isset($months[$monthKey])) {
+                continue;
+            }
+            $category = trim($this->string($row['category_name'] ?? null));
+            $category = $category === '' ? 'Uncategorized' : $category;
+            $categoryCounts[$category][$monthKey] = ($categoryCounts[$category][$monthKey] ?? 0) + 1;
+        }
+
+        $categorySeries = [];
+        foreach ($categoryCounts as $category => $counts) {
+            $categorySeries[] = [
+                'name' => $category,
+                'counts' => array_map(
+                    static fn (array $month): int => $counts[$month['month']] ?? 0,
+                    array_values($months),
+                ),
+            ];
+        }
+        usort(
+            $categorySeries,
+            static function (array $left, array $right): int {
+                $totalComparison = array_sum($right['counts']) <=> array_sum($left['counts']);
+                if ($totalComparison !== 0) {
+                    return $totalComparison;
+                }
+
+                return $left['name'] <=> $right['name'];
+            },
+        );
+
         $topBorrowersStatement = $this->pdo->prepare(
             'SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(br.id) AS borrowing_count '
             . 'FROM users u JOIN borrowing br ON br.user_id = u.id '
@@ -462,6 +505,16 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
         return [
             'borrowing_activity' => array_values($months),
+            'category_borrowing_activity' => [
+                'months' => array_map(
+                    static fn (array $month): array => [
+                        'month' => $month['month'],
+                        'label' => $month['label'],
+                    ],
+                    array_values($months),
+                ),
+                'series' => $categorySeries,
+            ],
             'loan_status' => [
                 'available' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Available'"),
                 'borrowed' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Borrowed'"),

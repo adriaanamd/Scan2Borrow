@@ -14,6 +14,9 @@ final class StaffRouteTable
         return [
             Route::create('GET', '/api/staff/dashboard', [$controller, 'dashboard']),
             Route::create('GET', '/api/staff/borrowers', [$controller, 'borrowers']),
+            Route::create('GET', '/api/staff/borrower', [$controller, 'borrowerDetails']),
+            Route::create('POST', '/api/staff/borrower/photo', [$controller, 'updateBorrowerPhoto']),
+            Route::create('POST', '/api/staff/notify', [$controller, 'notifyBorrower']),
             Route::create('GET', '/api/staff/overdue', [$controller, 'overdue']),
             Route::create('GET', '/api/staff/reports', [$controller, 'report']),
             Route::create('GET', '/api/staff/reports/export', [$controller, 'exportReport']),

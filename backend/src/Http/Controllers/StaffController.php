@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Application\Services\CsrfService;
 use App\Application\Services\GuestApprovalService;
+use App\Application\Services\BorrowerNotificationService;
+use App\Application\Services\PhotoStorageInterface;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Role;
 use App\Http\Requests\ServerRequest;
@@ -21,6 +23,8 @@ final readonly class StaffController
         private StaffRepositoryInterface $staff,
         private CsrfService $csrf,
         private ?GuestApprovalService $guestApproval = null,
+        private ?PhotoStorageInterface $photoStorage = null,
+        private ?BorrowerNotificationService $notifications = null,
     ) {
     }
 
@@ -32,6 +36,64 @@ final readonly class StaffController
     public function borrowers(ServerRequest $request): JsonResponse
     {
         return $this->staffDataResponse(fn (): array => ['borrowers' => $this->staff->borrowers($this->queryString($request, 'search'))]);
+    }
+
+    public function borrowerDetails(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff()) {
+            return $this->unauthorized();
+        }
+        $id = $this->positiveInt($request->query()['id'] ?? null);
+        $details = $id > 0 ? $this->staff->borrowerDetails($id) : null;
+        if ($details === null) {
+            return new JsonResponse(404, ['ok' => false, 'errors' => ['Borrower not found.']]);
+        }
+
+        $details['can_edit_photo'] = $this->isAdmin();
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $details]);
+    }
+
+    public function updateBorrowerPhoto(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isAdmin()) {
+            return $this->unauthorized();
+        }
+        $csrfFailure = $this->csrfFailure($request);
+        if ($csrfFailure !== null) {
+            return $csrfFailure;
+        }
+        $id = $this->positiveInt($request->body()['user_id'] ?? null);
+        $photo = $this->bodyString($request, 'photo_data');
+        if ($id < 1 || $photo === '' || $this->photoStorage === null) {
+            return new JsonResponse(422, ['ok' => false, 'message' => 'Please choose a valid image file.']);
+        }
+        $path = $this->photoStorage->store($photo, 'borrower-' . $id);
+        if ($path === null) {
+            return new JsonResponse(422, ['ok' => false, 'message' => 'Please choose a valid image file (JPG, PNG or WEBP, max 4 MB).']);
+        }
+        $this->staff->updateBorrowerPhoto($id, $path);
+
+        return new JsonResponse(200, ['ok' => true, 'message' => 'ID photo updated.', 'photo' => $path]);
+    }
+
+    public function notifyBorrower(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff() || $this->notifications === null) {
+            return $this->unauthorized();
+        }
+        $csrfFailure = $this->csrfFailure($request);
+        if ($csrfFailure !== null) {
+            return $csrfFailure;
+        }
+        $result = $this->notifications->send(
+            $this->positiveInt($request->body()['user_id'] ?? null),
+            $this->bodyString($request, 'channel'),
+        );
+
+        return new JsonResponse($result['ok'] ? 200 : 422, $result['ok']
+            ? ['ok' => true, 'message' => $result['message']]
+            : ['ok' => false, 'message' => $result['message']]);
     }
 
     public function overdue(ServerRequest $request): JsonResponse

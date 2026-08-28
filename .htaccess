@@ -14,8 +14,7 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule \.php$ - [F,L,NC]
 
 # Existing static files (assets and uploads) continue to be served directly.
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
 # All clean page and API requests enter the modular monolith.

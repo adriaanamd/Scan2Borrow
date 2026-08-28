@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf" content="" />
+    <title>Borrower Details | Scan2Borrow</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      defer
+    ></script>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <span class="brand-mark">&#128218;</span><span>Scan2Borrow</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="/scan2borrow/staff/dashboard"
+            ><span class="nav-icon">&#128202;</span>Dashboard</a
+          >
+          <a href="/scan2borrow/staff/books"
+            ><span class="nav-icon">&#128218;</span>Book Inventory</a
+          >
+          <a href="/scan2borrow/staff/students"
+            ><span class="nav-icon">&#128100;</span>Borrowers</a
+          >
+          <a href="/scan2borrow/staff/overdue"
+            ><span class="nav-icon">&#9888;</span>Overdue</a
+          >
+          <a href="/scan2borrow/staff/reports"
+            ><span class="nav-icon">&#128203;</span>Reports</a
+          >
+          <a href="/scan2borrow/staff/guest-requests"
+            ><span class="nav-icon">&#128203;</span>Guest Requests</a
+          >
+          <a href="/scan2borrow/admin/staff"
+            ><span class="nav-icon">&#128081;</span>Staff</a
+          >
+          <a href="/scan2borrow/logout" class="nav-logout"
+            ><span class="nav-icon">&#9211;</span>Logout</a
+          >
+        </nav>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <h1 class="topbar-title">Borrower Details</h1>
+          <div class="topbar-user"><span class="user-role">Staff</span></div>
+        </header>
+        <div class="content" data-page="staff-borrower">
+          <a
+            href="/scan2borrow/staff/students"
+            class="btn btn-outline-secondary btn-sm mb-3"
+            >&larr; Back to Borrowers</a
+          >
+
+          <div class="table-card mb-4">
+            <div class="d-flex align-items-center flex-wrap gap-3">
+              <div class="text-center">
+                <div class="profile-avatar" id="borrower-avatar">--</div>
+                <button
+                  type="button"
+                  id="change-photo"
+                  class="btn btn-outline-primary btn-sm mt-2 py-0 px-2 d-none"
+                  style="font-size: 12px"
+                  data-bs-toggle="modal"
+                  data-bs-target="#photoModal"
+                >
+                  Upload Photo
+                </button>
+              </div>
+              <div class="flex-grow-1">
+                <h3 class="mb-1" id="borrower-name">Loading borrower...</h3>
+                <div class="text-muted" id="borrower-meta"></div>
+                <div class="text-muted" id="borrower-contact"></div>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-secondary" id="borrower-status"></span>
+                <span
+                  class="badge bg-danger d-none"
+                  id="borrower-overdue"
+                ></span>
+                <div class="mt-2">
+                  <a
+                    id="notify-borrower"
+                    href="#"
+                    class="btn btn-warning btn-sm"
+                    >Notify by Email</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+              <div class="stat-card">
+                <div class="icon">&#128218;</div>
+                <div>
+                  <div class="label">Currently Borrowed</div>
+                  <div class="value" id="borrower-active">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-6">
+              <div class="stat-card stat-accent">
+                <div class="icon">&#10003;</div>
+                <div>
+                  <div class="label">Returned</div>
+                  <div class="value" id="borrower-returned">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-6">
+              <div class="stat-card stat-danger">
+                <div class="icon">&#9888;</div>
+                <div>
+                  <div class="label">Overdue</div>
+                  <div class="value" id="borrower-overdue-count">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-6">
+              <div class="stat-card stat-warning">
+                <div class="icon">&#128176;</div>
+                <div>
+                  <div class="label">Unpaid Fines</div>
+                  <div class="value" id="borrower-fines">&#8369;0.00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <h5 class="mb-3">
+              Borrowing History
+              <span class="text-muted fs-6" id="history-count"
+                >(0 records)</span
+              >
+            </h5>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Book</th>
+                    <th>Borrowed</th>
+                    <th>Due</th>
+                    <th>Returned</th>
+                    <th>Status</th>
+                    <th>Fine</th>
+                  </tr>
+                </thead>
+                <tbody id="borrower-history">
+                  <tr>
+                    <td colspan="7" class="text-center text-muted">
+                      Loading borrowing history...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="photoModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="photo-form">
+            <div
+              class="modal-header text-white"
+              style="background: var(--primary)"
+            >
+              <h5 class="modal-title">Borrower ID Photo</h5>
+              <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body text-center">
+              <img
+                id="photo-preview"
+                src=""
+                class="img-fluid rounded mx-auto mb-2 d-none"
+                style="max-width: 240px; aspect-ratio: 4/3; object-fit: cover"
+                alt="Photo preview"
+              />
+              <label class="form-label fw-semibold d-block text-start"
+                >Choose a photo to upload</label
+              >
+              <input
+                type="file"
+                id="photo-file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                class="form-control"
+                required
+              />
+              <div class="form-text text-start">
+                JPG, PNG, WEBP or GIF &middot; max 4 MB.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-light"
+                data-bs-dismiss="modal"
+              >
+                Close</button
+              ><button type="submit" class="btn btn-primary fw-semibold">
+                Upload Photo
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script src="/scan2borrow/frontend/assets/js/pages/staff.js" defer></script>
+  </body>
+</html>

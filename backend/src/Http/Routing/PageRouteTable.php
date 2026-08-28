@@ -44,6 +44,16 @@ final class PageRouteTable
                 $pageRoot . DIRECTORY_SEPARATOR . 'staff-students.html',
                 ['admin', 'librarian'],
             ),
+            '/staff/borrower' => new PageRoute(
+                '/staff/borrower',
+                $pageRoot . DIRECTORY_SEPARATOR . 'staff-borrower.html',
+                ['admin', 'librarian'],
+            ),
+            '/staff/notify' => new PageRoute(
+                '/staff/notify',
+                $pageRoot . DIRECTORY_SEPARATOR . 'staff-notify.html',
+                ['admin', 'librarian'],
+            ),
             '/staff/overdue' => new PageRoute(
                 '/staff/overdue',
                 $pageRoot . DIRECTORY_SEPARATOR . 'staff-overdue.html',

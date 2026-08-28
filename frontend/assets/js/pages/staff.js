@@ -43,6 +43,10 @@ class StaffPageController {
         return this.dashboard();
       case "staff-students":
         return this.students();
+      case "staff-borrower":
+        return this.borrowerDetails();
+      case "staff-notify":
+        return this.notify();
       case "staff-overdue":
         return this.overdue();
       case "staff-reports":
@@ -200,7 +204,7 @@ class StaffPageController {
             <td>${this.escape(row.course || "")}</td><td>${this.escape(row.year_level || "")}</td>
             <td><span class="badge bg-primary">${row.active_loans || 0}</span>${Number(row.overdue_loans) ? ` <span class="badge bg-danger">${row.overdue_loans} overdue</span>` : ""}</td>
             <td>${this.escape(row.status || "")}</td>
-            <td class="text-nowrap"><a href="/scan2borrow/staff/students?id=${row.id}" class="btn btn-primary btn-sm">View</a><a href="/scan2borrow/staff/students?id=${row.id}" class="btn btn-warning btn-sm">Notify</a></td>
+            <td class="text-nowrap"><a href="/scan2borrow/staff/borrower?id=${row.id}" class="btn btn-primary btn-sm">View</a><a href="/scan2borrow/staff/notify?id=${row.id}" class="btn btn-warning btn-sm">Notify</a></td>
           </tr>`,
             )
             .join("")
@@ -208,6 +212,182 @@ class StaffPageController {
     } catch (error) {
       this.showError(error);
     }
+  }
+
+  async borrowerDetails() {
+    const id = new URLSearchParams(window.location.search).get("id") || "";
+    try {
+      const response = await this.api.get("/scan2borrow/api/staff/borrower", {
+        id,
+      });
+      const data = response.data;
+      const borrower = data.borrower || {};
+      const summary = data.summary || {};
+      const initials =
+        `${(borrower.firstname || "")[0] || ""}${(borrower.lastname || "")[0] || ""}`.toUpperCase();
+      const avatar = document.getElementById("borrower-avatar");
+      if (avatar) {
+        avatar.textContent = initials || "--";
+        if (borrower.photo) {
+          avatar.innerHTML = `<img src="${this.escape(borrower.photo)}" alt="ID photo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`;
+        }
+      }
+      this.text("borrower-name", borrower.name || "Borrower Details");
+      this.text(
+        "borrower-meta",
+        `ID: ${borrower.barcode || ""} · ${(borrower.role || "").replace(/^./, (letter) => letter.toUpperCase())}${borrower.course ? ` · ${borrower.course}` : ""}${borrower.year_level ? ` · Year ${borrower.year_level}` : ""}`,
+      );
+      this.text(
+        "borrower-contact",
+        `${borrower.email || ""}${borrower.contact_no ? ` · ${borrower.contact_no}` : ""}`,
+      );
+      this.text("borrower-status", borrower.status || "");
+      const overdue = document.getElementById("borrower-overdue");
+      if (overdue) {
+        overdue.textContent = `${summary.overdue || 0} Overdue`;
+        overdue.classList.toggle("d-none", !Number(summary.overdue));
+      }
+      this.text("borrower-active", summary.active || 0);
+      this.text("borrower-returned", summary.returned || 0);
+      this.text("borrower-overdue-count", summary.overdue || 0);
+      this.text(
+        "borrower-fines",
+        `₱${Number(summary.total_fine || 0).toFixed(2)}`,
+      );
+      this.text("history-count", `(${(data.history || []).length} records)`);
+      this.renderBorrowerHistory(data.history || []);
+      const notify = document.getElementById("notify-borrower");
+      if (notify)
+        notify.href = `/scan2borrow/staff/notify?id=${encodeURIComponent(borrower.id || id)}`;
+      const changePhoto = document.getElementById("change-photo");
+      if (changePhoto)
+        changePhoto.classList.toggle("d-none", !data.can_edit_photo);
+      this.bindPhotoForm(borrower.id || id, data.can_edit_photo);
+    } catch (error) {
+      this.showError(error);
+    }
+  }
+
+  renderBorrowerHistory(rows) {
+    const body = document.getElementById("borrower-history");
+    if (!body) return;
+    body.innerHTML = rows.length
+      ? rows
+          .map(
+            (
+              row,
+            ) => `<tr class="${!row.return_date && row.status === "Overdue" ? "row-overdue" : ""}">
+          <td><code>${this.escape(row.transaction_code)}</code></td>
+          <td>${this.escape(row.title)}<br /><span class="text-muted small">${this.escape(row.author || "")}</span></td>
+          <td>${this.escape(this.date(row.borrow_date))}</td>
+          <td>${this.escape(this.date(row.due_date))}</td>
+          <td>${row.return_date ? this.escape(this.date(row.return_date)) : '<span class="text-muted">—</span>'}</td>
+          <td><span class="badge bg-secondary">${this.escape(row.status)}</span></td>
+          <td>${Number(row.fine_amount || 0) > 0 ? `₱${Number(row.fine_amount).toFixed(2)}` : "—"}</td>
+        </tr>`,
+          )
+          .join("")
+      : '<tr><td colspan="7" class="text-center text-muted">No borrowing history found.</td></tr>';
+  }
+
+  bindPhotoForm(id, canEdit) {
+    const form = document.getElementById("photo-form");
+    const input = document.getElementById("photo-file");
+    const preview = document.getElementById("photo-preview");
+    if (!form || !input || !preview || !canEdit || form.dataset.bound) return;
+    form.dataset.bound = "true";
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      preview.src = URL.createObjectURL(file);
+      preview.classList.remove("d-none");
+    });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const file = input.files?.[0];
+      if (!file || file.size > 4 * 1024 * 1024) {
+        this.toast("Please choose a valid image file (max 4 MB).", "danger");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          await this.api.post("/scan2borrow/api/staff/borrower/photo", {
+            user_id: id,
+            photo_data: reader.result,
+          });
+          window.location.reload();
+        } catch (error) {
+          this.toast(error.message, "danger");
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async notify() {
+    const id = new URLSearchParams(window.location.search).get("id") || "";
+    try {
+      const response = await this.api.get("/scan2borrow/api/staff/borrower", {
+        id,
+      });
+      const data = response.data;
+      const borrower = data.borrower || {};
+      this.text(
+        "notify-name",
+        `${borrower.name || ""} (${borrower.barcode || ""})`,
+      );
+      this.text("notify-email", borrower.email || "No email on file");
+      this.text(
+        "notify-contact",
+        borrower.contact_no || "No contact number on file",
+      );
+      this.text("notify-loans", (data.summary || {}).active || 0);
+      const back = document.getElementById("notify-back");
+      if (back)
+        back.href = `/scan2borrow/staff/borrower?id=${encodeURIComponent(id)}`;
+      document
+        .getElementById("send-email")
+        ?.addEventListener("click", () => this.sendNotification(id, "email"));
+      document
+        .getElementById("send-sms")
+        ?.addEventListener("click", () => this.sendNotification(id, "sms"));
+      if (!borrower.email)
+        document
+          .getElementById("send-email")
+          ?.setAttribute("disabled", "disabled");
+      if (!borrower.contact_no)
+        document
+          .getElementById("send-sms")
+          ?.setAttribute("disabled", "disabled");
+    } catch (error) {
+      this.showError(error);
+    }
+  }
+
+  async sendNotification(id, channel) {
+    try {
+      const response = await this.api.post("/scan2borrow/api/staff/notify", {
+        user_id: id,
+        channel,
+      });
+      const host = document.getElementById(
+        channel === "email" ? "notify-email-alert" : "notify-sms-alert",
+      );
+      if (host)
+        host.innerHTML = `<div class="alert alert-success">${this.escape(response.message || "Notification sent.")}</div>`;
+    } catch (error) {
+      const host = document.getElementById(
+        channel === "email" ? "notify-email-alert" : "notify-sms-alert",
+      );
+      if (host)
+        host.innerHTML = `<div class="alert alert-danger">${this.escape(error.message)}</div>`;
+    }
+  }
+
+  text(id, value) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value ?? "";
   }
 
   async overdue() {
@@ -227,7 +407,7 @@ class StaffPageController {
         <td>${this.escape(row.borrower)}<br><span class="text-muted small">${this.escape(row.id_barcode)}</span></td>
         <td>${this.escape(row.title)}</td><td>${this.escape(this.date(row.due_date))}</td>
         <td><span class="badge bg-danger">${row.days_late || 0} day(s)</span></td><td>₱${Number(row.fine_amount || 0).toFixed(2)}</td>
-        <td><a href="/scan2borrow/staff/students?id=${row.user_id}" class="btn btn-warning btn-sm">Email Reminder</a></td>
+        <td><a href="/scan2borrow/staff/notify?id=${row.user_id}" class="btn btn-warning btn-sm">Email Reminder</a></td>
       </tr>`,
               )
               .join("")

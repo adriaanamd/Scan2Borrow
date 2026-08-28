@@ -7,6 +7,7 @@ namespace App\Bootstrap;
 use App\Application\Services\AuthenticationService;
 use App\Application\Services\BookQueryService;
 use App\Application\Services\BookArchiveService;
+use App\Application\Services\BorrowerNotificationService;
 use App\Application\Services\BookMutationService;
 use App\Application\Services\BorrowingService;
 use App\Application\Services\CsrfService;
@@ -16,6 +17,7 @@ use App\Application\Services\GuestRegistrationCompletionService;
 use App\Application\Services\GuestRegistrationService;
 use App\Application\Services\LocalPhotoStorage;
 use App\Application\Services\NullSmsSender;
+use App\Application\Services\NativeEmailSender;
 use App\Application\Services\OtpService;
 use App\Application\Services\RegistrationCompletionService;
 use App\Application\Services\RegistrationService;
@@ -130,6 +132,11 @@ final class ApplicationFactory
             new \App\Application\Services\GuestApprovalService(
                 new \App\Infrastructure\Persistence\PdoGuestApprovalRepository($pdo),
                 new \App\Infrastructure\Persistence\PdoVisitorNotificationRepository($pdo),
+            ),
+            new LocalPhotoStorage(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads', '/scan2borrow/uploads'),
+            new BorrowerNotificationService(
+                new \App\Infrastructure\Persistence\PdoStaffRepository($pdo),
+                new NativeEmailSender(),
             ),
         );
         $apiRouter = new Router(array_merge(

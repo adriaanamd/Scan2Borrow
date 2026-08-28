@@ -44,6 +44,12 @@ final readonly class PageController
             );
         }
 
+        $html = str_replace(
+            '</head>',
+            '<script src="/scan2borrow/frontend/assets/js/core/encoding.js" defer></script></head>',
+            $html,
+        );
+
         return new HtmlResponse(200, $html);
     }
 }

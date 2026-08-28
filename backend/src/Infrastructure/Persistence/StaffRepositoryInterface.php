@@ -12,6 +12,11 @@ interface StaffRepositoryInterface
     /** @return list<array<string, mixed>> */
     public function borrowers(string $search): array;
 
+    /** @return array{borrower: array<string, mixed>, summary: array<string, mixed>, history: list<array<string, mixed>>}|null */
+    public function borrowerDetails(int $userId): ?array;
+
+    public function updateBorrowerPhoto(int $userId, string $photoPath): void;
+
     /** @return list<array<string, mixed>> */
     public function overdue(): array;
 

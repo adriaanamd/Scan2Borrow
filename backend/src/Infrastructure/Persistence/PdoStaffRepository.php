@@ -57,6 +57,65 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         return $rows;
     }
 
+    public function borrowerDetails(int $userId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id, barcode, firstname, lastname, role, department, position, course, year_level,
+                    email, contact_no, photo, status
+             FROM users WHERE id = :id AND role IN ('student', 'teacher') LIMIT 1"
+        );
+        $statement->execute(['id' => $userId]);
+        $borrower = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($borrower)) {
+            return null;
+        }
+
+        $borrower['name'] = trim($this->string($borrower['firstname'] ?? null) . ' ' . $this->string($borrower['lastname'] ?? null));
+
+        $historyStatement = $this->pdo->prepare(
+            'SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount,
+                    b.title, b.author
+             FROM borrowing br JOIN books b ON b.id = br.book_id
+             WHERE br.user_id = :user_id ORDER BY br.borrow_date DESC'
+        );
+        $historyStatement->execute(['user_id' => $userId]);
+        /** @var list<array<string, mixed>> $history */
+        $history = $historyStatement->fetchAll(PDO::FETCH_ASSOC);
+
+        $active = 0;
+        $returned = 0;
+        $overdue = 0;
+        $totalFine = 0.0;
+        foreach ($history as $row) {
+            if ($row['return_date'] !== null && $row['return_date'] !== '') {
+                $returned++;
+                continue;
+            }
+            $active++;
+            if ($row['status'] === 'Overdue') {
+                $overdue++;
+                $totalFine += $this->number($row['fine_amount'] ?? null);
+            }
+        }
+
+        return [
+            'borrower' => $borrower,
+            'summary' => [
+                'active' => $active,
+                'returned' => $returned,
+                'overdue' => $overdue,
+                'total_fine' => $totalFine,
+            ],
+            'history' => $history,
+        ];
+    }
+
+    public function updateBorrowerPhoto(int $userId, string $photoPath): void
+    {
+        $statement = $this->pdo->prepare("UPDATE users SET photo = :photo WHERE id = :id AND role IN ('student', 'teacher')");
+        $statement->execute(['photo' => $photoPath, 'id' => $userId]);
+    }
+
     public function overdue(): array
     {
         $statement = $this->pdo->query(

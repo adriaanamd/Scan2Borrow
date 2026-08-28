@@ -59,13 +59,13 @@ final class AuthenticationService implements AuthenticationServiceInterface
             return AuthenticationResult::failure('Enter your staff ID and password.');
         }
 
-        if ($this->users->isLocked($barcode)) {
+        $user = $this->users->findByBarcode($barcode);
+        if ($user?->locked() === true) {
             return AuthenticationResult::failure(
                 'Account temporarily locked due to too many failed attempts. Please try again later.',
             );
         }
 
-        $user = $this->users->findByBarcode($barcode);
         if ($user === null || !in_array($user->role(), [Role::ADMIN, Role::LIBRARIAN], true)) {
             $this->users->recordLoginFailure(null, $barcode);
 

@@ -73,10 +73,29 @@ final class AuthenticationServiceTest extends TestCase
             $service->loginStaff('ADMIN001', 'admin123')->message(),
         );
     }
+
+    public function testStaffLoginUsesTheLoadedUserForLockState(): void
+    {
+        $repository = new FakeUserRepository();
+        $repository->add(new UserAccount(
+            13,
+            'ADMIN002',
+            Role::ADMIN,
+            'active',
+            password_hash('admin123', PASSWORD_DEFAULT),
+        ));
+        $service = new AuthenticationService($repository, new SessionService(new AuthenticationSessionStore()));
+
+        $service->loginStaff('ADMIN002', 'wrong');
+
+        self::assertSame(0, $repository->lockChecks);
+    }
 }
 
 final class FakeUserRepository implements UserRepositoryInterface
 {
+    public int $lockChecks = 0;
+
     /**
      * @var array<string, UserAccount>
      */
@@ -94,6 +113,8 @@ final class FakeUserRepository implements UserRepositoryInterface
 
     public function isLocked(string $barcode): bool
     {
+        $this->lockChecks++;
+
         return isset($this->users[$barcode]) && $this->users[$barcode]->locked();
     }
 

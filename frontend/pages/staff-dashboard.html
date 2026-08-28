@@ -495,6 +495,38 @@
             }
           </script>
 
+          <!-- Full Top 10 Borrowers Modal -->
+          <div
+            class="modal fade"
+            id="overview-borrowers-modal"
+            tabindex="-1"
+            aria-labelledby="overview-borrowers-modal-title"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="overview-borrowers-modal-title">
+                    Top 10 borrowers
+                  </h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div class="modal-body">
+                  <ol
+                    id="overview-borrowers-modal-list"
+                    class="overview-borrowers-modal-list"
+                    aria-label="Complete top 10 borrower ranking"
+                  ></ol>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Borrow Notification Modal -->
           <div class="modal fade" id="borrowNotificationModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">

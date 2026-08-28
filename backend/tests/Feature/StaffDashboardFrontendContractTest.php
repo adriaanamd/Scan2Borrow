@@ -47,4 +47,14 @@ final class StaffDashboardFrontendContractTest extends TestCase
 
         self::assertStringContainsString('toggle.hidden = !rows.length;', $source);
     }
+
+    public function testTopBorrowersViewAllOpensFullRankingModal(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $source = (string) file_get_contents($path);
+
+        self::assertStringContainsString('overview-borrowers-modal', $source);
+        self::assertStringContainsString('renderTopBorrowersModal', $source);
+        self::assertStringContainsString('bootstrap.Modal.getOrCreateInstance', $source);
+    }
 }

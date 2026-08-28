@@ -515,46 +515,61 @@ class StaffPageController {
 
     if (toggle) {
       toggle.hidden = !rows.length;
-      toggle.dataset.expanded = "false";
       toggle.textContent = "View all top 10 →";
-      if (rows.length > 5) {
-        toggle.onclick = () => {
-          const expanded = toggle.dataset.expanded === "true";
-          toggle.dataset.expanded = expanded ? "false" : "true";
-          toggle.textContent = expanded ? "View all top 10 →" : "Show top 5 ↑";
-          list.querySelectorAll(".overview-borrower-row").forEach((row, index) => {
-            row.dataset.hidden = !expanded && index >= 5 ? "true" : "false";
-          });
-        };
-      } else {
-        toggle.onclick = null;
-      }
+      toggle.onclick = () => this.renderTopBorrowersModal(rows);
     }
 
-    rows.forEach((borrower, index) => {
-      const row = document.createElement("li");
-      row.className = "overview-borrower-row";
-
-      const rank = document.createElement("span");
-      rank.className = "overview-borrower-rank";
-      rank.textContent = String(index + 1).padStart(2, "0");
-
-      const identity = document.createElement("span");
-      identity.className = "overview-borrower-name";
-      identity.textContent = String(borrower.name || "");
-      const barcode = document.createElement("span");
-      barcode.className = "overview-borrower-barcode";
-      barcode.textContent = String(borrower.barcode || "");
-      identity.appendChild(barcode);
-
-      const count = document.createElement("span");
-      count.className = "overview-borrower-count";
-      count.textContent = String(this.nonNegativeInteger(borrower.borrowing_count));
-
-      row.dataset.hidden = index >= 5 ? "true" : "false";
-      row.append(rank, identity, count);
-      list.appendChild(row);
+    rows.slice(0, 5).forEach((borrower, index) => {
+      list.appendChild(this.createTopBorrowerRow(borrower, index));
     });
+  }
+
+  renderTopBorrowersModal(borrowers) {
+    const modal = document.getElementById("overview-borrowers-modal");
+    const list = document.getElementById("overview-borrowers-modal-list");
+    if (!modal || !list) return;
+    list.replaceChildren();
+
+    const rows = borrowers.slice(0, 10);
+    rows.forEach((borrower, index) => {
+      list.appendChild(
+        this.createTopBorrowerRow(
+          borrower,
+          index,
+          "overview-borrower-modal-row",
+        ),
+      );
+    });
+
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  }
+
+  createTopBorrowerRow(
+    borrower,
+    index,
+    rowClass = "overview-borrower-row",
+  ) {
+    const row = document.createElement("li");
+    row.className = rowClass;
+
+    const rank = document.createElement("span");
+    rank.className = "overview-borrower-rank";
+    rank.textContent = String(index + 1).padStart(2, "0");
+
+    const identity = document.createElement("span");
+    identity.className = "overview-borrower-name";
+    identity.textContent = String(borrower.name || "");
+    const barcode = document.createElement("span");
+    barcode.className = "overview-borrower-barcode";
+    barcode.textContent = String(borrower.barcode || "");
+    identity.appendChild(barcode);
+
+    const count = document.createElement("span");
+    count.className = "overview-borrower-count";
+    count.textContent = String(this.nonNegativeInteger(borrower.borrowing_count));
+
+    row.append(rank, identity, count);
+    return row;
   }
 
   renderRecent(rows) {

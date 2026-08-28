@@ -17,7 +17,9 @@ final class PageRouteTable
     {
         $this->routes = [
             '/login' => new PageRoute('/login', $pageRoot . DIRECTORY_SEPARATOR . 'login.html'),
+            '/staff/login' => new PageRoute('/staff/login', $pageRoot . DIRECTORY_SEPARATOR . 'staff-login.html'),
             '/register' => new PageRoute('/register', $pageRoot . DIRECTORY_SEPARATOR . 'register.html'),
+            '/verify-otp' => new PageRoute('/verify-otp', $pageRoot . DIRECTORY_SEPARATOR . 'verify-otp.html'),
             '/staff/dashboard' => new PageRoute(
                 '/staff/dashboard',
                 $pageRoot . DIRECTORY_SEPARATOR . 'staff-dashboard.html',

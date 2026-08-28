@@ -78,10 +78,173 @@ class StaffPageController {
       });
       this.renderRecent(data.recent || []);
       this.renderApprovals(data.pending || []);
+      this.renderOverview(data.overview || {});
       window.setInterval(() => this.refreshNotifications(), 5000);
     } catch (error) {
       this.showError(error);
     }
+  }
+
+  renderOverview(overview) {
+    const activity = Array.isArray(overview.borrowing_activity)
+      ? overview.borrowing_activity
+      : [];
+    const status =
+      overview.loan_status && typeof overview.loan_status === "object"
+        ? overview.loan_status
+        : {};
+    const borrowers = Array.isArray(overview.top_borrowers)
+      ? overview.top_borrowers
+      : [];
+
+    this.renderActivity(activity);
+    this.renderStatus(status);
+    this.renderTopBorrowers(borrowers);
+  }
+
+  renderActivity(activity) {
+    const host = document.getElementById("overview-activity");
+    if (!host) return;
+    host.replaceChildren();
+
+    const rows = activity.map((row) => ({
+      label: String(row.label || row.month || ""),
+      count: this.nonNegativeInteger(row.count),
+    }));
+    const total = rows.reduce((sum, row) => sum + row.count, 0);
+    const totalHost = document.getElementById("overview-activity-total");
+    if (totalHost) totalHost.textContent = total ? `${total} total` : "No activity";
+
+    if (!rows.length || total === 0) {
+      const empty = document.createElement("div");
+      empty.className = "overview-empty";
+      empty.textContent = "No borrowing activity recorded.";
+      host.appendChild(empty);
+      return;
+    }
+
+    const maximum = Math.max(1, ...rows.map((row) => row.count));
+    rows.forEach((row) => {
+      const column = document.createElement("div");
+      column.className = "overview-activity-column";
+      column.setAttribute("aria-label", `${row.label}: ${row.count} loan(s)`);
+
+      const value = document.createElement("span");
+      value.className = "overview-activity-value";
+      value.textContent = String(row.count);
+
+      const bar = document.createElement("span");
+      bar.className = "overview-activity-bar";
+      bar.dataset.zero = row.count === 0 ? "true" : "false";
+      bar.style.height = `${(row.count / maximum) * 100}%`;
+
+      const label = document.createElement("span");
+      label.className = "overview-activity-label";
+      label.textContent = row.label;
+
+      column.append(value, bar, label);
+      host.appendChild(column);
+    });
+  }
+
+  renderStatus(status) {
+    const ring = document.getElementById("overview-status-ring");
+    const legend = document.getElementById("overview-status-legend");
+    if (!ring || !legend) return;
+    legend.replaceChildren();
+
+    const entries = [
+      { key: "available", label: "Available", color: "#002fa7" },
+      { key: "borrowed", label: "Borrowed", color: "#64748b" },
+      { key: "overdue", label: "Overdue", color: "#b45309" },
+      { key: "pending", label: "Pending", color: "#b91c1c" },
+    ].map((entry) => ({
+      ...entry,
+      count: this.nonNegativeInteger(status[entry.key]),
+    }));
+    const total = entries.reduce((sum, entry) => sum + entry.count, 0);
+
+    if (total === 0) {
+      ring.className = "overview-status-ring overview-empty";
+      ring.style.background = "";
+      ring.textContent = "No current status data.";
+      return;
+    }
+
+    let cursor = 0;
+    const segments = entries.map((entry) => {
+      const end = cursor + (entry.count / total) * 360;
+      const segment = `${entry.color} ${cursor}deg ${end}deg`;
+      cursor = end;
+      return segment;
+    });
+    ring.className = "overview-status-ring";
+    ring.textContent = "";
+    ring.style.background = `conic-gradient(${segments.join(", ")})`;
+    ring.setAttribute(
+      "aria-label",
+      `Current status: ${entries.map((entry) => `${entry.label} ${entry.count}`).join(", ")}`,
+    );
+
+    entries.forEach((entry) => {
+      const item = document.createElement("div");
+      item.className = "overview-status-item";
+
+      const swatch = document.createElement("span");
+      swatch.className = "overview-status-swatch";
+      swatch.style.setProperty("--status-color", entry.color);
+      swatch.setAttribute("aria-hidden", "true");
+
+      const name = document.createElement("span");
+      name.className = "overview-status-name";
+      name.textContent = entry.label;
+
+      const count = document.createElement("span");
+      count.className = "overview-status-count";
+      count.textContent = String(entry.count);
+
+      item.append(swatch, name, count);
+      legend.appendChild(item);
+    });
+  }
+
+  renderTopBorrowers(borrowers) {
+    const list = document.getElementById("overview-borrowers-list");
+    if (!list) return;
+    list.replaceChildren();
+
+    const rows = borrowers.slice(0, 10);
+    if (!rows.length) {
+      const empty = document.createElement("li");
+      empty.className = "overview-empty";
+      empty.textContent = "No borrowing records yet.";
+      list.appendChild(empty);
+      return;
+    }
+
+    rows.forEach((borrower, index) => {
+      const row = document.createElement("li");
+      row.className = "overview-borrower-row";
+
+      const rank = document.createElement("span");
+      rank.className = "overview-borrower-rank";
+      rank.textContent = String(index + 1).padStart(2, "0");
+
+      const identity = document.createElement("span");
+      identity.className = "overview-borrower-name";
+      identity.textContent = String(borrower.name || "");
+      const barcode = document.createElement("span");
+      barcode.className = "overview-borrower-barcode";
+      barcode.textContent = String(borrower.barcode || "");
+      identity.appendChild(barcode);
+
+      const count = document.createElement("span");
+      count.className = "overview-borrower-count";
+      count.textContent = String(this.nonNegativeInteger(borrower.borrowing_count));
+
+      row.append(rank, identity, count);
+      list.appendChild(row);
+    });
   }
 
   renderRecent(rows) {
@@ -665,6 +828,12 @@ class StaffPageController {
 
   media(value) {
     return Scan2BorrowMedia.resolve(value);
+  }
+
+  nonNegativeInteger(value) {
+    const number = Number(value);
+
+    return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
   }
 
   escape(value) {

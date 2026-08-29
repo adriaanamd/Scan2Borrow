@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class RoleNavbarContractTest extends TestCase
 {
     public function testEveryApplicationShellUsesTheCentralRoleNavbar(): void
     {
-        foreach ($this->shellPages() as $filename) {
-            $source = $this->readPage($filename);
+        foreach ($this->shellPages() as $pageName) {
+            $source = $this->readPage($pageName);
 
-            self::assertStringContainsString('data-app-navbar', $source, $filename);
-            self::assertStringContainsString('/scan2borrow/frontend/assets/js/core/app-navbar.js', $source, $filename);
-            self::assertStringNotContainsString('<nav class="sidebar-nav">', $source, $filename . ' still owns a duplicate navbar.');
-            self::assertStringNotContainsString('<div class="sidebar-brand">', $source, $filename . ' still owns a duplicate navbar brand.');
+            self::assertStringContainsString('data-app-navbar', $source, $pageName);
+            self::assertStringContainsString('/scan2borrow/frontend/assets/js/core/app-navbar.js', $source, $pageName);
+            self::assertStringNotContainsString('<nav class="sidebar-nav">', $source, $pageName . ' still owns a duplicate navbar.');
+            self::assertStringNotContainsString('<div class="sidebar-brand">', $source, $pageName . ' still owns a duplicate navbar brand.');
         }
     }
 
@@ -50,33 +51,18 @@ final class RoleNavbarContractTest extends TestCase
     private function shellPages(): array
     {
         return [
-            'admin-api-docs.html',
-            'admin-staff.html',
-            'guest-borrowed-books.html',
-            'guest-borrowing-history.html',
-            'guest-browse-books.html',
-            'guest-dashboard.html',
-            'guest-profile.html',
-            'staff-books.html',
-            'staff-borrower.html',
-            'staff-dashboard.html',
-            'staff-guest-requests.html',
-            'staff-notify.html',
-            'staff-overdue.html',
-            'staff-reports.html',
-            'staff-students.html',
-            'student-dashboard.html',
-            'student-history.html',
-            'student-search.html',
-            'student-settings.html',
-            'teacher-dashboard.html',
-            'teacher-settings.html',
+            'admin-api-docs', 'admin-staff', 'guest-borrowed', 'guest-history',
+            'guest-browse', 'guest-dashboard', 'guest-profile', 'staff-books',
+            'staff-borrower', 'staff-dashboard', 'staff-guest-requests', 'staff-notify',
+            'staff-overdue', 'staff-reports', 'staff-students', 'student-dashboard',
+            'student-history', 'student-search', 'student-settings', 'teacher-dashboard',
+            'teacher-settings',
         ];
     }
 
-    private function readPage(string $filename): string
+    private function readPage(string $pageName): string
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+        $path = FrontendPagePaths::path($pageName);
         $source = file_get_contents($path);
         self::assertIsString($source);
 

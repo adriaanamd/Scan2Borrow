@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CleanRouteMatrixTest extends TestCase
 {
-    public function testMatrixRecordsKnownExtractionRisks(): void
+    public function testMatrixRecordsCanonicalOwnershipAndRetiredTrees(): void
     {
         $matrixPath = dirname(__DIR__, 3)
             . DIRECTORY_SEPARATOR . 'frontend'
@@ -17,8 +17,11 @@ final class CleanRouteMatrixTest extends TestCase
             . DIRECTORY_SEPARATOR . 'page-matrix.md';
         $matrix = (string) file_get_contents($matrixPath);
 
-        foreach (['staff.js', 'inventory.js', 'borrower-dashboard.js', 'inline styles', 'navbar'] as $risk) {
-            self::assertStringContainsString($risk, $matrix, $risk);
+        foreach (['features/staff/pages/dashboard/dashboard.html', 'features/student/pages/search/search.html', 'canonical', 'frontend/assets/js/core/'] as $marker) {
+            self::assertStringContainsString($marker, $matrix, $marker);
+        }
+        foreach (['frontend/pages/', 'frontend/assets/js/pages/', 'frontend/assets/js/guest/'] as $retiredTree) {
+            self::assertStringContainsString($retiredTree, $matrix, $retiredTree);
         }
     }
 
@@ -49,7 +52,7 @@ final class CleanRouteMatrixTest extends TestCase
 
     public function testAllExtractedPageRoutesHaveExplicitPolicies(): void
     {
-        $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages');
+        $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend');
 
         foreach (['/login', '/register'] as $path) {
             self::assertTrue($table->forPath($path)->isPublic());

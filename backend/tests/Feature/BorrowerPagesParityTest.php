@@ -5,27 +5,28 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class BorrowerPagesParityTest extends TestCase
 {
     /**
      * @param list<string> $markers
      */
-    private function assertPageContains(string $filename, array $markers): void
+    private function assertPageContains(string $pageName, array $markers): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+        $path = FrontendPagePaths::path($pageName);
         self::assertFileExists($path);
         $html = file_get_contents($path);
         self::assertIsString($html);
 
         foreach ($markers as $marker) {
-            self::assertStringContainsString($marker, $html, "Missing {$filename} marker: {$marker}");
+            self::assertStringContainsString($marker, $html, "Missing {$pageName} marker: {$marker}");
         }
     }
 
     public function testSearchPagePreservesCatalogFiltersCardsAndBorrowModal(): void
     {
-        $this->assertPageContains('student-search.html', [
+        $this->assertPageContains('student-search', [
             'Book Catalog',
             'id="searchForm"',
             'name="category_name"',
@@ -38,7 +39,7 @@ final class BorrowerPagesParityTest extends TestCase
             'id="borrow-error"',
             'Borrow Now',
         ]);
-        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'student-search.js');
+        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'search' . DIRECTORY_SEPARATOR . 'student-search.page.js');
         self::assertIsString($script);
         foreach (['book-card-shell', 'book-face-front', 'book-face-back', 'body.append("action", "borrow")', 'body.append("csrf"'] as $marker) {
             self::assertStringContainsString($marker, $script);
@@ -60,7 +61,7 @@ final class BorrowerPagesParityTest extends TestCase
 
     public function testHistoryPagePreservesBorrowingRecordTable(): void
     {
-        $this->assertPageContains('student-history.html', [
+        $this->assertPageContains('student-history', [
             'Your complete borrowing record.',
             '<th>Code</th>',
             '<th>Returned</th>',
@@ -71,7 +72,7 @@ final class BorrowerPagesParityTest extends TestCase
 
     public function testTeacherDashboardPreservesTeacherSpecificPanelsAndDueDate(): void
     {
-        $this->assertPageContains('teacher-dashboard.html', [
+        $this->assertPageContains('teacher-dashboard', [
             'Teacher Card',
             'Reading Velocity',
             'Fine Risk Prediction',
@@ -86,13 +87,13 @@ final class BorrowerPagesParityTest extends TestCase
 
     public function testReceiptPagePreservesPrintableReceiptContract(): void
     {
-        $this->assertPageContains('receipt.html', [
+        $this->assertPageContains('receipt', [
             'Borrowing Receipt',
             'Scan2Borrow Library',
             'class="no-print',
             'window.print()',
         ]);
-        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'receipt.js');
+        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'receipt' . DIRECTORY_SEPARATOR . 'receipt.page.js');
         self::assertIsString($script);
         foreach (['Transaction', 'Accession Number', 'Validity of the Book'] as $marker) {
             self::assertStringContainsString($marker, $script);

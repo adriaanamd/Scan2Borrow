@@ -159,7 +159,7 @@ final class ApplicationFactory
         return new Application(
             $environment,
             $apiRouter,
-            new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages'),
+            new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend'),
             $pageController,
             new ResponseEmitter(),
         );

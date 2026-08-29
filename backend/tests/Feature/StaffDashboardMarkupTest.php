@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class StaffDashboardMarkupTest extends TestCase
 {
     public function testDashboardContainsOverviewHooksAndStylesheet(): void
     {
-        $dashboard = $this->page('staff-dashboard.html');
+        $dashboard = $this->page('staff-dashboard');
 
         foreach ([
             'data-overview',
@@ -34,7 +35,7 @@ final class StaffDashboardMarkupTest extends TestCase
 
     public function testDashboardExposesPendingApprovalControl(): void
     {
-        $dashboard = $this->page('staff-dashboard.html');
+        $dashboard = $this->page('staff-dashboard');
 
         self::assertStringContainsString('id="pending-approvals-trigger"', $dashboard);
         self::assertStringContainsString('data-bs-target="#approvalModal"', $dashboard);
@@ -44,8 +45,8 @@ final class StaffDashboardMarkupTest extends TestCase
 
     public function testOverviewHooksDoNotLeakIntoOtherAdminPages(): void
     {
-        foreach (['staff-books.html', 'staff-reports.html', 'admin-staff.html'] as $filename) {
-            self::assertStringNotContainsString('data-overview', $this->page($filename), $filename . ' must not render dashboard Overview markup.');
+        foreach (['staff-books', 'staff-reports', 'admin-staff'] as $pageName) {
+            self::assertStringNotContainsString('data-overview', $this->page($pageName), $pageName . ' must not render dashboard Overview markup.');
         }
     }
 
@@ -66,12 +67,15 @@ final class StaffDashboardMarkupTest extends TestCase
         self::assertIsString($html);
         self::assertStringContainsString('data-app-page="staff-admin-staff"', $html);
         self::assertStringContainsString('frontend/features/staff/pages/admin-staff/entry.js', $html);
-        foreach (['promoteModal', 'pwModal', 'data-promote-user', 'Staff Accounts'] as $marker) self::assertStringContainsString($marker, $html);
+        foreach (['promoteModal', 'pwModal', 'Staff Accounts'] as $marker) self::assertStringContainsString($marker, $html);
+        $page = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'admin-staff' . DIRECTORY_SEPARATOR . 'admin-staff.page.js');
+        self::assertIsString($page);
+        self::assertStringContainsString('data-promote-user', $page);
     }
 
-    private function page(string $filename): string
+    private function page(string $pageName): string
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+        $path = FrontendPagePaths::path($pageName);
         $source = file_get_contents($path);
         self::assertIsString($source);
 

@@ -12,7 +12,7 @@ final class InventoryBrowserParityTest extends TestCase
      * @var list<string>
      */
     private const INTERACTION_MARKERS = [
-        'class InventoryPageController',
+        'class InventoryPage',
         'new Set()',
         'setTimeout',
         'new bootstrap.Offcanvas',
@@ -26,7 +26,7 @@ final class InventoryBrowserParityTest extends TestCase
 
     public function testInventoryControllerKeepsBrowserInteractionHooks(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory' . DIRECTORY_SEPARATOR . 'inventory.page.js';
         self::assertFileExists($path);
         $script = file_get_contents($path);
         self::assertIsString($script);
@@ -41,7 +41,7 @@ final class InventoryBrowserParityTest extends TestCase
 
     public function testInventoryRendererIncludesAccessionBeforeStatusAndLocationColumns(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory' . DIRECTORY_SEPARATOR . 'inventory.page.js';
         $script = file_get_contents($path);
         self::assertIsString($script);
 
@@ -66,7 +66,7 @@ final class InventoryBrowserParityTest extends TestCase
         $drawer = file_get_contents($root . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'book-drawer' . DIRECTORY_SEPARATOR . 'book-drawer.component.js');
         self::assertIsString($service);
         self::assertIsString($drawer);
-        foreach (['/scan2borrow/api/books', 'action', 'ids'] as $marker) {
+        foreach (['/scan2borrow/api/books', 'action', 'list'] as $marker) {
             self::assertStringContainsString($marker, $service);
         }
         foreach (['book-form', 'bookDrawer', 'cover_file'] as $marker) {

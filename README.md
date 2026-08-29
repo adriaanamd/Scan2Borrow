@@ -9,15 +9,17 @@ Scan2Borrow is a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
-Apache sends clean page and API routes through `backend/public/index.php`. Page files are static HTML under `frontend/pages`; they are streamed only after the server-side session and role policy has allowed the request.
+Apache sends clean page and API routes through `backend/public/index.php`. Page files are feature-owned static HTML under `frontend/features`; they are streamed only after the server-side session and role policy has allowed the request.
 
 ## Structure
 
 ```text
 frontend/
-  pages/                 Static vanilla HTML templates
+  app/                   Application bootstrap, API, session, guards, and shared components
+  features/              Auth, student, teacher, guest, and staff pages, entries, services, and models
   assets/css/            Preserved stylesheet and page styles
-  assets/js/             Class-based vanilla controllers and scanner modules
+  assets/js/core/        Shared navbar, auth-brand, icon, media, and scanner helpers
+  tests/                 Native Node frontend contract and parity tests
 backend/
   public/index.php       Thin Apache entry point
   src/                   OOP application, domain, HTTP, and PDO modules
@@ -41,4 +43,4 @@ The tests cover route authorization, clean-route gateway behavior, CSRF, authent
 - State-changing requests require CSRF validation.
 - PDO repositories retain the existing table names, columns, status values, and SQL behavior wherever possible.
 - Credentials are read from environment variables; secrets are not stored in application source.
-- The old procedural root entry points are removed. The public application surface is the clean route gateway plus static frontend assets.
+- The old procedural root entry points and duplicate `frontend/pages`, `frontend/assets/js/pages`, and `frontend/assets/js/guest` trees are removed. The public application surface is the clean route gateway plus static frontend assets.

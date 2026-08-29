@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class AuthBrandContractTest extends TestCase
 {
     public function testEveryAuthPageUsesTheCentralBrandMount(): void
     {
-        foreach ($this->authPages() as $filename) {
-            $source = $this->readPage($filename);
+        foreach ($this->authPages() as $pageName) {
+            $source = $this->readPage($pageName);
 
-            self::assertStringContainsString('data-auth-brand', $source, $filename);
-            self::assertStringContainsString('/scan2borrow/frontend/assets/js/core/auth-brand.js', $source, $filename);
-            self::assertStringNotContainsString('auth-brand-logo', $source, $filename);
-            self::assertStringNotContainsString('auth-brand-wordmark', $source, $filename);
+            self::assertStringContainsString('data-auth-brand', $source, $pageName);
+            self::assertStringContainsString('/scan2borrow/frontend/assets/js/core/auth-brand.js', $source, $pageName);
+            self::assertStringNotContainsString('auth-brand-logo', $source, $pageName);
+            self::assertStringNotContainsString('auth-brand-wordmark', $source, $pageName);
         }
     }
 
@@ -37,19 +38,19 @@ final class AuthBrandContractTest extends TestCase
     private function authPages(): array
     {
         return [
-            'login.html',
-            'register.html',
-            'staff-login.html',
-            'guest-registration.html',
-            'verify-otp.html',
-            'guest-verify-otp.html',
-            'guest-profile-verify-otp.html',
+            'login',
+            'register',
+            'staff-login',
+            'guest-registration',
+            'verify-otp',
+            'guest-verify-otp',
+            'guest-profile-verify-otp',
         ];
     }
 
-    private function readPage(string $filename): string
+    private function readPage(string $pageName): string
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;
+        $path = FrontendPagePaths::path($pageName);
         $source = file_get_contents($path);
         self::assertIsString($source);
 

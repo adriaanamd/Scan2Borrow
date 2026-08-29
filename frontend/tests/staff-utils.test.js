@@ -41,6 +41,66 @@ test('reports and overdue pages expose their operational boundaries', async () =
   assert.equal(typeof OverduePage.prototype.render, 'function');
 });
 
+test('reports page renders data, preserves links, and prints after report readiness', async () => {
+  const nodes = new Map();
+  const makeNode = (extra = {}) => ({
+    children: [],
+    dataset: {},
+    classList: { added: [], add(value) { this.added.push(value); } },
+    replaceChildren(...children) { this.children = children; },
+    appendChild(child) { this.children.push(child); },
+    querySelector(selector) { return this.children.find((child) => child.selector === selector) || null; },
+    setAttribute(name, value) { this[name] = value; },
+    ...extra,
+  });
+  const root = makeNode({
+    querySelector(selector) { return nodes.get(selector) || null; },
+  });
+  const table = makeNode();
+  table.querySelector = (selector) => selector === 'thead' ? nodes.get('thead') : nodes.get('tbody');
+  nodes.set('#staff-report-table', table);
+  nodes.set('thead', makeNode());
+  nodes.set('tbody', makeNode());
+  nodes.set('#staff-report-document', makeNode());
+  nodes.set('#staff-report-title', makeNode());
+  nodes.set('#staff-report-period', makeNode());
+  nodes.set('#staff-report-count', makeNode());
+  nodes.set('#staff-report-generated', makeNode());
+  nodes.set('#staff-report-status', makeNode());
+  nodes.set('#export-report-link', makeNode());
+  nodes.set('#generate-report-link', makeNode());
+  nodes.set('select[name="type"]', makeNode());
+  nodes.set('input[name="from"]', makeNode());
+  nodes.set('input[name="to"]', makeNode());
+
+  const created = [];
+  const document = { createElement(tag) { const node = makeNode({ tag, textContent: '', selector: tag }); created.push(node); return node; } };
+  const service = {
+    async load(filters) { return { data: { report: { label: 'Overdue Books', headers: ['Title'], data: [['Dune']] } }, filters }; },
+    exportUrl(filters) { return `/export?${filters.type}`; },
+    printUrl(filters) { return `/print?${filters.type}`; },
+  };
+  let printed = false;
+  const window = {
+    location: { search: '?type=overdue&from=2026-01-01&print=1' },
+    requestAnimationFrame(callback) { callback(); },
+    print() { printed = true; },
+  };
+
+  const page = new ReportsPage(root, { service, window, document });
+  await page.load();
+
+  assert.match(nodes.get('select[name="type"]').innerHTML, /overdue/);
+  assert.equal(nodes.get('input[name="from"]').value, '2026-01-01');
+  assert.equal(nodes.get('#export-report-link').href, '/export?overdue');
+  assert.equal(nodes.get('#generate-report-link').href, '/print?overdue');
+  assert.equal(nodes.get('#staff-report-title').textContent, 'Overdue Books');
+  assert.equal(nodes.get('#staff-report-document').dataset.reportReady, 'true');
+  assert.equal(root.classList.added[0], 'report-print-mode');
+  assert.equal(printed, true);
+  assert.ok(created.some((node) => node.tag === 'th' && node.textContent === 'Title'));
+});
+
 test('staff notification and guest review boundaries preserve action payloads', async () => {
   let call;
   const service = new StaffGuestRequestService({ api: { get: async (path, params) => { call = { method: 'GET', path, params }; return { ok: true, data: { requests: [] } }; }, post: async (path, body) => { call = { method: 'POST', path, body }; return { ok: true }; } } });
@@ -51,6 +111,7 @@ test('staff notification and guest review boundaries preserve action payloads', 
   assert.equal(typeof StaffNotifyPage.prototype.load, 'function');
   assert.equal(GuestRequestsPage.name, 'GuestRequestsPage');
   assert.equal(typeof GuestRequestsPage.prototype.render, 'function');
+  assert.equal(typeof GuestRequestsPage.prototype.bindGuestReview, 'function');
 });
 
 test('admin staff service preserves candidate search and role-management fields', async () => {
@@ -68,6 +129,7 @@ test('admin staff service preserves candidate search and role-management fields'
   ]);
   assert.equal(AdminStaffPage.name, 'AdminStaffPage');
   assert.equal(typeof AdminStaffPage.prototype.render, 'function');
+  assert.equal(typeof AdminStaffPage.prototype.bindAdminActions, 'function');
 });
 
 test('API docs page preserves grouped search/rendering boundaries', () => {

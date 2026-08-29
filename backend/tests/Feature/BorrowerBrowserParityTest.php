@@ -12,7 +12,7 @@ final class BorrowerBrowserParityTest extends TestCase
      * @var list<string>
      */
     private const INTERACTION_MARKERS = [
-        'class BorrowerDashboardController',
+        'class StudentDashboardPage',
         'borrowForm',
         'returnForm',
         'new bootstrap.Modal',
@@ -22,9 +22,9 @@ final class BorrowerBrowserParityTest extends TestCase
         'escapeHtml',
     ];
 
-    public function testBorrowerControllerKeepsBrowserInteractionHooks(): void
+    public function testStudentDashboardKeepsBrowserInteractionHooks(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'borrower-dashboard.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'student-dashboard.page.js';
         self::assertFileExists($path);
         $script = file_get_contents($path);
         self::assertIsString($script);

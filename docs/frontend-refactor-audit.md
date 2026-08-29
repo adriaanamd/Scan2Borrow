@@ -20,11 +20,11 @@ Apache continues to expose static assets and browser modules, but denies direct 
 
 ## Compatibility boundary
 
-Legacy page controllers and templates remain in the repository as compatibility fixtures while the route table and canonical templates are exercised. They are not the route targets and are denied direct web access. Existing shared core helpers remain available because they are reusable browser infrastructure. The pre-existing working-tree changes in `frontend/assets/js/pages/registration.js` and `frontend/assets/js/pages/student-search.js` were preserved.
+The duplicate `frontend/pages`, `frontend/assets/js/pages`, and `frontend/assets/js/guest` runtime trees are retired. Existing shared core helpers remain available because they are reusable browser infrastructure. Legacy direct URLs remain denied by Apache so stale bookmarks cannot expose an unintended static document.
 
 ## Verification
 
-- `npm test` — 68 passing native-module tests, including served feature-template parity.
+- `npm test` — native-module tests, including served feature-template parity and the retired-tree guard.
 - `powershell -File tests/browser/frontend-module-parity.ps1` — local HTTP route/module/source protection smoke check passed.
 - PHP lint passed for every changed PHP contract and support file.
 - `git diff --check` passed for the refactor changes.

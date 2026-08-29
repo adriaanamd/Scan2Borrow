@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class InventoryMarkupParityTest extends TestCase
 {
@@ -24,9 +25,9 @@ final class InventoryMarkupParityTest extends TestCase
         'data-scan-target="barcode"',
     ];
 
-    public function testStaticInventoryPagePreservesLegacyDomContract(): void
+    public function testInventoryPagePreservesDomContract(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff-books.html';
+        $path = FrontendPagePaths::path('staff-books');
         self::assertFileExists($path);
         $html = file_get_contents($path);
         self::assertIsString($html);
@@ -35,7 +36,7 @@ final class InventoryMarkupParityTest extends TestCase
             self::assertStringContainsString($marker, $html, "Missing inventory marker: {$marker}");
         }
 
-        self::assertStringContainsString('frontend/assets/js/pages/inventory.js', $html);
+        self::assertStringContainsString('frontend/features/staff/pages/inventory/inventory.page.js', $html);
         self::assertStringContainsString('frontend/assets/css/style.css', $html);
     }
 

@@ -10,7 +10,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
 {
     public function testDashboardControllerRendersOverviewPayloadWithVanillaMethods(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'staff-dashboard.page.js';
         $source = (string) file_get_contents($path);
 
         foreach ([
@@ -32,7 +32,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
             'this.renderOverview(data.overview || {}, data.recent || [])',
             'ring.style.background = ""',
         ] as $marker) {
-            self::assertStringContainsString($marker, $source, $marker . ' is missing from staff.js.');
+            self::assertStringContainsString($marker, $source, $marker . ' is missing from the staff dashboard page.');
         }
 
         self::assertStringNotContainsString('chart.js', strtolower($source));
@@ -42,7 +42,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
 
     public function testTopBorrowersKeepsViewAllControlForShortRankings(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'staff-dashboard.page.js';
         $source = (string) file_get_contents($path);
 
         self::assertStringContainsString('toggle.hidden = !rows.length;', $source);
@@ -50,7 +50,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
 
     public function testTopBorrowersViewAllOpensFullRankingModal(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'staff-dashboard.page.js';
         $source = (string) file_get_contents($path);
 
         self::assertStringContainsString('overview-borrowers-modal', $source);
@@ -60,7 +60,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
 
     public function testPendingApprovalCountUpdatesTheVisibleDashboardControl(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'staff.js';
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'staff-dashboard.page.js';
         $source = (string) file_get_contents($path);
 
         self::assertStringContainsString('pending-approvals-count', $source);
@@ -100,7 +100,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
         self::assertIsString($html);
         self::assertStringContainsString('data-app-page="staff-dashboard"', $html);
         self::assertStringContainsString('frontend/features/staff/pages/dashboard/staff-dashboard.page.js', $html);
-        foreach (['pending-approvals-count', 'overview-activity', 'overview-borrowers-modal', 'Borrowing Overview'] as $marker) {
+        foreach (['pending-approvals-count', 'overview-activity', 'overview-borrowers-modal', 'Overview'] as $marker) {
             self::assertStringContainsString($marker, $html);
         }
     }

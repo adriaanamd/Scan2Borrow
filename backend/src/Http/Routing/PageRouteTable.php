@@ -13,9 +13,9 @@ final class PageRouteTable
      */
     private readonly array $routes;
 
-    public function __construct(string $pageRoot)
+    public function __construct(string $frontendRoot)
     {
-        $featurePath = static fn (string $relative): string => dirname($pageRoot)
+        $featurePath = static fn (string $relative): string => $frontendRoot
             . DIRECTORY_SEPARATOR . 'features'
             . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relative);
 

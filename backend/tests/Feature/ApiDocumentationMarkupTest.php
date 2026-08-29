@@ -25,14 +25,14 @@ final class ApiDocumentationMarkupTest extends TestCase
         $source = file_get_contents(FrontendPagePaths::path('admin-api-docs'));
         self::assertIsString($source);
 
-        foreach (['data-page="admin-api-docs"', 'api-docs-tags', 'api-docs-operations', 'OpenAPI 3.0.3', 'api-docs.js'] as $marker) {
+        foreach (['data-page="admin-api-docs"', 'api-docs-tags', 'api-docs-operations', 'OpenAPI 3.0.3', 'api-docs.page.js'] as $marker) {
             self::assertStringContainsString($marker, $source, $marker . ' is missing.');
         }
     }
 
     public function testApiDocsFrontendFetchesOnlyTheAdminDocumentationApi(): void
     {
-        $source = $this->read('frontend/assets/js/pages/api-docs.js');
+        $source = $this->read('frontend/features/staff/pages/api-docs/api-docs.page.js');
 
         self::assertStringContainsString('/scan2borrow/api/admin/api-docs', $source);
         self::assertStringContainsString('details', $source);

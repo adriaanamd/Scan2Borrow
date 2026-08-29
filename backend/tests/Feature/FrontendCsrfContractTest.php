@@ -8,27 +8,43 @@ use PHPUnit\Framework\TestCase;
 
 final class FrontendCsrfContractTest extends TestCase
 {
-    /** @dataProvider postControllerProvider */
-    public function testStateChangingVanillaControllersSubmitGatewayToken(string $script): void
+    public function testSharedApiClientSubmitsTheGatewayToken(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . $script;
-        $source = (string) file_get_contents($path);
+        $source = $this->read('frontend/app/core/api/api-client.js');
+
+        self::assertStringContainsString('meta[name="csrf"]', $this->read('frontend/app/bootstrap/page-context.js'));
+        self::assertStringContainsString("body.append('csrf'", $source);
+        self::assertStringContainsString('this.csrf', $source);
+    }
+
+    /** @dataProvider directPostModuleProvider */
+    public function testDirectPostFeatureModulesPreserveTheGatewayToken(string $relativePath): void
+    {
+        $source = $this->read($relativePath);
 
         self::assertStringContainsString('meta[name="csrf"]', $source);
         self::assertStringContainsString('body.append("csrf"', $source);
     }
 
     /** @return list<array{string}> */
-    public static function postControllerProvider(): array
+    public static function directPostModuleProvider(): array
     {
         return [
-            ['guest/registration.js'],
-            ['guest/otp.js'],
-            ['guest/borrow-request.js'],
-            ['guest/return-book.js'],
-            ['guest/profile.js'],
-            ['pages/student-search.js'],
-            ['pages/borrower-dashboard.js'],
+            ['frontend/features/guest/pages/return/guest-return.page.js'],
+            ['frontend/features/guest/pages/borrow-request/guest-borrow-request.page.js'],
+            ['frontend/features/guest/pages/profile/guest-profile.page.js'],
+            ['frontend/features/student/pages/search/student-search.page.js'],
+            ['frontend/features/student/pages/dashboard/student-dashboard.page.js'],
         ];
+    }
+
+    private function read(string $relativePath): string
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        self::assertFileExists($path);
+        $source = file_get_contents($path);
+        self::assertIsString($source);
+
+        return $source;
     }
 }

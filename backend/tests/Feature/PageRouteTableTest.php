@@ -11,7 +11,7 @@ final class PageRouteTableTest extends TestCase
 {
     public function testDefinesPublicAndProtectedPagePolicies(): void
     {
-        $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages');
+        $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend');
 
         self::assertTrue($table->forPath('/login')->isPublic());
         self::assertSame([], $table->forPath('/login')->allowedRoles());
@@ -28,7 +28,7 @@ final class PageRouteTableTest extends TestCase
 
     public function testEveryPageRouteResolvesToFeatureOwnedTemplate(): void
     {
-        $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages');
+        $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend');
         foreach (['/login', '/register', '/verify-otp', '/student/dashboard', '/student/search', '/teacher/dashboard', '/staff/dashboard', '/staff/books', '/guest/dashboard', '/guest/registration', '/guest/receipt', '/admin/api-docs'] as $path) {
             $template = $table->forPath($path)->templatePath();
             self::assertStringContainsString(DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR, $template, $path);

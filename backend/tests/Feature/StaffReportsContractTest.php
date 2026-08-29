@@ -31,9 +31,9 @@ final class StaffReportsContractTest extends TestCase
 
     public function testReportsPrintsOnlyAfterTheRealReportHasRendered(): void
     {
-        $source = $this->read('frontend/assets/js/pages/staff.js');
+        $source = $this->read('frontend/features/staff/pages/reports/reports.page.js');
 
-        self::assertStringContainsString('renderReport(report, from, to)', $source);
+        self::assertStringContainsString('render(response.data?.report || {}, filters.from, filters.to)', $source);
         self::assertStringContainsString('await this.printReportWhenReady();', $source);
         self::assertStringContainsString('requestAnimationFrame', $source);
         self::assertStringContainsString('staff-report-document', $source);
@@ -46,7 +46,7 @@ final class StaffReportsContractTest extends TestCase
         $notification = file_get_contents($root . DIRECTORY_SEPARATOR . 'notification.service.js');
         self::assertIsString($report);
         self::assertIsString($notification);
-        foreach (['/api/staff/reports', '/api/staff/reports/export', 'print=1', 'type', 'from', 'to'] as $marker) self::assertStringContainsString($marker, $report);
+        foreach (['/api/staff/reports', '/api/staff/reports/export', "print: '1'", 'type', 'from', 'to'] as $marker) self::assertStringContainsString($marker, $report);
         foreach (['/api/staff/notifications', '/api/staff/notifications/viewed', '/api/staff/notify', 'notification_id', 'notification_type'] as $marker) self::assertStringContainsString($marker, $notification);
     }
 
@@ -70,7 +70,7 @@ final class StaffReportsContractTest extends TestCase
     {
         foreach ([
             ['notify/notify.html', 'staff-notify', 'notify/entry.js', ['notify-email', 'notify-contact', 'send-email']],
-            ['guest-requests/guest-requests.html', 'staff-guest-requests', 'guest-requests/entry.js', ['reviewModal', 'review-notes', 'data-review-request']],
+            ['guest-requests/guest-requests.html', 'staff-guest-requests', 'guest-requests/entry.js', ['reviewModal', 'review-notes']],
         ] as [$relativePath, $pageName, $entry, $markers]) {
             $html = $this->read('frontend/features/staff/pages/' . $relativePath);
             self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);

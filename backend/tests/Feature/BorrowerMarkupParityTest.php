@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class BorrowerMarkupParityTest extends TestCase
 {
@@ -28,9 +29,9 @@ final class BorrowerMarkupParityTest extends TestCase
         'Recommended for You',
     ];
 
-    public function testStaticStudentDashboardPreservesLegacyDomContract(): void
+    public function testStudentDashboardPreservesDomContract(): void
     {
-        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'student-dashboard.html';
+        $path = FrontendPagePaths::path('student-dashboard');
         self::assertFileExists($path);
         $html = file_get_contents($path);
         self::assertIsString($html);
@@ -39,7 +40,7 @@ final class BorrowerMarkupParityTest extends TestCase
             self::assertStringContainsString($marker, $html, "Missing borrower marker: {$marker}");
         }
 
-        self::assertStringContainsString('frontend/assets/js/pages/borrower-dashboard.js', $html);
+        self::assertStringContainsString('frontend/features/student/pages/dashboard/student-dashboard.page.js', $html);
         self::assertStringContainsString('frontend/assets/css/style.css', $html);
     }
 

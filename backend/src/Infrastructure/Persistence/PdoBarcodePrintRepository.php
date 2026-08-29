@@ -52,14 +52,14 @@ final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
             );
             $copyIds = [];
             foreach ($labels as $label) {
-                $copyId = (int) ($label['copy_id'] ?? 0);
+                $copyId = $this->intValue($label['copy_id'] ?? null);
                 $copyIds[] = $copyId;
                 $itemStatement->execute([
                     'batch_id' => $batchId,
                     'copy_id' => $copyId,
-                    'title' => (string) ($label['title'] ?? ''),
+                    'title' => $this->stringValue($label['title'] ?? null),
                     'author' => $this->nullableString($label['author'] ?? null),
-                    'barcode' => (string) ($label['barcode'] ?? ''),
+                    'barcode' => $this->stringValue($label['barcode'] ?? null),
                     'accession_no' => $this->nullableString($label['accession_no'] ?? null),
                     'floor_no' => $this->nullableString($label['floor_no'] ?? null),
                     'section_name' => $this->nullableString($label['section_name'] ?? null),
@@ -82,7 +82,7 @@ final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
                 $batchId,
                 $token,
                 $titleId,
-                (string) ($labels[0]['title'] ?? ''),
+                $this->stringValue($labels[0]['title'] ?? null),
                 $createdAt,
                 $this->withoutCopyIds($labels),
             );
@@ -110,16 +110,16 @@ final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
             'SELECT title, author, barcode, accession_no, floor_no, section_name, shelf_no, row_no '
             . 'FROM barcode_print_batch_items WHERE batch_id = :batch_id ORDER BY id'
         );
-        $itemStatement->execute(['batch_id' => (int) $batch['id']]);
+        $itemStatement->execute(['batch_id' => $this->intValue($batch['id'] ?? null)]);
         /** @var list<array<string, mixed>> $labels */
         $labels = $itemStatement->fetchAll(PDO::FETCH_ASSOC);
 
         return new BarcodePrintBatch(
-            (int) $batch['id'],
-            (string) $batch['batch_token'],
-            (int) $batch['title_id'],
-            (string) ($labels[0]['title'] ?? ''),
-            (string) $batch['created_at'],
+            $this->intValue($batch['id'] ?? null),
+            $this->stringValue($batch['batch_token'] ?? null),
+            $this->intValue($batch['title_id'] ?? null),
+            $this->stringValue($labels[0]['title'] ?? null),
+            $this->stringValue($batch['created_at'] ?? null),
             $labels,
         );
     }
@@ -135,7 +135,7 @@ final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
         /** @var list<array<string, mixed>> $history */
         $history = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($history as &$entry) {
-            $entry['label_count'] = (int) ($entry['label_count'] ?? 0);
+            $entry['label_count'] = $this->intValue($entry['label_count'] ?? null);
         }
         unset($entry);
 
@@ -150,15 +150,29 @@ final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
         return (string) $statement->fetchColumn();
     }
 
-    /** @param list<array<string, mixed>> $labels @return list<array<string, mixed>> */
+    /**
+     * @param list<array<string, mixed>> $labels
+     * @return list<array<string, mixed>>
+     */
     private function withoutCopyIds(array $labels): array
     {
-        foreach ($labels as &$label) {
+        $result = [];
+        foreach ($labels as $label) {
             unset($label['copy_id']);
+            $result[] = $label;
         }
-        unset($label);
 
-        return $labels;
+        return $result;
+    }
+
+    private function intValue(mixed $value): int
+    {
+        return is_int($value) ? $value : (is_string($value) && is_numeric($value) ? (int) $value : 0);
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        return is_string($value) || is_numeric($value) ? (string) $value : '';
     }
 
     private function nullableString(mixed $value): ?string

@@ -178,7 +178,11 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                 return false;
             }
             while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
-                if ((string) ($row['name'] ?? '') === $column) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $name = $row['name'] ?? null;
+                if (is_string($name) && $name === $column) {
                     return true;
                 }
             }

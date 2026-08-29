@@ -11,6 +11,10 @@ USE `scan2borrow_2.0`;
 
 -- ---- Users (borrowers + staff) ---------------------------------------------
 DROP TABLE IF EXISTS `borrowing`;
+DROP TABLE IF EXISTS `borrowing_items`;
+DROP TABLE IF EXISTS `borrowing_transactions`;
+DROP TABLE IF EXISTS `book_copies`;
+DROP TABLE IF EXISTS `book_titles`;
 DROP TABLE IF EXISTS `books`;
 DROP TABLE IF EXISTS `users`;
 
@@ -35,6 +39,7 @@ CREATE TABLE `users` (
 CREATE TABLE `books` (
     `id`           INT AUTO_INCREMENT PRIMARY KEY,
     `barcode`      VARCHAR(50)  NOT NULL UNIQUE,
+    `accession_no` VARCHAR(50)  DEFAULT NULL,
     `isbn`         VARCHAR(30)  DEFAULT NULL,
     `title`        VARCHAR(200) NOT NULL,
     `author`       VARCHAR(150) DEFAULT NULL,
@@ -42,7 +47,7 @@ CREATE TABLE `books` (
     `description`  TEXT DEFAULT NULL,
     `cover_file`   VARCHAR(255) DEFAULT NULL,
     `cover_image`  VARCHAR(255) DEFAULT NULL,
-    `category`     VARCHAR(100) DEFAULT NULL,
+    `category_name` VARCHAR(100) DEFAULT NULL,
     `floor_no`     VARCHAR(20)  DEFAULT NULL,
     `section_name` VARCHAR(80)  DEFAULT NULL,
     `shelf_no`     VARCHAR(20)  DEFAULT NULL,
@@ -70,6 +75,80 @@ CREATE TABLE `borrowing` (
     CONSTRAINT `fk_borrow_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_borrow_book` FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_borrow_staff` FOREIGN KEY (`processed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ---- Bulk borrowing catalog and transaction model ------------------------
+-- `books` and `borrowing` remain in this base schema for upgrade compatibility.
+-- Run sql/upgrade_bulk_borrowing.sql after importing this file to backfill the
+-- normalized tables and activate the bulk-borrowing application model.
+CREATE TABLE `book_titles` (
+    `id`          INT AUTO_INCREMENT PRIMARY KEY,
+    `isbn`        VARCHAR(30) DEFAULT NULL,
+    `title`       VARCHAR(200) NOT NULL,
+    `author`      VARCHAR(150) DEFAULT NULL,
+    `publisher`   VARCHAR(150) DEFAULT NULL,
+    `description` TEXT DEFAULT NULL,
+    `cover_file`  VARCHAR(255) DEFAULT NULL,
+    `category_name` VARCHAR(100) DEFAULT NULL,
+    `quantity`    INT UNSIGNED NOT NULL DEFAULT 0,
+    `created_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY `idx_book_titles_title` (`title`),
+    KEY `idx_book_titles_isbn` (`isbn`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `book_copies` (
+    `id`           INT AUTO_INCREMENT PRIMARY KEY,
+    `title_id`     INT NOT NULL,
+    `barcode`      VARCHAR(50) NOT NULL UNIQUE,
+    `accession_no` VARCHAR(50) DEFAULT NULL,
+    `floor_no`     VARCHAR(20) DEFAULT NULL,
+    `section_name` VARCHAR(80) DEFAULT NULL,
+    `shelf_no`     VARCHAR(20) DEFAULT NULL,
+    `row_no`       VARCHAR(20) DEFAULT NULL,
+    `due_date`     DATE DEFAULT NULL,
+    `return_date`  DATE DEFAULT NULL,
+    `status`       ENUM('Available','Borrowed','Reserved') NOT NULL DEFAULT 'Available',
+    `deleted_at`   DATETIME DEFAULT NULL,
+    `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_copy_title` FOREIGN KEY (`title_id`) REFERENCES `book_titles`(`id`) ON DELETE CASCADE,
+    KEY `idx_copies_title_status` (`title_id`, `status`, `deleted_at`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `borrowing_transactions` (
+    `id`               INT AUTO_INCREMENT PRIMARY KEY,
+    `transaction_code` VARCHAR(40) NOT NULL UNIQUE,
+    `user_id`          INT NOT NULL,
+    `processed_by`     INT DEFAULT NULL,
+    `approval_status`  ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+    `borrow_date`      DATETIME NOT NULL,
+    `due_date`         DATE NOT NULL,
+    `return_date`      DATETIME DEFAULT NULL,
+    `status`           ENUM('Pending','Borrowed','Returned','Overdue') NOT NULL DEFAULT 'Borrowed',
+    `fine_amount`      DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+    `requested_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `approved_at`      TIMESTAMP NULL DEFAULT NULL,
+    `approved_by`      INT DEFAULT NULL,
+    `created_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_transaction_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_transaction_processed_by` FOREIGN KEY (`processed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_transaction_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    KEY `idx_transactions_user_status` (`user_id`, `status`, `return_date`),
+    KEY `idx_transactions_approval` (`approval_status`, `requested_at`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `borrowing_items` (
+    `id`             INT AUTO_INCREMENT PRIMARY KEY,
+    `transaction_id` INT NOT NULL,
+    `copy_id`        INT NOT NULL,
+    `return_date`    DATETIME DEFAULT NULL,
+    `status`         ENUM('Pending','Borrowed','Returned','Overdue') NOT NULL DEFAULT 'Borrowed',
+    `fine_amount`    DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+    `created_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_item_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `borrowing_transactions`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_item_copy` FOREIGN KEY (`copy_id`) REFERENCES `book_copies`(`id`) ON DELETE RESTRICT,
+    UNIQUE KEY `uq_transaction_copy` (`transaction_id`, `copy_id`),
+    KEY `idx_items_copy_active` (`copy_id`, `return_date`)
 ) ENGINE=InnoDB;
 
 -- ============================================================================

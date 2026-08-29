@@ -53,11 +53,30 @@ final class SchemaContractTest extends TestCase
         foreach ([
             'upgrade.sql', 'upgrade_add_teacher_fields.sql', 'upgrade_approval_system.sql',
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
-            'upgrade_pending_status.sql', 'upgrade_security.sql', 'sample_books_import.sql',
+            'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
             self::assertFileExists($path, "Missing SQL migration or seed file: {$filename}");
             self::assertNotSame('', trim((string) file_get_contents($path)));
+        }
+    }
+
+    public function testBulkBorrowingSchemaIsPresentInFreshSchemaAndMigration(): void
+    {
+        $base = $this->readSql('database.sql');
+        $migration = $this->readSql('upgrade_bulk_borrowing.sql');
+
+        foreach ([
+            'CREATE TABLE `book_titles`', '`quantity`', 'CREATE TABLE `book_copies`',
+            'CREATE TABLE `borrowing_transactions`', 'CREATE TABLE `borrowing_items`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $base, "Fresh schema missing bulk borrowing marker: {$marker}");
+        }
+        foreach ([
+            'CREATE TABLE IF NOT EXISTS `book_titles`', 'CREATE TABLE IF NOT EXISTS `book_copies`',
+            'CREATE TABLE IF NOT EXISTS `borrowing_transactions`', 'CREATE TABLE IF NOT EXISTS `borrowing_items`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $migration, "Migration missing bulk borrowing marker: {$marker}");
         }
     }
 

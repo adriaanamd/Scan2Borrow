@@ -5,7 +5,7 @@ Scan2Borrow is a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. Import `sql/database.sql` (or the existing `scan2borrow_2_0.sql` dump) into MySQL. Apply the upgrade scripts in `sql/` in their documented order when upgrading an existing database.
+2. Import `sql/database.sql` (or the existing `scan2borrow_2_0.sql` dump) into MySQL. Apply the upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, then `upgrade_bulk_borrowing.sql`. Existing databases must run all applicable scripts; fresh installs should also run `upgrade_bulk_borrowing.sql` after the base import so the catalog/copy data is backfilled.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
@@ -27,6 +27,10 @@ backend/
 sql/                     Preserved schema, seed, dump, and upgrade scripts
 uploads/                 Runtime photo storage
 ```
+
+### Bulk borrowing database model
+
+Bulk borrowing uses `book_titles` for one catalog title and its total `quantity`, `book_copies` for individually barcoded physical copies, `borrowing_transactions` for one checkout session, and `borrowing_items` for each copy in that session. Available, reserved, and borrowed quantities are calculated from non-archived copy statuses. Run `sql/upgrade_bulk_borrowing.sql` whenever an existing or freshly imported legacy schema is being prepared for the bulk-borrowing application.
 
 ## Quality checks
 

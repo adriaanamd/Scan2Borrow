@@ -26,21 +26,21 @@ export class StudentHistoryPage {
         this.render(response.data?.history || []);
       })
       .catch((error) => {
-        this.body.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${this.escapeHtml(error.message || "Unable to load history.")}</td></tr>`;
+        this.body.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${this.escapeHtml(error.message || "Unable to load history.")}</td></tr>`;
       });
   }
   render(history) {
     this.body.replaceChildren();
     if (!history.length) {
       this.body.innerHTML =
-        '<tr><td colspan="7" class="text-center text-muted">No borrowing history yet.</td></tr>';
+        '<tr><td colspan="8" class="text-center text-muted">No borrowing history yet.</td></tr>';
       return;
     }
     history.forEach((item) => {
       const row = document.createElement("tr");
       if (!item.return_date && item.status === "Overdue")
         row.className = "row-overdue";
-      row.innerHTML = `<td><code>${this.escapeHtml(item.transaction_code)}</code></td><td>${this.escapeHtml(item.title)}<br><span class="text-muted small">${this.escapeHtml(item.author)}</span></td><td>${this.date(item.borrow_date)}</td><td>${this.date(item.due_date)}</td><td>${item.return_date ? this.date(item.return_date) : '<span class="text-muted">&mdash;</span>'}</td><td><span class="badge bg-secondary">${this.escapeHtml(item.status)}</span></td><td>${Number(item.fine_amount || 0) > 0 ? `₱${Number(item.fine_amount).toFixed(2)}` : "&mdash;"}</td>`;
+      row.innerHTML = `<td><code>${this.escapeHtml(item.transaction_code)}</code></td><td>${this.escapeHtml(item.title)}<br><span class="text-muted small">${this.escapeHtml(item.author)}</span></td><td>${Number(item.quantity || 1)}</td><td>${this.date(item.borrow_date)}</td><td>${this.date(item.due_date)}</td><td>${item.return_date ? this.date(item.return_date) : '<span class="text-muted">&mdash;</span>'}</td><td><span class="badge bg-secondary">${this.escapeHtml(item.status)}</span></td><td>${Number(item.fine_amount || 0) > 0 ? `₱${Number(item.fine_amount).toFixed(2)}` : "&mdash;"}</td>`;
       this.body.appendChild(row);
     });
   }

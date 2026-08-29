@@ -55,7 +55,23 @@ export class TeacherDashboardPage {
       `₱${Number(stats.fines || 0).toFixed(2)}`;
     document.getElementById("on-time-rate").textContent =
       `${Number(stats.on_time_rate ?? 100)}%`;
+    this.renderLoans(data.current_loans || []);
     this.renderBarcode(user.barcode || "");
+  }
+
+  renderLoans(loans) {
+    const body = document.getElementById("current-loans");
+    if (!body) return;
+    body.replaceChildren();
+    if (!loans.length) {
+      body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">You have no active borrowed books.</td></tr>';
+      return;
+    }
+    loans.forEach((loan) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author || "")}</span></td><td>${Number(loan.quantity || 1)}</td><td>${this.escapeHtml(loan.borrow_date || "")}</td><td>${this.escapeHtml(loan.due_date || "")}</td><td>${this.escapeHtml(loan.status || "")}</td><td><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" class="btn btn-outline-secondary btn-sm">View</a></td>`;
+      body.appendChild(row);
+    });
   }
   renderBarcode(value) {
     if (value && window.JsBarcode)

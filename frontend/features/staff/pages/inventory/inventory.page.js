@@ -168,7 +168,7 @@ export class InventoryPage {
     this.tbody.innerHTML = "";
     if (!response.data.length)
       this.tbody.innerHTML =
-        '<tr><td colspan="12" class="text-center text-muted py-4">No books found.</td></tr>';
+        '<tr><td colspan="13" class="text-center text-muted py-4">No books found.</td></tr>';
     response.data.forEach((book) => {
       const row = document.createElement("tr");
       const actions = this.state.archived
@@ -220,6 +220,11 @@ export class InventoryPage {
       row.appendChild(
         cell(this.escapeHtml(book.author || ""), "", "min-width:160px;"),
       );
+      const total = Number(book.quantity ?? 1);
+      const available = Number(book.available_quantity ?? (book.status === "Available" ? 1 : 0));
+      const reserved = Number(book.reserved_quantity ?? 0);
+      const borrowed = Number(book.borrowed_quantity ?? (book.status === "Borrowed" ? 1 : 0));
+      row.appendChild(cell(`<strong>${total}</strong><br><span class="text-muted small">${available} available · ${reserved} reserved · ${borrowed} borrowed</span>`, "", "min-width:190px;"));
       row.appendChild(
         cell(
           this.escapeHtml(book.accession_no || ""),

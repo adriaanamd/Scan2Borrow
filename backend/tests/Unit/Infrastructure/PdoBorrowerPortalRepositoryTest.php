@@ -47,4 +47,24 @@ final class PdoBorrowerPortalRepositoryTest extends TestCase
         self::assertCount(1, $dashboard['current_loans']);
         self::assertSame('Clean Code', $dashboard['current_loans'][0]['title']);
     }
+
+    public function testNormalizedPortalRowsExposeGroupedQuantities(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT, author TEXT, category_name TEXT, created_at TEXT)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode TEXT, floor_no TEXT, status TEXT, deleted_at TEXT)');
+        $this->pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, borrow_date TEXT, due_date TEXT, return_date TEXT, status TEXT, fine_amount NUMERIC)');
+        $this->pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date TEXT, status TEXT, fine_amount NUMERIC)');
+        $this->pdo->exec("INSERT INTO book_titles VALUES (1, 'Clean Code', 'Martin', 'Computer Science', '2026-08-01')");
+        $this->pdo->exec("INSERT INTO book_copies VALUES (1, 1, 'COPY-1', '2', 'Borrowed', NULL), (2, 1, 'COPY-2', '2', 'Borrowed', NULL)");
+        $this->pdo->exec("INSERT INTO borrowing_transactions VALUES (1, 'TX-BULK', 1, '2026-08-10', '2026-09-10', NULL, 'Borrowed', 0)");
+        $this->pdo->exec("INSERT INTO borrowing_items VALUES (1, 1, 1, NULL, 'Borrowed', 0), (2, 1, 2, NULL, 'Borrowed', 0)");
+
+        $repository = new PdoBorrowerPortalRepository($this->pdo);
+        $dashboard = $repository->dashboard(1);
+        $receipt = $repository->receipt(1, 'TX-BULK');
+
+        self::assertSame(2, (int) $dashboard['current_loans'][0]['quantity']);
+        self::assertSame(2, $dashboard['stats']['active']);
+        self::assertSame(2, (int) $receipt['books'][0]['quantity']);
+    }
 }

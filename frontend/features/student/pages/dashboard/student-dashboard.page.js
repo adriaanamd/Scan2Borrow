@@ -193,13 +193,13 @@ export class StudentDashboardPage {
     body.replaceChildren();
     if (!loans.length) {
       body.innerHTML =
-        '<tr><td colspan="5" class="text-center text-muted py-4">You have no active borrowed. Tap <strong>Borrow a Book</strong> to get started.</td></tr>';
+        '<tr><td colspan="6" class="text-center text-muted py-4">You have no active borrowed. Tap <strong>Borrow a Book</strong> to get started.</td></tr>';
       return;
     }
     loans.forEach((loan) => {
       const row = document.createElement("tr");
       if (loan.status === "Overdue") row.className = "row-overdue";
-      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author)}</span></td><td>${this.formatDate(loan.borrow_date)}</td><td>${this.formatDate(loan.due_date)}</td><td>${this.badge(loan.status)}</td><td><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" class="btn btn-outline-secondary btn-sm">View</a></td>`;
+      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author)}</span></td><td>${Number(loan.quantity || 1)}</td><td>${this.formatDate(loan.borrow_date)}</td><td>${this.formatDate(loan.due_date)}</td><td>${this.badge(loan.status)}</td><td><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" class="btn btn-outline-secondary btn-sm">View</a></td>`;
       body.appendChild(row);
     });
   }

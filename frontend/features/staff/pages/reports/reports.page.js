@@ -51,6 +51,7 @@ export class ReportsPage {
 
     const headers = Array.isArray(report.headers) ? report.headers : [];
     const rows = Array.isArray(report.data) ? report.data : [];
+    const quantityIndex = headers.findIndex((header) => String(header).toLowerCase() === 'quantity');
     const head = table.querySelector?.('thead');
     const body = table.querySelector?.('tbody');
     if (!head || !body) return;
@@ -77,9 +78,9 @@ export class ReportsPage {
     } else {
       rows.forEach((values) => {
         const row = this.document.createElement('tr');
-        (Array.isArray(values) ? values : []).forEach((value) => {
+        (Array.isArray(values) ? values : []).forEach((value, index) => {
           const cell = this.document.createElement('td');
-          cell.textContent = String(value ?? '');
+          cell.textContent = String(value ?? (index === quantityIndex ? 1 : ''));
           row.appendChild(cell);
         });
         body.appendChild(row);

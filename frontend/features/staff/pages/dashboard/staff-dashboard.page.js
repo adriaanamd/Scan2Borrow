@@ -588,13 +588,14 @@ export class StaffDashboardPage {
               <td><code>${this.escape(row.transaction_code)}</code></td>
               <td>${this.escape(row.borrower)}</td>
               <td>${this.escape(row.title)}</td>
+              <td>${Number(row.quantity || 1)}</td>
               <td>${this.escape(this.date(row.borrow_date))}</td>
               <td>${this.escape(this.date(row.due_date))}</td>
               <td><span class="badge bg-secondary">${this.escape(row.status)}</span></td>
             </tr>`,
           )
           .join("")
-      : '<tr><td colspan="6" class="text-center text-muted">No recent activity.</td></tr>';
+      : '<tr><td colspan="7" class="text-center text-muted">No recent activity.</td></tr>';
   }
 
   svg(tag, attributes = {}) {
@@ -639,6 +640,7 @@ export class StaffDashboardPage {
           <div><p class="name">${this.escape(row.title)}</p><p class="function">by ${this.escape(row.author || "—")} | Barcode: ${this.escape(row.book_barcode)}</p></div>
           <div class="details" style="font-size: .95rem; color: rgba(156, 163, 175, 1); margin-top: 6px">
             <p style="margin: 0"><strong>Student:</strong> ${this.escape(row.borrower)}</p>
+            <p style="margin: 0"><strong>Quantity:</strong> ${Number(row.book_count || 1)} copy/copies</p>
             <p style="margin: 0"><strong>ID:</strong> ${this.escape(row.id_barcode)}</p>
             <p style="margin: 0"><strong>Due Date:</strong> ${this.escape(this.date(row.due_date))}</p>
             <small class="text-muted">Requested: ${this.escape(this.date(row.borrow_date))}</small>
@@ -796,6 +798,7 @@ export class StaffDashboardPage {
             ) => `<tr class="${!row.return_date && row.status === "Overdue" ? "row-overdue" : ""}">
           <td><code>${this.escape(row.transaction_code)}</code></td>
           <td>${this.escape(row.title)}<br /><span class="text-muted small">${this.escape(row.author || "")}</span></td>
+          <td>${Number(row.quantity || 1)}</td>
           <td>${this.escape(this.date(row.borrow_date))}</td>
           <td>${this.escape(this.date(row.due_date))}</td>
           <td>${row.return_date ? this.escape(this.date(row.return_date)) : '<span class="text-muted">—</span>'}</td>
@@ -912,7 +915,7 @@ export class StaffDashboardPage {
       const response = await this.api.get("/scan2borrow/api/staff/overdue");
       const rows = response.data.overdue || [];
       const values = this.root.querySelectorAll(".stat-card .value");
-      if (values[0]) values[0].textContent = rows.length;
+      if (values[0]) values[0].textContent = rows.reduce((total, row) => total + Number(row.quantity || 1), 0);
       if (values[1])
         values[1].textContent = `₱${Number(response.data.total_fine || 0).toFixed(2)}`;
       const body = this.root.querySelector("table tbody");
@@ -922,13 +925,13 @@ export class StaffDashboardPage {
               .map(
                 (row) => `<tr class="row-overdue">
         <td>${this.escape(row.borrower)}<br><span class="text-muted small">${this.escape(row.id_barcode)}</span></td>
-        <td>${this.escape(row.title)}</td><td>${this.escape(this.date(row.due_date))}</td>
+        <td>${this.escape(row.title)}</td><td>${Number(row.quantity || 1)}</td><td>${this.escape(this.date(row.due_date))}</td>
         <td><span class="badge bg-danger">${row.days_late || 0} day(s)</span></td><td>₱${Number(row.fine_amount || 0).toFixed(2)}</td>
         <td><a href="/scan2borrow/staff/notify?id=${row.user_id}" class="btn btn-warning btn-sm">Email Reminder</a></td>
       </tr>`,
               )
               .join("")
-          : '<tr><td colspan="6" class="text-center text-muted">No overdue books. &#127881;</td></tr>';
+          : '<tr><td colspan="7" class="text-center text-muted">No overdue books. &#127881;</td></tr>';
     } catch (error) {
       this.showError(error);
     }

@@ -25,6 +25,31 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
     public function borrowers(string $search): array
     {
+        if ($this->hasTable('borrowing_items')) {
+            $sql = "SELECT u.id, u.barcode, u.firstname, u.lastname, u.role, u.department, u.position, u.course, u.year_level, u.status,
+                    COALESCE(SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END), 0) AS active_loans,
+                    COALESCE(SUM(CASE WHEN bi.return_date IS NULL AND bt.status = 'Overdue' THEN 1 ELSE 0 END), 0) AS overdue_loans
+                    FROM users u
+                    LEFT JOIN borrowing_transactions bt ON bt.user_id = u.id
+                    LEFT JOIN borrowing_items bi ON bi.transaction_id = bt.id
+                    WHERE u.role IN ('student','teacher')";
+            $parameters = [];
+            if (trim($search) !== '') {
+                $sql .= ' AND (u.barcode LIKE :search OR u.firstname LIKE :search OR u.lastname LIKE :search OR u.course LIKE :search)';
+                $parameters['search'] = '%' . trim($search) . '%';
+            }
+            $sql .= ' GROUP BY u.id, u.barcode, u.firstname, u.lastname, u.role, u.department, u.position, u.course, u.year_level, u.status ORDER BY u.lastname ASC, u.firstname ASC';
+            $statement = $this->pdo->prepare($sql);
+            $statement->execute($parameters);
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) {
+                $row['name'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
+            }
+            unset($row);
+            return $rows;
+        }
+
         $sql = "SELECT u.id, u.barcode, u.firstname, u.lastname, u.role, u.department, u.position, u.course, u.year_level, u.status,
                 COALESCE(loan_stats.active_loans, 0) AS active_loans,
                 COALESCE(loan_stats.overdue_loans, 0) AS overdue_loans
@@ -73,12 +98,19 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
         $borrower['name'] = trim($this->string($borrower['firstname'] ?? null) . ' ' . $this->string($borrower['lastname'] ?? null));
 
-        $historyStatement = $this->pdo->prepare(
-            'SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount,
-                    b.title, b.author
+        $historyStatement = $this->pdo->prepare($this->hasTable('borrowing_items')
+            ? "SELECT MIN(bi.id) AS id, bt.transaction_code, bt.borrow_date, bt.due_date, MAX(bi.return_date) AS return_date,
+                      CASE WHEN SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) > 0 THEN bt.status ELSE 'Returned' END AS status,
+                      SUM(bi.fine_amount) AS fine_amount, t.title, t.author, COUNT(bi.id) AS quantity
+               FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+               JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
+               WHERE bt.user_id = :user_id
+               GROUP BY bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.status, t.id, t.title, t.author
+               ORDER BY bt.borrow_date DESC"
+            : 'SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount,
+                    b.title, b.author, 1 AS quantity
              FROM borrowing br JOIN books b ON b.id = br.book_id
-             WHERE br.user_id = :user_id ORDER BY br.borrow_date DESC'
-        );
+             WHERE br.user_id = :user_id ORDER BY br.borrow_date DESC');
         $historyStatement->execute(['user_id' => $userId]);
         /** @var list<array<string, mixed>> $history */
         $history = $historyStatement->fetchAll(PDO::FETCH_ASSOC);
@@ -88,13 +120,14 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         $overdue = 0;
         $totalFine = 0.0;
         foreach ($history as $row) {
+            $quantity = is_numeric($row['quantity'] ?? null) ? (int) $row['quantity'] : 1;
             if ($row['return_date'] !== null && $row['return_date'] !== '') {
-                $returned++;
+                $returned += $quantity;
                 continue;
             }
-            $active++;
+            $active += $quantity;
             if ($row['status'] === 'Overdue') {
-                $overdue++;
+                $overdue += $quantity;
                 $totalFine += $this->number($row['fine_amount'] ?? null);
             }
         }
@@ -119,8 +152,34 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
     public function overdue(): array
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->query(
+                "SELECT MIN(bi.id) AS id, bt.due_date, SUM(bi.fine_amount) AS fine_amount,
+                        t.title, COUNT(bi.id) AS quantity, GROUP_CONCAT(c.barcode) AS book_barcode,
+                        u.id AS user_id, u.barcode AS id_barcode, u.email,
+                        u.firstname, u.lastname,
+                        DATEDIFF(CURRENT_DATE, bt.due_date) AS days_late
+                 FROM borrowing_items bi
+                 JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 JOIN book_copies c ON c.id = bi.copy_id
+                 JOIN book_titles t ON t.id = c.title_id
+                 JOIN users u ON u.id = bt.user_id
+                 WHERE bi.return_date IS NULL AND bt.status = 'Overdue'
+                 GROUP BY bt.id, bt.due_date, t.id, t.title, u.id, u.barcode, u.email, u.firstname, u.lastname
+                 ORDER BY bt.due_date ASC"
+            );
+            if ($statement === false) return [];
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) {
+                $row['borrower'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
+            }
+            unset($row);
+            return $rows;
+        }
+
         $statement = $this->pdo->query(
-            "SELECT br.id, br.due_date, br.fine_amount, b.title, b.barcode AS book_barcode,
+            "SELECT br.id, br.due_date, br.fine_amount, b.title, 1 AS quantity, b.barcode AS book_barcode,
                     u.id AS user_id, u.barcode AS id_barcode, u.email,
                     u.firstname, u.lastname,
                     DATEDIFF(CURRENT_DATE, br.due_date) AS days_late
@@ -157,8 +216,41 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         $type = isset($labels[$type]) ? $type : 'borrowed';
 
         if ($type === 'inventory') {
+            if ($this->hasTable('book_copies')) {
+                $statement = $this->pdo->query(
+                    "SELECT GROUP_CONCAT(c.barcode) AS barcodes, t.title, t.author, t.category_name,
+                            COUNT(c.id) AS quantity,
+                            SUM(CASE WHEN c.status = 'Available' THEN 1 ELSE 0 END) AS available_quantity,
+                            SUM(CASE WHEN c.status = 'Borrowed' THEN 1 ELSE 0 END) AS borrowed_quantity,
+                            SUM(CASE WHEN c.status = 'Reserved' THEN 1 ELSE 0 END) AS reserved_quantity,
+                            CASE WHEN SUM(CASE WHEN c.status = 'Available' THEN 1 ELSE 0 END) > 0 THEN 'Available'
+                                 WHEN SUM(CASE WHEN c.status = 'Borrowed' THEN 1 ELSE 0 END) > 0 THEN 'Borrowed'
+                                 ELSE 'Reserved' END AS status,
+                            CONCAT('Floor ', MIN(c.floor_no), ' / ', MIN(c.section_name), ' / Shelf ', MIN(c.shelf_no)) AS location
+                     FROM book_titles t JOIN book_copies c ON c.title_id = t.id
+                     WHERE c.deleted_at IS NULL GROUP BY t.id, t.title, t.author, t.category_name ORDER BY t.title ASC"
+                );
+                $rows = $statement === false ? [] : $statement->fetchAll(PDO::FETCH_ASSOC);
+                $data = [];
+                foreach ($rows as $row) {
+                    $data[] = [
+                        $this->string($row['barcodes'] ?? null),
+                        $this->string($row['title'] ?? null),
+                        $this->string($row['author'] ?? null),
+                        $this->string($row['category_name'] ?? null),
+                        (int) ($row['quantity'] ?? 0),
+                        (int) ($row['available_quantity'] ?? 0),
+                        (int) ($row['borrowed_quantity'] ?? 0),
+                        (int) ($row['reserved_quantity'] ?? 0),
+                        $this->string($row['status'] ?? null),
+                        $this->string($row['location'] ?? null),
+                    ];
+                }
+                return ['label' => $labels[$type], 'headers' => ['Barcode(s)', 'Title', 'Author', 'Category', 'Quantity', 'Available', 'Borrowed', 'Reserved', 'Status', 'Location'], 'data' => $data];
+            }
+
             $statement = $this->pdo->query(
-                "SELECT barcode, title, author, category_name, status,
+                "SELECT barcode, title, author, category_name, 1 AS quantity, status,
                         CONCAT('Floor ', floor_no, ' / ', section_name, ' / Shelf ', shelf_no) AS location
                  FROM books WHERE deleted_at IS NULL ORDER BY title ASC"
             );
@@ -170,12 +262,63 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                     $this->string($row['title'] ?? null),
                     $this->string($row['author'] ?? null),
                     $this->string($row['category_name'] ?? null),
+                    1,
                     $this->string($row['status'] ?? null),
                     $this->string($row['location'] ?? null),
                 ];
             }
 
-            return ['label' => $labels[$type], 'headers' => ['Barcode', 'Title', 'Author', 'Category', 'Status', 'Location'], 'data' => $data];
+            return ['label' => $labels[$type], 'headers' => ['Barcode', 'Title', 'Author', 'Category', 'Quantity', 'Status', 'Location'], 'data' => $data];
+        }
+
+        if ($this->hasTable('borrowing_items')) {
+            $where = [];
+            $parameters = [];
+            if ($type === 'returned') {
+                $where[] = 'bi.return_date IS NOT NULL';
+                $dateColumn = 'bi.return_date';
+            } elseif ($type === 'overdue') {
+                $where[] = "bi.return_date IS NULL AND bt.status = 'Overdue'";
+                $dateColumn = 'bt.borrow_date';
+            } else {
+                $dateColumn = 'bt.borrow_date';
+            }
+            if ($from !== '') {
+                $where[] = 'DATE(' . $dateColumn . ') >= :from_date';
+                $parameters['from_date'] = $from;
+            }
+            if ($to !== '') {
+                $where[] = 'DATE(' . $dateColumn . ') <= :to_date';
+                $parameters['to_date'] = $to;
+            }
+            $statement = $this->pdo->prepare(
+                'SELECT bt.transaction_code, CONCAT(u.firstname, \' \', u.lastname) AS borrower, u.barcode AS id_barcode,
+                        t.title, COUNT(bi.id) AS quantity, bt.borrow_date, bt.due_date, MAX(bi.return_date) AS return_date,
+                        CASE WHEN SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) > 0 THEN bt.status ELSE \'Returned\' END AS status,
+                        SUM(bi.fine_amount) AS fine_amount
+                 FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 JOIN users u ON u.id = bt.user_id JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id ' .
+                ($where === [] ? '' : 'WHERE ' . implode(' AND ', $where)) .
+                ' GROUP BY bt.id, bt.transaction_code, u.firstname, u.lastname, u.barcode, t.id, t.title, bt.borrow_date, bt.due_date, bt.status ORDER BY bt.id DESC'
+            );
+            $statement->execute($parameters);
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            $data = [];
+            foreach ($rows as $row) {
+                $data[] = [
+                    $this->string($row['transaction_code'] ?? null),
+                    $this->string($row['borrower'] ?? null),
+                    $this->string($row['id_barcode'] ?? null),
+                    $this->string($row['title'] ?? null),
+                    (int) ($row['quantity'] ?? 0),
+                    $this->date($row['borrow_date'] ?? null),
+                    $this->date($row['due_date'] ?? null),
+                    $this->date($row['return_date'] ?? null),
+                    $this->string($row['status'] ?? null),
+                    number_format($this->number($row['fine_amount'] ?? null), 2),
+                ];
+            }
+            return ['label' => $labels[$type], 'headers' => ['Code', 'Borrower', 'ID', 'Book', 'Quantity', 'Borrowed', 'Due', 'Returned', 'Status', 'Fine'], 'data' => $data];
         }
 
         $where = [];
@@ -200,7 +343,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
         $statement = $this->pdo->prepare(
             'SELECT br.transaction_code, CONCAT(u.firstname, \' \', u.lastname) AS borrower, u.barcode AS id_barcode,
-                    b.title, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount
+                    b.title, 1 AS quantity, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount
              FROM borrowing br JOIN users u ON u.id = br.user_id JOIN books b ON b.id = br.book_id ' .
             ($where === [] ? '' : 'WHERE ' . implode(' AND ', $where)) . ' ORDER BY br.id DESC'
         );
@@ -213,6 +356,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 $this->string($row['borrower'] ?? null),
                 $this->string($row['id_barcode'] ?? null),
                 $this->string($row['title'] ?? null),
+                1,
                 $this->date($row['borrow_date'] ?? null),
                 $this->date($row['due_date'] ?? null),
                 $this->date($row['return_date'] ?? null),
@@ -221,7 +365,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             ];
         }
 
-        return ['label' => $labels[$type], 'headers' => ['Code', 'Borrower', 'ID', 'Book', 'Borrowed', 'Due', 'Returned', 'Status', 'Fine'], 'data' => $data];
+        return ['label' => $labels[$type], 'headers' => ['Code', 'Borrower', 'ID', 'Book', 'Quantity', 'Borrowed', 'Due', 'Returned', 'Status', 'Fine'], 'data' => $data];
     }
 
     public function guestRequests(): array
@@ -404,9 +548,32 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     private function recentTransactions(int $limit = 8): array
     {
         $limit = max(1, min($limit, 10));
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->query(
+                "SELECT bt.transaction_code, bt.borrow_date, bt.due_date, bt.status,
+                        u.firstname, u.lastname, t.title, COUNT(bi.id) AS quantity
+                 FROM borrowing_items bi
+                 JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 JOIN book_copies c ON c.id = bi.copy_id
+                 JOIN book_titles t ON t.id = c.title_id
+                 JOIN users u ON u.id = bt.user_id
+                 GROUP BY bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.status,
+                          u.firstname, u.lastname, t.id, t.title
+                 ORDER BY bt.id DESC LIMIT {$limit}"
+            );
+            if ($statement === false) return [];
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) {
+                $row['borrower'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
+            }
+            unset($row);
+            return $rows;
+        }
+
         $statement = $this->pdo->query(
             "SELECT br.transaction_code, br.borrow_date, br.due_date, br.status,
-                    u.firstname, u.lastname, b.title
+                    u.firstname, u.lastname, b.title, 1 AS quantity
              FROM borrowing br JOIN users u ON u.id = br.user_id JOIN books b ON b.id = br.book_id
              ORDER BY br.id DESC LIMIT {$limit}"
         );
@@ -428,6 +595,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     private function dashboardOverview(): array
     {
         $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
+        $normalized = $this->hasTable('borrowing_items');
 
         /** @var array<string, array{month: string, label: string, count: int}> $months */
         $months = [];
@@ -442,7 +610,12 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
 
         $activityStatement = $this->pdo->prepare(
-            "SELECT SUBSTR(TRIM(borrow_date), 1, 7) AS month, COUNT(*) AS count
+            $normalized
+            ? "SELECT SUBSTR(TRIM(bt.borrow_date), 1, 7) AS month, COUNT(bi.id) AS count
+             FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+             WHERE bt.borrow_date IS NOT NULL AND bt.borrow_date >= :start_date
+             GROUP BY SUBSTR(TRIM(bt.borrow_date), 1, 7)"
+            : "SELECT SUBSTR(TRIM(borrow_date), 1, 7) AS month, COUNT(*) AS count
              FROM borrowing
              WHERE borrow_date IS NOT NULL AND borrow_date >= :start_date
              GROUP BY SUBSTR(TRIM(borrow_date), 1, 7)"
@@ -461,7 +634,15 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         /** @var array<string, array<string, int>> $categoryCounts */
         $categoryCounts = [];
         $categoryActivityStatement = $this->pdo->prepare(
-            "SELECT SUBSTR(TRIM(br.borrow_date), 1, 7) AS month,
+            $normalized
+            ? "SELECT SUBSTR(TRIM(bt.borrow_date), 1, 7) AS month,
+                    COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized') AS category,
+                    COUNT(bi.id) AS count
+             FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+             JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
+             WHERE bt.borrow_date IS NOT NULL AND bt.borrow_date >= :start_date
+             GROUP BY SUBSTR(TRIM(bt.borrow_date), 1, 7), COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized')"
+            : "SELECT SUBSTR(TRIM(br.borrow_date), 1, 7) AS month,
                     COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized') AS category,
                     COUNT(*) AS count
              FROM borrowing br JOIN books b ON b.id = br.book_id
@@ -504,7 +685,14 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         );
 
         $topBorrowersStatement = $this->pdo->prepare(
-            'SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(br.id) AS borrowing_count '
+            $normalized
+            ? "SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(bi.id) AS borrowing_count
+               FROM users u JOIN borrowing_transactions bt ON bt.user_id = u.id
+               JOIN borrowing_items bi ON bi.transaction_id = bt.id
+               WHERE u.role IN ('student', 'teacher')
+               GROUP BY u.id, u.barcode, u.firstname, u.lastname
+               ORDER BY borrowing_count DESC, u.lastname ASC, u.firstname ASC LIMIT 10"
+            : 'SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(br.id) AS borrowing_count '
             . 'FROM users u JOIN borrowing br ON br.user_id = u.id '
             . "WHERE u.role IN ('student', 'teacher') "
             . 'GROUP BY u.id, u.barcode, u.firstname, u.lastname '
@@ -536,23 +724,36 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 'series' => $categorySeries,
             ],
             'loan_status' => [
-                'available' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Available'"),
-                'borrowed' => $this->count("SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Borrowed'"),
-                'overdue' => $this->count("SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL AND status = 'Overdue'"),
-                'pending' => $this->count("SELECT COUNT(*) FROM borrowing WHERE approval_status = 'pending' AND return_date IS NULL"),
+                'available' => $this->count($normalized ? "SELECT COUNT(*) FROM book_copies WHERE deleted_at IS NULL AND status = 'Available'" : "SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Available'"),
+                'borrowed' => $this->count($normalized ? "SELECT COUNT(*) FROM book_copies WHERE deleted_at IS NULL AND status = 'Borrowed'" : "SELECT COUNT(*) FROM books WHERE deleted_at IS NULL AND status = 'Borrowed'"),
+                'overdue' => $this->count($normalized ? "SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id WHERE bi.return_date IS NULL AND bt.status = 'Overdue'" : "SELECT COUNT(*) FROM borrowing WHERE return_date IS NULL AND status = 'Overdue'"),
+                'pending' => $this->count($normalized ? "SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id WHERE bt.approval_status = 'pending' AND bi.return_date IS NULL" : "SELECT COUNT(*) FROM borrowing WHERE approval_status = 'pending' AND return_date IS NULL"),
             ],
             'category_breakdown' => $this->namedCounts(
-                "SELECT COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized') AS name, COUNT(*) AS count
-                 FROM books WHERE deleted_at IS NULL
-                 GROUP BY COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized')
-                 ORDER BY count DESC, name ASC"
+                $normalized
+                ? "SELECT COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized') AS name, COUNT(c.id) AS count
+                   FROM book_titles t JOIN book_copies c ON c.title_id = t.id
+                   WHERE c.deleted_at IS NULL
+                   GROUP BY COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized')
+                   ORDER BY count DESC, name ASC"
+                : "SELECT COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized') AS name, COUNT(*) AS count
+                   FROM books WHERE deleted_at IS NULL
+                   GROUP BY COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized')
+                   ORDER BY count DESC, name ASC"
             ),
             'top_genres' => $this->namedCounts(
-                "SELECT COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized') AS name, COUNT(br.id) AS count
-                 FROM borrowing br JOIN books b ON b.id = br.book_id
-                 WHERE br.borrow_date IS NOT NULL
-                 GROUP BY COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized')
-                 ORDER BY count DESC, name ASC LIMIT 5"
+                $normalized
+                ? "SELECT COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized') AS name, COUNT(bi.id) AS count
+                   FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                   JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
+                   WHERE bt.borrow_date IS NOT NULL
+                   GROUP BY COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized')
+                   ORDER BY count DESC, name ASC LIMIT 5"
+                : "SELECT COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized') AS name, COUNT(br.id) AS count
+                   FROM borrowing br JOIN books b ON b.id = br.book_id
+                   WHERE br.borrow_date IS NOT NULL
+                   GROUP BY COALESCE(NULLIF(TRIM(b.category_name), ''), 'Uncategorized')
+                   ORDER BY count DESC, name ASC LIMIT 5"
             ),
             'top_borrowers' => $topBorrowers,
             'recent_activity' => $this->recentTransactions(10),
@@ -651,6 +852,18 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     /** @return array{total_books: int, available_books: int, borrowed_books: int, borrowers: int, active_loans: int, overdue_loans: int, pending_approvals: int} */
     private function dashboardStats(): array
     {
+        if ($this->hasTable('book_copies')) {
+            return [
+                'total_books' => $this->count("SELECT COUNT(*) FROM book_copies WHERE deleted_at IS NULL"),
+                'available_books' => $this->count("SELECT COUNT(*) FROM book_copies WHERE deleted_at IS NULL AND status = 'Available'"),
+                'borrowed_books' => $this->count("SELECT COUNT(*) FROM book_copies WHERE deleted_at IS NULL AND status = 'Borrowed'"),
+                'borrowers' => $this->count("SELECT COUNT(*) FROM users WHERE role IN ('student', 'teacher')"),
+                'active_loans' => $this->count("SELECT COUNT(*) FROM borrowing_items WHERE return_date IS NULL"),
+                'overdue_loans' => $this->count("SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id WHERE bi.return_date IS NULL AND bt.status = 'Overdue'"),
+                'pending_approvals' => $this->count("SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id WHERE bt.approval_status = 'pending' AND bi.return_date IS NULL"),
+            ];
+        }
+
         $statement = $this->pdo->query(
             "SELECT 'total_books' AS metric, COUNT(*) AS metric_count
              FROM books WHERE deleted_at IS NULL

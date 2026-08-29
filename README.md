@@ -32,6 +32,10 @@ uploads/                 Runtime photo storage
 
 Bulk borrowing uses `book_titles` for one catalog title and its total `quantity`, `book_copies` for individually barcoded physical copies, `borrowing_transactions` for one checkout session, and `borrowing_items` for each copy in that session. Available, reserved, and borrowed quantities are calculated from non-archived copy statuses. Run `sql/upgrade_bulk_borrowing.sql` whenever an existing or freshly imported legacy schema is being prepared for the bulk-borrowing application.
 
+### Inventory management
+
+Staff inventory is managed in two levels: a catalog title stores shared metadata and total quantity, while each physical copy stores its own barcode, accession number, status, location, and loan dates. New titles may be created with any quantity; blank seed identifiers are generated for every copy. Edit title quantity from the inventory row, then use `View copies` to assign or correct individual identifiers and locations. A title quantity reduction archives available copies only and will refuse to remove copies involved in active loans. If the normalized tables are missing, inventory quantity operations return `Run sql/upgrade_bulk_borrowing.sql before managing quantities.`
+
 ## Quality checks
 
 ```text

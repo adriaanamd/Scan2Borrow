@@ -108,8 +108,8 @@
                         class="form-check-input"
                       />
                     </th>
-                    <th data-sort="barcode">
-                      Barcode<span class="sort-arrow"></span>
+                    <th>
+                      Catalog ID
                     </th>
                     <th data-sort="title">
                       Title<span class="sort-arrow"></span>
@@ -118,8 +118,8 @@
                       Author<span class="sort-arrow"></span>
                     </th>
                     <th>Quantity</th>
-                    <th data-sort="accession_no">
-                      Accesion Number<span class="sort-arrow"></span>
+                    <th>
+                      Copies
                     </th>
                     <th data-sort="publisher">
                       Publisher<span class="sort-arrow"></span>
@@ -174,25 +174,29 @@
             </div>
             <div class="offcanvas-body">
               <form id="book-form" enctype="multipart/form-data">
-                <input type="hidden" id="book-id" name="id" />
-                <label class="form-label">Book Barcode</label>
-                <div class="input-group mb-3">
-                  <input
-                    type="text"
-                    name="barcode"
-                    id="barcode"
-                    class="form-control"
-                    placeholder="Scan or type barcode"
-                  />
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    data-scan-target="barcode"
-                  >
-                    Scan
-                  </button>
+                <input type="hidden" id="book-id" name="title_id" />
+                <div id="title-seed-fields">
+                  <label class="form-label">First copy barcode <span class="text-muted">(optional)</span></label>
+                  <div class="input-group mb-3">
+                    <input
+                      type="text"
+                      name="barcode"
+                      id="barcode"
+                      class="form-control"
+                      placeholder="Leave blank to generate"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      data-scan-target="barcode"
+                    >
+                      Scan
+                    </button>
+                  </div>
+                  <label class="form-label">First copy accession <span class="text-muted">(optional)</span></label>
+                  <input type="text" name="accession_no" class="form-control mb-3" placeholder="Leave blank to generate" />
                 </div>
-                <label class="form-label">Quantity</label>
+                <label class="form-label">Total quantity</label>
                 <input type="number" name="quantity" class="form-control mb-3" min="1" value="1" required />
                 <label class="form-label">ISBN</label
                 ><input type="text" name="isbn" class="form-control mb-3" />
@@ -326,6 +330,26 @@
                   Save Book
                 </button>
               </form>
+            </div>
+          </div>
+
+          <div class="modal fade" id="copyModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Physical copies <span id="copy-title-name"></span></h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div id="copy-error" class="alert alert-danger d-none"></div>
+                  <div class="table-responsive">
+                    <table class="table align-middle">
+                      <thead><tr><th>Barcode</th><th>Accession</th><th>Status</th><th>Location</th><th>Due / Return</th><th></th></tr></thead>
+                      <tbody id="copy-body"><tr><td colspan="6" class="text-center text-muted">Select a title to load copies.</td></tr></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div

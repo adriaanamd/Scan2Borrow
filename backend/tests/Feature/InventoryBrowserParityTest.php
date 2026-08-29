@@ -39,24 +39,25 @@ final class InventoryBrowserParityTest extends TestCase
         self::assertStringNotContainsString('books_api.php', $script);
     }
 
-    public function testInventoryRendererIncludesAccessionBeforeStatusAndLocationColumns(): void
+    public function testInventoryRendererUsesTitleQuantitiesAndCopyActions(): void
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory' . DIRECTORY_SEPARATOR . 'inventory.page.js';
         $script = file_get_contents($path);
         self::assertIsString($script);
 
-        $accession = strpos($script, 'book.accession_no');
-        $publisher = strpos($script, 'book.publisher');
-        $status = strpos($script, 'this.badge(book.status)');
-        $location = strpos($script, 'book.floor_no');
+        foreach ([
+            'book.title_id || book.id',
+            'book.quantity',
+            'book.available_quantity',
+            'book.reserved_quantity',
+            'book.borrowed_quantity',
+            'data-act="copies"',
+            'this.copyPanel.open',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $script, "Missing title/copy inventory behavior: {$marker}");
+        }
 
-        self::assertIsInt($accession);
-        self::assertIsInt($publisher);
-        self::assertIsInt($status);
-        self::assertIsInt($location);
-        self::assertLessThan($publisher, $accession);
-        self::assertLessThan($status, $publisher);
-        self::assertLessThan($location, $status);
+        self::assertStringNotContainsString('book.accession_no', $script);
     }
 
     public function testFeatureOwnedInventoryBoundariesExposeServiceAndDrawerContracts(): void
@@ -71,6 +72,22 @@ final class InventoryBrowserParityTest extends TestCase
         }
         foreach (['book-form', 'bookDrawer', 'cover_file'] as $marker) {
             self::assertStringContainsString($marker, $drawer);
+        }
+    }
+
+    public function testCopyPanelAndTitleActionsArePresentInInventoryPage(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff';
+        $markup = file_get_contents($root . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory' . DIRECTORY_SEPARATOR . 'inventory.html');
+        $panel = file_get_contents($root . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'copy-panel' . DIRECTORY_SEPARATOR . 'copy-panel.component.js');
+        self::assertIsString($markup);
+        self::assertIsString($panel);
+
+        foreach (['id="copyModal"', 'id="copy-body"', 'id="title-seed-fields"', 'name="title_id"'] as $marker) {
+            self::assertStringContainsString($marker, $markup, "Missing inventory markup: {$marker}");
+        }
+        foreach (['/scan2borrow/api/book-copies', 'copy_id', 'data-copy-action', 'Scan2BorrowConfirmation'] as $marker) {
+            self::assertStringContainsString($marker, $panel, "Missing copy panel behavior: {$marker}");
         }
     }
 }

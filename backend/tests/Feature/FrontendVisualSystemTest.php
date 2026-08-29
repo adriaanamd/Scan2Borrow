@@ -130,6 +130,7 @@ final class FrontendVisualSystemTest extends TestCase
         self::assertStringContainsString('/scan2borrow/public/logo.png', $brand, 'The shared auth brand must use the existing BCC logo.');
 
         $styles = $this->read('frontend/assets/css/style.css');
+        $styles = str_replace(["\r\n", "\r"], "\n", $styles);
         self::assertStringContainsString(
             ".auth-brand-panel {\n    align-items: center;",
             $styles,

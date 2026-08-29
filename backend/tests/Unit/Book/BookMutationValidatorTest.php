@@ -15,7 +15,7 @@ final class BookMutationValidatorTest extends TestCase
     {
         $validator = new BookMutationValidator();
 
-        self::assertSame('Barcode and title are required.', $validator->firstError(new BookMutationRequest()));
+        self::assertSame('Title is required.', $validator->firstError(new BookMutationRequest()));
     }
 
     public function testInvalidStatusFallsBackToAvailableAndPreservesKnownStatuses(): void

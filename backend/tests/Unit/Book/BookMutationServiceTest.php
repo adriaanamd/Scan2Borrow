@@ -41,6 +41,39 @@ final class BookMutationServiceTest extends TestCase
         self::assertTrue($service->update(3, $request)->successful());
         self::assertSame(3, $repository->updatedId);
     }
+
+    public function testUpdateDoesNotRequireABarcodeForAGroupedTitle(): void
+    {
+        $repository = new FakeBookMutationRepository();
+        $service = new BookMutationService(new BookMutationValidator(), $repository);
+
+        $result = $service->update(12, new BookMutationRequest(title: 'Clean Code', quantity: 1));
+
+        self::assertTrue($result->successful());
+        self::assertSame(12, $repository->updatedId);
+    }
+
+    public function testBulkCreateRejectsADuplicateSeedBarcodeBeforeWritingCopies(): void
+    {
+        $repository = new FakeBookMutationRepository();
+        $repository->barcodeExists = true;
+        $service = new BookMutationService(new BookMutationValidator(), $repository);
+
+        $result = $service->create(new BookMutationRequest('BK-1', 'Clean Code', quantity: 3));
+
+        self::assertFalse($result->successful());
+        self::assertSame('A book with this barcode already exists.', $result->message());
+    }
+
+    public function testTitleCreateAllowsGeneratedIdentifiersWhenBarcodeIsBlank(): void
+    {
+        $repository = new FakeBookMutationRepository();
+        $service = new BookMutationService(new BookMutationValidator(), $repository);
+
+        $result = $service->create(new BookMutationRequest(title: 'Clean Code'));
+
+        self::assertTrue($result->successful());
+    }
 }
 
 final class FakeBookMutationRepository implements BookMutationRepositoryInterface

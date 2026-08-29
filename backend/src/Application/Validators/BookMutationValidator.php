@@ -11,8 +11,8 @@ final class BookMutationValidator
 {
     public function firstError(BookMutationRequest $request): ?string
     {
-        if ($request->title === '' || ($request->barcode === '' && $request->quantity === 1)) {
-            return 'Barcode and title are required.';
+        if ($request->title === '') {
+            return 'Title is required.';
         }
         if ($request->quantity < 1) return 'Quantity must be positive.';
 

@@ -1,3 +1,5 @@
+import { CopyPanelComponent } from "../../components/copy-panel/copy-panel.component.js";
+
 export class InventoryPage {
   constructor() {
     this.api = "/scan2borrow/api/books";
@@ -25,6 +27,14 @@ export class InventoryPage {
     this.bulkCount = this.$("inv-bulkcount");
     this.offcanvasEl = this.$("bookDrawer");
     this.drawer = new bootstrap.Offcanvas(this.offcanvasEl);
+    this.copyPanel = new CopyPanelComponent({
+      modal: this.$("copyModal"),
+      body: this.$("copy-body"),
+      title: this.$("copy-title-name"),
+      error: this.$("copy-error"),
+      csrf: this.csrf,
+      onChanged: () => this.load(),
+    });
     this.form = this.$("book-form");
     this.coverFileInput = this.$("cover-file");
     this.coverPreview = this.$("cover-preview");
@@ -47,6 +57,11 @@ export class InventoryPage {
           "'": "&#39;",
         })[character],
     );
+  }
+
+  nonNegativeInteger(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
   }
 
   toast(message, ok) {
@@ -171,18 +186,22 @@ export class InventoryPage {
         '<tr><td colspan="13" class="text-center text-muted py-4">No books found.</td></tr>';
     response.data.forEach((book) => {
       const row = document.createElement("tr");
+      const titleId = book.title_id || book.id;
       const actions = this.state.archived
         ? '<button class="btn btn-success btn-sm" data-act="restore" data-id="' +
-          book.id +
+          titleId +
           '">Restore</button> ' +
           '<button class="btn btn-outline-danger btn-sm" data-act="delete" data-id="' +
-          book.id +
+          titleId +
           '">Delete</button>'
         : '<button class="btn btn-outline-primary btn-sm" data-act="edit" data-id="' +
-          book.id +
+          titleId +
           '">Edit</button> ' +
+          '<button class="btn btn-outline-secondary btn-sm" data-act="copies" data-id="' +
+          titleId +
+          '">Copies</button> ' +
           '<button class="btn btn-outline-warning btn-sm" data-act="archive" data-id="' +
-          book.id +
+          titleId +
           '">Archive</button>';
       const cell = (content, className, style) => {
         const element = document.createElement("td");
@@ -194,14 +213,14 @@ export class InventoryPage {
       row.appendChild(
         cell(
           '<input type="checkbox" class="form-check-input row-check" value="' +
-            book.id +
+            titleId +
             '">',
           "",
           "width:38px;",
         ),
       );
       row.appendChild(
-        cell(this.escapeHtml(book.barcode || ""), "", "min-width:110px;"),
+        cell(`<code>T-${this.escapeHtml(titleId)}</code>`, "", "min-width:110px;"),
       );
       row.appendChild(
         cell(
@@ -227,7 +246,7 @@ export class InventoryPage {
       row.appendChild(cell(`<strong>${total}</strong><br><span class="text-muted small">${available} available · ${reserved} reserved · ${borrowed} borrowed</span>`, "", "min-width:190px;"));
       row.appendChild(
         cell(
-          this.escapeHtml(book.accession_no || ""),
+          `<button type="button" class="btn btn-outline-secondary btn-sm" data-act="copies" data-id="${this.escapeHtml(titleId)}">View ${this.nonNegativeInteger(book.quantity)} copies</button>`,
           "",
           "min-width:140px;",
         ),
@@ -359,11 +378,17 @@ export class InventoryPage {
   openDrawer(book) {
     this.form.reset();
     this.showCoverPreview("");
-    this.$("book-id").value = book ? book.id : "";
+    this.$("book-id").value = book ? (book.title_id || book.id) : "";
     this.$("drawer-title").textContent = book ? "Edit Book" : "Add New Book";
+    const seedFields = this.$("title-seed-fields");
+    if (seedFields) {
+      seedFields.style.display = book ? "none" : "";
+      seedFields.querySelectorAll("input, button").forEach((field) => {
+        field.disabled = Boolean(book);
+      });
+    }
     if (book) {
       [
-        "barcode",
         "quantity",
         "isbn",
         "title",
@@ -449,6 +474,8 @@ export class InventoryPage {
       const action = button.dataset.act;
       if (action === "edit")
         this.openDrawer(JSON.parse(button.closest("tr").dataset.book));
+      else if (action === "copies")
+        this.copyPanel.open(id, JSON.parse(button.closest("tr").dataset.book).title);
       else if (action === "archive")
         this.doAction("archive", [id], {
           title: "Archive book",
@@ -501,9 +528,9 @@ export class InventoryPage {
     event.preventDefault();
     const id = this.$("book-id").value;
     const data = new FormData(this.form);
-    data.append("action", id ? "update" : "create");
+    data.append("action", id ? "update_title" : "create_title");
     data.append("csrf", this.csrf);
-    if (id) data.append("id", id);
+    if (id) data.append("title_id", id);
     fetch(this.api, { method: "POST", body: data })
       .then((response) =>
         response.text().then((text) => {

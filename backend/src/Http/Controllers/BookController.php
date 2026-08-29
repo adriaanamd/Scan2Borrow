@@ -76,14 +76,21 @@ final readonly class BookController
             return new JsonResponse(200, ['ok' => true, 'message' => $count . ' book(s) ' . $noun . '.']);
         }
 
-        if ($action === 'update') {
-            $result = $this->mutations->update($this->positiveInt($body['id'] ?? null), $this->bookRequest($body));
-            $message = 'Book updated successfully.';
-        } elseif ($action === 'create') {
-            $result = $this->mutations->create($this->bookRequest($body));
-            $message = 'Book added successfully.';
-        } else {
-            return new JsonResponse(400, ['ok' => false, 'message' => 'Unknown action.']);
+        try {
+            if (in_array($action, ['update', 'update_title'], true)) {
+                $result = $this->mutations->update(
+                    $this->positiveInt($body['title_id'] ?? $body['id'] ?? null),
+                    $this->bookRequest($body),
+                );
+                $message = 'Book updated successfully.';
+            } elseif (in_array($action, ['create', 'create_title'], true)) {
+                $result = $this->mutations->create($this->bookRequest($body));
+                $message = 'Book added successfully.';
+            } else {
+                return new JsonResponse(400, ['ok' => false, 'message' => 'Unknown action.']);
+            }
+        } catch (InvalidArgumentException $exception) {
+            return new JsonResponse(422, ['ok' => false, 'message' => $exception->getMessage()]);
         }
         if (!$result->successful()) {
             return new JsonResponse(422, ['ok' => false, 'message' => $result->message()]);

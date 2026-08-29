@@ -56,3 +56,10 @@ test('student surface styles remain scoped away from navigation', () => {
     assert.doesNotMatch(source, /\.sidebar|\[data-app-navbar\]/);
   }
 });
+
+test('student search controller exposes styled empty, error, and card boundaries', () => {
+  const source = read('features/student/pages/search/student-search.page.js');
+  assert.match(source, /student-library-state/);
+  assert.match(source, /student-search-filter-chip/);
+  assert.match(source, /student-search-result/);
+});

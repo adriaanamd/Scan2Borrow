@@ -5,7 +5,7 @@ Scan2Borrow is a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql` to backfill the seeded legacy rows into the catalog/copy model. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, then `upgrade_bulk_borrowing.sql`. The bulk migration is required in both cases.
+2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql` and `sql/upgrade_barcode_printing.sql` to backfill the seeded legacy rows and enable barcode export history. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, then `upgrade_barcode_printing.sql`. The bulk-borrowing and barcode-printing migrations are required in both cases.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
@@ -35,6 +35,10 @@ Bulk borrowing uses `book_titles` for one catalog title and its total `quantity`
 ### Inventory management
 
 Staff inventory is managed in two levels: a catalog title stores shared metadata and total quantity, while each physical copy stores its own barcode, accession number, status, location, and loan dates. New titles may be created with any quantity; blank seed identifiers are generated for every copy. Edit title quantity from the inventory row, then use `View copies` to assign or correct individual identifiers and locations. A title quantity reduction archives available copies only and will refuse to remove copies involved in active loans. If the normalized tables are missing, inventory quantity operations return `Run sql/upgrade_bulk_borrowing.sql before managing quantities.`
+
+### Printable barcodes
+
+From a title's `View copies` panel, staff can export all active copies whose barcodes have not been exported before. Export generation permanently marks those physical copies as printed and stores an immutable batch snapshot. If no unprinted copy remains, the request is skipped. Existing batches can be exported again from their history without changing the printed state. The print-ready page uses the browser print dialog; choose `Save as PDF` to create the barcode-label PDF. Canceling that dialog does not reverse the printed marker because the irreversible step occurs when the export batch is generated.
 
 ## Quality checks
 

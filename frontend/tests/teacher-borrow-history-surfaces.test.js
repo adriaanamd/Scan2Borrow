@@ -56,3 +56,14 @@ test('shared history retains its teacher-compatible route and role boundary', ()
   assert.match(source, /student-history-page/);
   assert.match(source, /\/scan2borrow\/api\/student\/history/);
 });
+
+test('teacher history exposes a scoped Swiss ledger contract', () => {
+  const template = read('features/student/pages/history/history.html');
+  const styles = read('assets/css/teacher-history.css');
+  assert.match(template, /teacher-history\.css/);
+  assert.match(styles, /\.teacher-history-page/);
+  assert.match(styles, /font-variant-numeric:\s*tabular-nums/);
+  assert.match(styles, /teacher-history-status/);
+  assert.match(styles, /teacher-history-fine/);
+  assert.match(styles, /prefers-reduced-motion/);
+});

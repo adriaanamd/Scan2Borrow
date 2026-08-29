@@ -71,14 +71,14 @@ export class StudentHistoryPage {
     }
     history.forEach((item) => {
       const row = document.createElement("tr");
-      row.classList.add("student-history-row");
+      row.classList.add("student-history-row", "teacher-history-row");
       if (!item.return_date && item.status === "Overdue")
-        row.classList.add("row-overdue", "student-history-row--overdue");
+        row.classList.add("row-overdue", "student-history-row--overdue", "teacher-history-row--overdue");
       row.innerHTML = `<td><code>${this.escapeHtml(item.transaction_code)}</code></td><td>${this.escapeHtml(item.title)}<br><span class="text-muted small">${this.escapeHtml(item.author)}</span></td><td>${Number(item.quantity || 1)}</td><td>${this.date(item.borrow_date)}</td><td>${this.date(item.due_date)}</td><td>${item.return_date ? this.date(item.return_date) : '<span class="text-muted">&mdash;</span>'}</td><td><span class="badge bg-secondary">${this.escapeHtml(item.status)}</span></td><td>${Number(item.fine_amount || 0) > 0 ? `₱${Number(item.fine_amount).toFixed(2)}` : "&mdash;"}</td>`;
-      row.querySelector("td:nth-child(7)")?.classList.add("student-history-status");
-      row.querySelector("td:nth-child(7) .badge")?.classList.add("student-history-status-badge", this.statusClass(item.status));
+      row.querySelector("td:nth-child(7)")?.classList.add("student-history-status", "teacher-history-status");
+      row.querySelector("td:nth-child(7) .badge")?.classList.add("student-history-status-badge", "teacher-history-status-badge", this.statusClass(item.status));
       if (Number(item.fine_amount || 0) > 0)
-        row.querySelector("td:nth-child(8)")?.classList.add("student-history-fine");
+        row.querySelector("td:nth-child(8)")?.classList.add("student-history-fine", "teacher-history-fine");
       this.body.appendChild(row);
     });
   }

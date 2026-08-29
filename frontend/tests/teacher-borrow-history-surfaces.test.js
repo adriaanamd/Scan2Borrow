@@ -36,3 +36,10 @@ test('teacher Borrow modal exposes the dashboard styling contract', () => {
   assert.match(styles, /teacher-borrow-modal/);
   assert.match(styles, /prefers-reduced-motion/);
 });
+
+test('teacher Borrow controller exposes cart presentation hooks', () => {
+  const source = read('features/teacher/pages/dashboard/teacher-dashboard.page.js');
+  assert.match(source, /teacher-borrow-cart-row/);
+  assert.match(source, /teacher-borrow-cart-actions/);
+  assert.match(source, /teacher-borrow-cart-count/);
+});

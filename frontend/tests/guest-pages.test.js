@@ -9,6 +9,7 @@ import { GuestHistoryPage } from '../features/guest/pages/history/guest-history.
 import { GuestBorrowRequestPage } from '../features/guest/pages/borrow-request/guest-borrow-request.page.js';
 import { GuestReturnPage } from '../features/guest/pages/return/guest-return.page.js';
 import { GuestPassPage } from '../features/guest/pages/pass/guest-pass.page.js';
+import { GuestReceiptPage } from '../features/guest/pages/receipt/guest-receipt.page.js';
 
 test('guest bootstrap registers every guest route and excludes borrower/staff auth pages', () => {
   assert.deepEqual(guestPageNames, [
@@ -58,4 +59,10 @@ test('guest return and pass expose photo verification and print boundaries', () 
   assert.equal(typeof GuestReturnPage.prototype.submit, 'function');
   assert.equal(GuestPassPage.name, 'GuestPassPage');
   assert.equal(typeof GuestPassPage.prototype.load, 'function');
+});
+
+test('guest receipt exposes a service-backed printable page boundary', () => {
+  assert.equal(GuestReceiptPage.name, 'GuestReceiptPage');
+  assert.equal(typeof GuestReceiptPage.prototype.load, 'function');
+  assert.equal(typeof GuestReceiptPage.prototype.render, 'function');
 });

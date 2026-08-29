@@ -74,4 +74,17 @@ final class GuestPortalContractTest extends TestCase
             }
         }
     }
+
+    public function testCanonicalGuestReceiptTemplateUsesFeatureServicePage(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'receipt' . DIRECTORY_SEPARATOR . 'receipt.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="guest-receipt"', $html);
+        self::assertStringContainsString('frontend/features/guest/pages/receipt/guest-receipt.page.js', $html);
+        foreach (['Borrowing Receipt', 'Scan2Borrow Library', 'window.print()', 'class="no-print'] as $marker) {
+            self::assertStringContainsString($marker, $html);
+        }
+    }
 }

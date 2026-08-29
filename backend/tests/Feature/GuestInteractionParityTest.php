@@ -41,4 +41,17 @@ final class GuestInteractionParityTest extends TestCase
         self::assertStringContainsString('/guest/receipt', $this->script('history.js'));
         self::assertStringContainsString('window.JsBarcode', $this->script('pass.js'));
     }
+
+    public function testCanonicalOtpPagesKeepSeparateFormAndRedirectContracts(): void
+    {
+        $base = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'auth' . DIRECTORY_SEPARATOR . 'pages';
+        $guest = file_get_contents($base . DIRECTORY_SEPARATOR . 'guest-otp' . DIRECTORY_SEPARATOR . 'guest-otp.page.js');
+        $profile = file_get_contents($base . DIRECTORY_SEPARATOR . 'profile-otp' . DIRECTORY_SEPARATOR . 'profile-otp.page.js');
+        self::assertIsString($guest);
+        self::assertIsString($profile);
+        self::assertStringContainsString("guest-otp-form", $guest);
+        self::assertStringContainsString("/scan2borrow/guest/dashboard", $guest);
+        self::assertStringContainsString("profile-otp-form", $profile);
+        self::assertStringContainsString("/scan2borrow/guest/profile", $profile);
+    }
 }

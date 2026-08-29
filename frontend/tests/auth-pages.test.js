@@ -5,6 +5,8 @@ import { LoginPage } from '../features/auth/pages/login/login.page.js';
 import { RegistrationPage } from '../features/auth/pages/register/register.page.js';
 import { OtpPage } from '../features/auth/pages/otp/otp.page.js';
 import { GuestRegistrationPage } from '../features/auth/pages/guest-registration/guest-registration.page.js';
+import { GuestOtpPage } from '../features/auth/pages/guest-otp/guest-otp.page.js';
+import { ProfileOtpPage } from '../features/auth/pages/profile-otp/profile-otp.page.js';
 
 test('AuthService preserves borrower and staff login endpoints', async () => {
   const calls = [];
@@ -178,4 +180,42 @@ test('GuestRegistrationPage preserves purpose controls, photo steps, and redirec
   assert.equal(purposeWrap.hidden, true);
   await submit({ preventDefault() {} });
   assert.equal(redirected, '/scan2borrow/guest/verify-otp');
+});
+
+test('Guest and profile OTP pages keep distinct form boundaries and redirects', async () => {
+  let guestSubmit;
+  let profileSubmit;
+  let guestRedirect = '';
+  let profileRedirect = '';
+  const makeDocument = (formId, form) => ({
+    getElementById(id) {
+      if (id === formId) return form;
+      if (id === 'resend-form') return { addEventListener() {} };
+      if (id === 'form-error' || id === 'form-success') return { hidden: true, textContent: '' };
+      return null;
+    },
+  });
+  const guestForm = { addEventListener(name, callback) { if (name === 'submit') guestSubmit = callback; } };
+  const profileForm = { addEventListener(name, callback) { if (name === 'submit') profileSubmit = callback; } };
+  const guest = new GuestOtpPage({}, {
+    document: makeDocument('guest-otp-form', guestForm),
+    window: { location: { set href(value) { guestRedirect = value; } }, setInterval: () => 1, clearInterval() {} },
+    auth: { verifyGuestOtp: async () => ({ ok: true }) },
+    formDataFactory: () => ({ guestForm }),
+  });
+  const profile = new ProfileOtpPage({}, {
+    document: makeDocument('profile-otp-form', profileForm),
+    window: { location: { set href(value) { profileRedirect = value; } }, setInterval: () => 2, clearInterval() {} },
+    auth: { verifyGuestOtp: async () => ({ ok: true, message: 'Profile updated.' }) },
+    formDataFactory: () => ({ profileForm }),
+  });
+
+  await guestSubmit({ preventDefault() {} });
+  await profileSubmit({ preventDefault() {} });
+  assert.deepEqual(guest.formDataFactory(guestForm), { guestForm });
+  assert.deepEqual(profile.formDataFactory(profileForm), { profileForm });
+  assert.equal(guestRedirect, '/scan2borrow/guest/dashboard');
+  assert.equal(profileRedirect, '/scan2borrow/guest/profile');
+  guest.destroy();
+  profile.destroy();
 });

@@ -25,3 +25,14 @@ test('teacher Borrow surface boundary retains existing dashboard contracts', () 
   assert.match(source, /teacher-borrow-modal__cart/);
   assert.match(source, /teacher-borrow-modal__footer/);
 });
+
+test('teacher Borrow modal exposes the dashboard styling contract', () => {
+  const template = read('features/teacher/pages/dashboard/dashboard.html');
+  const styles = read('assets/css/borrower-dashboards.css');
+  assert.match(template, /teacher-borrow-modal/);
+  assert.match(template, /teacher-borrow-modal__scan/);
+  assert.match(template, /teacher-borrow-modal__cart/);
+  assert.match(template, /teacher-borrow-modal__footer/);
+  assert.match(styles, /teacher-borrow-modal/);
+  assert.match(styles, /prefers-reduced-motion/);
+});

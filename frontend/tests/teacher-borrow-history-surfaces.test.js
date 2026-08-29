@@ -75,3 +75,14 @@ test('shared history controller exposes teacher row hierarchy hooks', () => {
   assert.match(source, /teacher-history-fine/);
   assert.match(source, /row-overdue/);
 });
+
+test('teacher history states remain explicit and readable', () => {
+  const source = read('features/student/pages/history/student-history.page.js');
+  const styles = read('assets/css/teacher-history.css');
+  assert.match(source, /teacher-history-state/);
+  assert.match(source, /teacher-history-state--empty/);
+  assert.match(source, /teacher-history-state--error/);
+  assert.match(styles, /teacher-history-state/);
+  assert.match(styles, /teacher-history-state--empty/);
+  assert.match(styles, /teacher-history-state--error/);
+});

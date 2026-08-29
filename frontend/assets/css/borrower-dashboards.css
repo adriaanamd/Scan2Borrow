@@ -55,6 +55,32 @@
   border-radius: 22px;
 }
 
+.borrower-dashboard--teacher .content {
+  color: #23384A;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.borrower-dashboard--teacher h1,
+.borrower-dashboard--teacher h2,
+.borrower-dashboard--teacher h3,
+.borrower-dashboard--teacher h4,
+.borrower-dashboard--teacher h5,
+.borrower-dashboard--teacher h6 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -.025em;
+}
+
+.borrower-dashboard--teacher .borrower-dashboard__panel {
+  background: #FFFFFF;
+  border: 1px solid #D4E0E8;
+  border-radius: 4px;
+}
+
+.borrower-dashboard--teacher .borrower-dashboard__stats,
+.borrower-dashboard--teacher .borrower-dashboard__table {
+  font-variant-numeric: tabular-nums;
+}
+
 .borrower-dashboard .content {
   background: var(--borrower-surface);
   min-height: calc(100vh - 76px);

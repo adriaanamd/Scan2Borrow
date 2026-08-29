@@ -60,3 +60,11 @@ test('student dashboard declares its Organic surface and display typography', ()
   assert.match(css, /Fraunces/);
   assert.match(css, /border-radius:\s*22px/);
 });
+
+test('teacher dashboard declares its Swiss surface and data typography', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  assert.match(css, /\.borrower-dashboard--teacher[\s\S]*#F7F7F8/);
+  assert.match(css, /Helvetica Neue/);
+  assert.match(css, /font-variant-numeric:\s*tabular-nums/);
+  assert.match(css, /\.borrower-dashboard--teacher[\s\S]*border:\s*1px solid/);
+});

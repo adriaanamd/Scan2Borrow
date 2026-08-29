@@ -18,6 +18,7 @@ test('barcode lookup does not pin an unavailable copy when the title has other a
   for (const relative of [
     'features/student/pages/search/student-search.page.js',
     'features/student/pages/dashboard/student-dashboard.page.js',
+    'features/teacher/pages/dashboard/teacher-dashboard.page.js',
   ]) {
     assert.match(
       read(relative),

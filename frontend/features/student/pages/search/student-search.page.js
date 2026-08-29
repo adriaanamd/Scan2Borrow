@@ -120,6 +120,8 @@ export class StudentSearchPage {
     const title = this.escapeHtml(book.title || "");
     const author = this.escapeHtml(book.author || "Unknown Author");
     const status = this.escapeHtml(book.status || "");
+    const totalQuantity = Number(book.quantity ?? 1);
+    const availableQuantity = Number(book.available_quantity ?? (book.status === "Available" ? 1 : 0));
     const available = Number(book.available_quantity ?? (book.status === "Available" ? 1 : 0)) > 0;
     const borrowed = Boolean(book.already_borrowed);
     const coverMarkup = cover
@@ -131,6 +133,8 @@ export class StudentSearchPage {
         ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${title}" data-author="${author}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`
         : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
     column.innerHTML = `<div class="book-card-shell"><div class="book-card"><div class="book-face book-face-front"><div class="book-cover${cover ? "" : " book-cover-fallback"}">${coverMarkup}<div class="book-cover-content"><span class="badge bg-light text-dark mb-3">${this.escapeHtml(book.category_name || "Library")}</span><h4 class="fw-bold text-white mb-2">${title}</h4><p class="text-white-50 small mb-0">${author}</p></div></div></div><div class="book-face book-face-back"><div class="book-back-content"><div class="d-flex justify-content-between align-items-start mb-3"><div><h5 class="fw-bold mb-1">${title}</h5><p class="text-muted small mb-0">${author}</p></div>${this.badge(status)}</div><p class="text-muted small mb-3">${this.escapeHtml(book.description || "No description available")}</p><div class="small text-muted mb-3"><div><strong>Publisher:</strong> ${this.escapeHtml(book.publisher || "N/A")}</div><div><strong>Location:</strong> Floor ${this.escapeHtml(book.floor_no)} · Shelf ${this.escapeHtml(book.shelf_no)} · Row ${this.escapeHtml(book.row_no)}</div></div>${action}</div></div></div></div>`;
+    const details = column.querySelector(".book-back-content .small.text-muted.mb-3");
+    details?.insertAdjacentHTML("afterbegin", `<div><strong>Copies:</strong> ${totalQuantity} total · ${availableQuantity} available</div>`);
     const image = column.querySelector("img");
     image?.addEventListener("error", () => {
       image.style.display = "none";

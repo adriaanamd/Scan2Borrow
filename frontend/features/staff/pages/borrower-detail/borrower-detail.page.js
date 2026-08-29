@@ -46,10 +46,11 @@ export class BorrowerDetailPage {
   renderHistory(rows) {
     const body = this.document.getElementById('borrower-history');
     if (!body) return;
-    body.innerHTML = rows.length ? rows.map((row) => `<tr><td><code>${this.escape(row.transaction_code)}</code></td><td>${this.escape(row.title)}</td><td>${this.escape(row.status)}</td></tr>`).join('') : '<tr><td colspan="7" class="text-center text-muted">No borrowing history found.</td></tr>';
+    body.innerHTML = rows.length ? rows.map((row) => `<tr><td><code>${this.escape(row.transaction_code)}</code></td><td>${this.escape(row.title)}<br><span class="text-muted small">${this.escape(row.author || '')}</span></td><td>${Number(row.quantity || 1)}</td><td>${this.escape(this.date(row.borrow_date))}</td><td>${this.escape(this.date(row.due_date))}</td><td>${row.return_date ? this.escape(this.date(row.return_date)) : '<span class="text-muted">—</span>'}</td><td><span class="badge bg-secondary">${this.escape(row.status)}</span></td><td>${Number(row.fine_amount || 0) > 0 ? `₱${Number(row.fine_amount).toFixed(2)}` : '—'}</td></tr>`).join('') : '<tr><td colspan="8" class="text-center text-muted">No borrowing history found.</td></tr>';
   }
 
   media(value) { return globalThis.Scan2BorrowMedia?.resolve(value || '') || value || ''; }
+  date(value) { return value ? String(value).slice(0, 10) : ''; }
   text(id, value) { const node = this.document.getElementById(id); if (node) node.textContent = value ?? ''; }
   escape(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
 }

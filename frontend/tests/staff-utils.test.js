@@ -7,6 +7,8 @@ import { OverduePage } from '../features/staff/pages/overdue/overdue.page.js';
 import { StaffGuestRequestService } from '../features/staff/services/guest-request.service.js';
 import { StaffNotifyPage } from '../features/staff/pages/notify/notify.page.js';
 import { GuestRequestsPage } from '../features/staff/pages/guest-requests/guest-requests.page.js';
+import { AdminStaffService } from '../features/staff/services/admin-staff.service.js';
+import { AdminStaffPage } from '../features/staff/pages/admin-staff/admin-staff.page.js';
 
 test('staff utility services preserve report filters, export/print flags, and notification actions', async () => {
   const calls = [];
@@ -48,4 +50,21 @@ test('staff notification and guest review boundaries preserve action payloads', 
   assert.equal(typeof StaffNotifyPage.prototype.load, 'function');
   assert.equal(GuestRequestsPage.name, 'GuestRequestsPage');
   assert.equal(typeof GuestRequestsPage.prototype.render, 'function');
+});
+
+test('admin staff service preserves candidate search and role-management fields', async () => {
+  const calls = [];
+  const api = {
+    get: async (path, params) => { calls.push({ method: 'GET', path, params }); return { ok: true, data: {} }; },
+    post: async (path, body) => { calls.push({ method: 'POST', path, body }); return { ok: true }; },
+  };
+  const service = new AdminStaffService({ api });
+  await service.list('faculty');
+  await service.action('promote', 9, { role: 'librarian' });
+  assert.deepEqual(calls, [
+    { method: 'GET', path: '/scan2borrow/api/admin/staff', params: { bsearch: 'faculty' } },
+    { method: 'POST', path: '/scan2borrow/api/admin/staff-action', body: { role: 'librarian', action: 'promote', user_id: 9 } },
+  ]);
+  assert.equal(AdminStaffPage.name, 'AdminStaffPage');
+  assert.equal(typeof AdminStaffPage.prototype.render, 'function');
 });

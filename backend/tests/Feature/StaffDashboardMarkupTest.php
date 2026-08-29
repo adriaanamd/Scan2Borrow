@@ -58,6 +58,17 @@ final class StaffDashboardMarkupTest extends TestCase
         self::assertStringContainsString('width: 12rem;', $styles);
     }
 
+    public function testCanonicalAdminStaffPageUsesFeatureEntry(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'admin-staff' . DIRECTORY_SEPARATOR . 'admin-staff.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="staff-admin-staff"', $html);
+        self::assertStringContainsString('frontend/features/staff/pages/admin-staff/entry.js', $html);
+        foreach (['promoteModal', 'pwModal', 'data-promote-user', 'Staff Accounts'] as $marker) self::assertStringContainsString($marker, $html);
+    }
+
     private function page(string $filename): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $filename;

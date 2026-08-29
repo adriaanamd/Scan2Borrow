@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence;
 
+use App\Application\DTO\BulkBorrowRequest;
+use App\Application\DTO\BulkBorrowItem;
 use App\Domain\Borrowing\LoanRecord;
 use DateTimeImmutable;
 use PDO;
@@ -24,6 +26,126 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         return $row === false ? null : $row;
+    }
+
+    /** @return array{transaction_code: string, copy_count: int, title_count: int} */
+    public function createBulkTransaction(
+        BulkBorrowRequest $request,
+        DateTimeImmutable $dueDate,
+        string $transactionCode,
+        string $status,
+        string $approvalStatus,
+    ): array {
+        $this->pdo->beginTransaction();
+        try {
+            /** @var list<array{id: int, title_id: int}> $copies */
+            $copies = [];
+            foreach ($request->items as $item) {
+                $copies = array_merge($copies, $this->allocateCopies($item));
+            }
+
+            if (count($copies) !== array_sum(array_map(
+                static fn (BulkBorrowItem $item): int => $item->quantity,
+                $request->items,
+            ))) {
+                throw new \RuntimeException('Not enough available copies for this borrowing request.');
+            }
+
+            $statement = $this->pdo->prepare(
+                'INSERT INTO borrowing_transactions (transaction_code, user_id, processed_by, approval_status, borrow_date, due_date, status, fine_amount, requested_at) '
+                . 'VALUES (:transaction_code, :user_id, NULL, :approval_status, CURRENT_TIMESTAMP, :due_date, :status, 0, CURRENT_TIMESTAMP)'
+            );
+            $statement->execute([
+                'transaction_code' => $transactionCode,
+                'user_id' => $request->userId,
+                'approval_status' => $approvalStatus,
+                'due_date' => $dueDate->format('Y-m-d'),
+                'status' => $status,
+            ]);
+            $transactionId = (int) $this->pdo->lastInsertId();
+
+            $itemStatement = $this->pdo->prepare(
+                'INSERT INTO borrowing_items (transaction_id, copy_id, status, fine_amount) VALUES (:transaction_id, :copy_id, :status, 0)'
+            );
+            $copyStatement = $this->pdo->prepare('UPDATE book_copies SET status = :status, due_date = :due_date WHERE id = :id');
+            $copyStatus = $approvalStatus === 'pending' ? 'Reserved' : 'Borrowed';
+            foreach ($copies as $copy) {
+                $itemStatement->execute([
+                    'transaction_id' => $transactionId,
+                    'copy_id' => $copy['id'],
+                    'status' => $status,
+                ]);
+                $copyStatement->execute([
+                    'status' => $copyStatus,
+                    'due_date' => $dueDate->format('Y-m-d'),
+                    'id' => $copy['id'],
+                ]);
+            }
+
+            $this->pdo->commit();
+
+            return [
+                'transaction_code' => $transactionCode,
+                'copy_count' => count($copies),
+                'title_count' => count($request->items),
+            ];
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
+    }
+
+    /** @return list<array{id: int, title_id: int}> */
+    private function allocateCopies(BulkBorrowItem $item): array
+    {
+        $requestedBarcodes = array_values(array_unique(array_filter(
+            $item->barcodes,
+            static fn (mixed $barcode): bool => is_string($barcode) && trim($barcode) !== '',
+        )));
+        if (count($requestedBarcodes) > $item->quantity) {
+            throw new \RuntimeException('The scanned copies do not match the requested quantity.');
+        }
+
+        $selected = [];
+        if ($requestedBarcodes !== []) {
+            $placeholders = implode(',', array_fill(0, count($requestedBarcodes), '?'));
+            $query = 'SELECT id, title_id FROM book_copies WHERE title_id = ? AND barcode IN (' . $placeholders . ') AND status = \'Available\' AND deleted_at IS NULL ORDER BY id';
+            $statement = $this->pdo->prepare($this->forUpdate($query));
+            $statement->execute(array_merge([$item->titleId], $requestedBarcodes));
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            if (count($rows) !== count($requestedBarcodes)) {
+                throw new \RuntimeException('One or more scanned copies are unavailable.');
+            }
+            foreach ($rows as $row) {
+                $selected[] = ['id' => (int) $row['id'], 'title_id' => (int) $row['title_id']];
+            }
+        }
+
+        $remaining = $item->quantity - count($selected);
+        if ($remaining > 0) {
+            $statement = $this->pdo->prepare($this->forUpdate(
+                'SELECT id, title_id FROM book_copies WHERE title_id = :title_id AND status = \'Available\' AND deleted_at IS NULL ORDER BY id'
+            ));
+            $statement->execute(['title_id' => $item->titleId]);
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            foreach (array_slice($rows, 0, $remaining) as $row) {
+                $selected[] = ['id' => (int) $row['id'], 'title_id' => (int) $row['title_id']];
+            }
+            if (count($selected) !== $item->quantity) {
+                throw new \RuntimeException('Not enough available copies for this title.');
+            }
+        }
+
+        return $selected;
+    }
+
+    private function forUpdate(string $query): string
+    {
+        return $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? $query . ' FOR UPDATE' : $query;
     }
 
     public function activeApprovedCount(int $userId): int

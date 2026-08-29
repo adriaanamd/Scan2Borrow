@@ -47,21 +47,10 @@
             <div class="d-flex align-items-center flex-wrap gap-4 student-dashboard__identity">
               <div class="avatar-placeholder" aria-hidden="true">&#128100;</div>
               <div class="flex-grow-1">
-                <div
-                  class="text-muted"
-                  style="
-                    font-size: 13px;
-                    letter-spacing: 1px;
-                    text-transform: uppercase;
-                  "
-                >
+                <div class="text-muted borrower-dashboard__eyebrow">
                   Welcome back
                 </div>
-                <h2
-                  class="mb-1"
-                  style="font-weight: 800"
-                  id="borrower-name"
-                ></h2>
+                <h2 class="mb-1 borrower-dashboard__hero-title" id="borrower-name"></h2>
                 <div class="text-muted" id="borrower-meta"></div>
                 <div class="d-flex gap-2 flex-wrap mt-3">
                   <button
@@ -241,10 +230,7 @@
               <div class="modal-content student-dashboard__modal">
                 <form method="POST" id="borrowForm">
                   <input type="hidden" name="book_barcode" data-scan-target="book_barcode" />
-                  <div
-                    class="modal-header text-white student-dashboard__modal-header"
-                    style="background: var(--primary)"
-                  >
+                  <div class="modal-header text-white student-dashboard__modal-header">
                     <h5 class="modal-title">&#128229; Borrow Books</h5>
                     <button
                       type="button"
@@ -308,10 +294,7 @@
           <div class="modal fade" id="successModal" tabindex="-1">
             <div class="modal-dialog">
               <div class="modal-content student-dashboard__modal">
-                <div
-                  class="modal-header text-white student-dashboard__modal-header"
-                  style="background: var(--success)"
-                >
+                <div class="modal-header text-white student-dashboard__modal-header student-dashboard__modal-header--success">
                   <h5 class="modal-title">&#10003; Borrowing Complete</h5>
                   <button
                     type="button"
@@ -348,10 +331,7 @@
             <div class="modal-dialog">
               <div class="modal-content student-dashboard__modal">
                 <form method="POST" id="returnForm">
-                  <div
-                    class="modal-header text-white student-dashboard__modal-header"
-                    style="background: var(--primary)"
-                  >
+                  <div class="modal-header text-white student-dashboard__modal-header">
                     <h5 class="modal-title">&#128228; Return a Book</h5>
                     <button
                       type="button"

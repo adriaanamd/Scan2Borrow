@@ -426,6 +426,10 @@
   padding: 1.15rem 1.35rem;
 }
 
+.borrower-dashboard--student .student-dashboard__modal-header--success {
+  background: var(--success) !important;
+}
+
 .borrower-dashboard--student .student-dashboard__modal .modal-body {
   padding: 1.35rem;
 }
@@ -541,6 +545,16 @@
 
 .borrower-dashboard__hero {
   margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.borrower-dashboard__eyebrow {
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.borrower-dashboard__hero-title {
+  font-weight: 800;
 }
 
 .borrower-dashboard__stats {

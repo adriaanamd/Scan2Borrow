@@ -44,21 +44,10 @@
                 &#128104;&#8205;&#127979;
               </div>
               <div class="flex-grow-1">
-                <div
-                  class="text-muted"
-                  style="
-                    font-size: 13px;
-                    letter-spacing: 1px;
-                    text-transform: uppercase;
-                  "
-                >
+                <div class="text-muted borrower-dashboard__eyebrow">
                   Welcome back
                 </div>
-                <h2
-                  class="mb-1"
-                  style="font-weight: 800"
-                  id="teacher-name"
-                ></h2>
+                <h2 class="mb-1 borrower-dashboard__hero-title" id="teacher-name"></h2>
                 <div class="text-muted" id="teacher-meta"></div>
                 <div class="d-flex gap-2 flex-wrap mt-3 teacher-dashboard__desk-rail">
                   <button
@@ -406,10 +395,7 @@
               <div class="modal-content teacher-dashboard__modal">
                 <form method="POST" id="borrowForm">
                   <input type="hidden" name="book_barcode" data-scan-target="book_barcode" />
-                  <div
-                    class="modal-header text-white teacher-dashboard__modal-header"
-                    style="background: var(--primary)"
-                  >
+                  <div class="modal-header text-white teacher-dashboard__modal-header">
                     <h5 class="modal-title">&#128229; Borrow Books</h5>
                     <button
                       type="button"
@@ -484,10 +470,7 @@
             <div class="modal-dialog">
               <div class="modal-content teacher-dashboard__modal">
                 <form method="POST" id="returnForm">
-                  <div
-                    class="modal-header text-white teacher-dashboard__modal-header"
-                    style="background: var(--primary)"
-                  >
+                  <div class="modal-header text-white teacher-dashboard__modal-header">
                     <h5 class="modal-title">&#128228; Return a Book</h5>
                     <button
                       type="button"

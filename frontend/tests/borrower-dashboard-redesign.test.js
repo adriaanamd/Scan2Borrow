@@ -164,3 +164,15 @@ test('teacher borrowing modals expose Swiss modal and cart hooks', () => {
     assert.match(source, new RegExp(`id="${id}"`));
   }
 });
+
+test('borrower dashboard hero and modal presentation stays in scoped CSS', () => {
+  for (const relative of [
+    'features/student/pages/dashboard/dashboard.html',
+    'features/teacher/pages/dashboard/dashboard.html',
+  ]) {
+    const source = read(relative);
+    assert.doesNotMatch(source, /class="text-muted"\s+style=/);
+    assert.doesNotMatch(source, /class="mb-1"\s+style="font-weight: 800"/);
+    assert.doesNotMatch(source, /class="modal-header[^\"]*"[\s\S]{0,160}?style=/);
+  }
+});

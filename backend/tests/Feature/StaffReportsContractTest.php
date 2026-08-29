@@ -48,6 +48,22 @@ final class StaffReportsContractTest extends TestCase
         foreach (['/api/staff/notifications', '/api/staff/notifications/viewed', '/api/staff/notify', 'notification_id', 'notification_type'] as $marker) self::assertStringContainsString($marker, $notification);
     }
 
+    public function testCanonicalReportsAndOverduePagesUseFeatureEntries(): void
+    {
+        foreach ([
+            ['reports/reports.html', 'staff-reports', 'reports/entry.js', ['staff-report-document', 'staff-report-table']],
+            ['overdue/overdue.html', 'staff-overdue', 'overdue/entry.js', ['No overdue books', 'table']],
+        ] as [$relativePath, $pageName, $entry, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString('frontend/features/staff/pages/' . $entry, $html);
+            foreach ($markers as $marker) self::assertStringContainsString($marker, $html);
+        }
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

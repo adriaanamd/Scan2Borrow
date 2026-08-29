@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { StaffReportService, StaffNotificationService } from '../features/staff/services/index.js';
+import { StaffOverdueService } from '../features/staff/services/overdue.service.js';
+import { ReportsPage } from '../features/staff/pages/reports/reports.page.js';
+import { OverduePage } from '../features/staff/pages/overdue/overdue.page.js';
 
 test('staff utility services preserve report filters, export/print flags, and notification actions', async () => {
   const calls = [];
@@ -19,4 +22,15 @@ test('staff utility services preserve report filters, export/print flags, and no
     { method: 'GET', path: '/scan2borrow/api/staff/notifications', params: { action: 'pending_approvals' } },
   ]);
   notifications.stop();
+});
+
+test('reports and overdue pages expose their operational boundaries', async () => {
+  let call;
+  const overdue = new StaffOverdueService({ api: { get: async (path, params) => { call = { path, params }; return { ok: true, data: { overdue: [] } }; } } });
+  await overdue.load();
+  assert.deepEqual(call, { path: '/scan2borrow/api/staff/overdue', params: {} });
+  assert.equal(ReportsPage.name, 'ReportsPage');
+  assert.equal(typeof ReportsPage.prototype.render, 'function');
+  assert.equal(OverduePage.name, 'OverduePage');
+  assert.equal(typeof OverduePage.prototype.render, 'function');
 });

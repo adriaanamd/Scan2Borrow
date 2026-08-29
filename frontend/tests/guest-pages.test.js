@@ -7,6 +7,8 @@ import { GuestBrowsePage } from '../features/guest/pages/browse/guest-browse.pag
 import { GuestBorrowedPage } from '../features/guest/pages/borrowed/guest-borrowed.page.js';
 import { GuestHistoryPage } from '../features/guest/pages/history/guest-history.page.js';
 import { GuestBorrowRequestPage } from '../features/guest/pages/borrow-request/guest-borrow-request.page.js';
+import { GuestReturnPage } from '../features/guest/pages/return/guest-return.page.js';
+import { GuestPassPage } from '../features/guest/pages/pass/guest-pass.page.js';
 
 test('guest bootstrap registers every guest route and excludes borrower/staff auth pages', () => {
   assert.deepEqual(guestPageNames, [
@@ -49,4 +51,11 @@ test('guest history and borrow request expose protected interaction boundaries',
   assert.equal(typeof GuestHistoryPage.prototype.render, 'function');
   assert.equal(GuestBorrowRequestPage.name, 'GuestBorrowRequestPage');
   assert.equal(typeof GuestBorrowRequestPage.prototype.submit, 'function');
+});
+
+test('guest return and pass expose photo verification and print boundaries', () => {
+  assert.equal(GuestReturnPage.name, 'GuestReturnPage');
+  assert.equal(typeof GuestReturnPage.prototype.submit, 'function');
+  assert.equal(GuestPassPage.name, 'GuestPassPage');
+  assert.equal(typeof GuestPassPage.prototype.load, 'function');
 });

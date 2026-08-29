@@ -159,4 +159,22 @@ final class GuestMarkupParityTest extends TestCase
             }
         }
     }
+
+    public function testCanonicalGuestReturnAndPassTemplatesUseFeatureModules(): void
+    {
+        foreach ([
+            ['return/return.html', 'guest-return', 'guest-return.page.js', ['Return a Book', 'name="book_barcode"', 'id="return_photo"', 'Submit Return']],
+            ['pass/pass.html', 'guest-pass', 'guest-pass.page.js', ['Registered Government ID', 'id="id-barcode"', 'Verified Government ID', 'window.print()']],
+        ] as [$relativePath, $pageName, $module, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString('frontend/features/guest/pages/' . str_replace('/', '/', dirname($relativePath)) . '/' . $module, $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html);
+            }
+        }
+    }
 }

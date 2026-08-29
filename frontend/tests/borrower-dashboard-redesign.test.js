@@ -38,3 +38,16 @@ test('approved student and teacher design tokens are present and role-scoped', (
   assert.match(css, /\.borrower-dashboard--student/);
   assert.match(css, /\.borrower-dashboard--teacher/);
 });
+
+test('borrower dashboards expose shared layout primitives', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  for (const selector of [
+    '.borrower-dashboard__hero',
+    '.borrower-dashboard__stats',
+    '.borrower-dashboard__work-grid',
+    '.borrower-dashboard__panel',
+    '.borrower-dashboard__table',
+  ]) {
+    assert.match(css, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+});

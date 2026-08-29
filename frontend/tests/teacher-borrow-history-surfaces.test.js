@@ -67,3 +67,11 @@ test('teacher history exposes a scoped Swiss ledger contract', () => {
   assert.match(styles, /teacher-history-fine/);
   assert.match(styles, /prefers-reduced-motion/);
 });
+
+test('shared history controller exposes teacher row hierarchy hooks', () => {
+  const source = read('features/student/pages/history/student-history.page.js');
+  assert.match(source, /teacher-history-row/);
+  assert.match(source, /teacher-history-status/);
+  assert.match(source, /teacher-history-fine/);
+  assert.match(source, /row-overdue/);
+});

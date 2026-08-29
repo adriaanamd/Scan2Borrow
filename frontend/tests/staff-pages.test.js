@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { normalizeStaffDashboard } from '../features/staff/models/index.js';
 import { StaffApprovalService, StaffDashboardService } from '../features/staff/services/index.js';
 import { OverviewChartComponent } from '../features/staff/components/overview-chart/overview-chart.component.js';
@@ -7,6 +10,11 @@ import { StaffDashboardPage } from '../features/staff/pages/dashboard/staff-dash
 import { InventoryService } from '../features/staff/services/inventory.service.js';
 import { BookDrawerComponent } from '../features/staff/components/book-drawer/book-drawer.component.js';
 import { InventoryPage } from '../features/staff/pages/inventory/inventory.page.js';
+
+const testsDirectory = path.dirname(fileURLToPath(import.meta.url));
+const inventorySources = [
+  path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'inventory', 'inventory.page.js'),
+];
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -69,4 +77,12 @@ test('inventory boundaries preserve list, bulk action, drawer, and page contract
   ]);
   assert.equal(typeof BookDrawerComponent.prototype.open, 'function');
   assert.equal(InventoryPage.name, 'InventoryPage');
+});
+
+test('inventory controllers use the shared confirmation service for destructive actions', () => {
+  for (const sourcePath of inventorySources) {
+    const source = fs.readFileSync(sourcePath, 'utf8');
+    assert.match(source, /Scan2BorrowConfirmation\.confirm/, sourcePath);
+    assert.doesNotMatch(source, /window\.confirm/, sourcePath);
+  }
 });

@@ -336,14 +336,19 @@ export class InventoryPage {
     });
   }
 
-  doAction(action, ids, confirmMessage) {
-    if (confirmMessage && !window.confirm(confirmMessage)) return;
-    this.apiPost(action, { ids })
+  doAction(action, ids, confirmation = null) {
+    const execute = () => this.apiPost(action, { ids })
       .then((response) => {
         this.toast(response.message, response.ok);
         if (response.ok) this.load();
       })
       .catch(() => this.toast("Request failed.", false));
+
+    if (!confirmation) return execute();
+    return window.Scan2BorrowConfirmation.confirm({
+      ...confirmation,
+      onConfirm: execute,
+    });
   }
 
   openDrawer(book) {
@@ -439,13 +444,23 @@ export class InventoryPage {
       if (action === "edit")
         this.openDrawer(JSON.parse(button.closest("tr").dataset.book));
       else if (action === "archive")
-        this.doAction("archive", [id], "Archive this book?");
+        this.doAction("archive", [id], {
+          title: "Archive book",
+          message: "Archive this book?",
+          confirmLabel: "Archive",
+          confirmClass: "btn-warning",
+        });
       else if (action === "restore") this.doAction("restore", [id]);
       else if (action === "delete")
         this.doAction(
           "delete",
           [id],
-          "Permanently delete this archived book? This cannot be undone.",
+          {
+            title: "Delete archived book",
+            message: "Permanently delete this archived book? This cannot be undone.",
+            confirmLabel: "Delete permanently",
+            confirmClass: "btn-danger",
+          },
         );
     });
     document.querySelectorAll("[data-bulk]").forEach((button) =>
@@ -453,13 +468,23 @@ export class InventoryPage {
         const ids = Array.from(this.state.selected);
         if (!ids.length) return;
         const action = button.getAttribute("data-bulk");
-        const message =
+        const confirmation =
           action === "delete"
-            ? "Permanently delete " + ids.length + " book(s)?"
+            ? {
+                title: "Delete selected books",
+                message: "Permanently delete " + ids.length + " book(s)?",
+                confirmLabel: "Delete permanently",
+                confirmClass: "btn-danger",
+              }
             : action === "archive"
-              ? "Archive " + ids.length + " book(s)?"
+              ? {
+                  title: "Archive selected books",
+                  message: "Archive " + ids.length + " book(s)?",
+                  confirmLabel: "Archive",
+                  confirmClass: "btn-warning",
+                }
               : null;
-        this.doAction(action, ids, message);
+        this.doAction(action, ids, confirmation);
       }),
     );
     this.$("btn-add").addEventListener("click", () => this.openDrawer(null));

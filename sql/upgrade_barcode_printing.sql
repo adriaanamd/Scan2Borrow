@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS `barcode_print_batches` (
     UNIQUE KEY `uq_barcode_print_batch_token` (`batch_token`),
     KEY `idx_barcode_print_batches_title` (`title_id`, `created_at`)
 ) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS `barcode_print_batch_items` (
     `id`             INT AUTO_INCREMENT PRIMARY KEY,
     `batch_id`       INT NOT NULL,
@@ -40,4 +39,3 @@ CREATE TABLE IF NOT EXISTS `barcode_print_batch_items` (
     UNIQUE KEY `uq_barcode_print_batch_copy` (`batch_id`, `copy_id`),
     KEY `idx_barcode_print_batch_items_copy` (`copy_id`)
 ) ENGINE=InnoDB;
-

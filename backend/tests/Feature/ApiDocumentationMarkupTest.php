@@ -36,6 +36,14 @@ final class ApiDocumentationMarkupTest extends TestCase
         self::assertStringContainsString('api-docs-method', $source);
     }
 
+    public function testCanonicalApiDocsPageUsesFeatureOwnedModule(): void
+    {
+        $source = $this->read('frontend/features/staff/pages/api-docs/api-docs.html');
+        foreach (['data-app-page="staff-api-docs"', 'frontend/features/staff/pages/api-docs/api-docs.page.js', 'api-docs-tags', 'api-docs-operations', 'OpenAPI 3.0.3'] as $marker) {
+            self::assertStringContainsString($marker, $source, $marker . ' is missing from the canonical page.');
+        }
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

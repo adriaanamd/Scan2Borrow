@@ -9,6 +9,7 @@ import { StaffNotifyPage } from '../features/staff/pages/notify/notify.page.js';
 import { GuestRequestsPage } from '../features/staff/pages/guest-requests/guest-requests.page.js';
 import { AdminStaffService } from '../features/staff/services/admin-staff.service.js';
 import { AdminStaffPage } from '../features/staff/pages/admin-staff/admin-staff.page.js';
+import { ApiDocsPage } from '../features/staff/pages/api-docs/api-docs.page.js';
 
 test('staff utility services preserve report filters, export/print flags, and notification actions', async () => {
   const calls = [];
@@ -67,4 +68,11 @@ test('admin staff service preserves candidate search and role-management fields'
   ]);
   assert.equal(AdminStaffPage.name, 'AdminStaffPage');
   assert.equal(typeof AdminStaffPage.prototype.render, 'function');
+});
+
+test('API docs page preserves grouped search/rendering boundaries', () => {
+  assert.equal(ApiDocsPage.name, 'ApiDocsPage');
+  for (const method of ['renderTags', 'renderOperations', 'group', 'operation', 'detail', 'empty']) {
+    assert.equal(typeof ApiDocsPage.prototype[method], 'function', method);
+  }
 });

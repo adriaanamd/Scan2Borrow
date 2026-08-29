@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ApiError } from '../app/core/api/api-error.js';
 import { ApiClient } from '../app/core/api/api-client.js';
+import { createPageContext } from '../app/bootstrap/page-context.js';
 
 test('ApiError preserves HTTP status and compatibility payload', () => {
   const error = new ApiError('Denied', {
@@ -52,4 +53,31 @@ test('ApiClient encodes POST bodies and raises ApiError for rejected envelopes',
     (error) => error instanceof ApiError && error.status === 403 && error.message === 'Denied',
   );
   assert.equal(request.options.body.toString(), 'action=archive&id=4&csrf=token-123');
+});
+
+test('page context binds the browser fetch method to its owning window', async () => {
+  const originalFetch = globalThis.fetch;
+  const fakeWindow = {
+    fetch(url, options) {
+      assert.equal(this, fakeWindow);
+      assert.equal(url, '/scan2borrow/api/session');
+      assert.equal(options.credentials, 'same-origin');
+      return Promise.resolve(new Response(JSON.stringify({ ok: true, data: {} }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }));
+    },
+  };
+
+  try {
+    globalThis.fetch = fakeWindow.fetch;
+    const context = createPageContext({
+      document: { querySelector: () => ({ content: 'csrf-token' }) },
+      window: fakeWindow,
+    });
+
+    await assert.doesNotReject(() => context.api.get('/scan2borrow/api/session'));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

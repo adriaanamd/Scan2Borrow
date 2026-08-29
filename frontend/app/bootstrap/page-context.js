@@ -5,10 +5,11 @@ import { SessionService } from '../core/auth/session.service.js';
 export function createPageContext({
   document = globalThis.document,
   window = globalThis.window,
-  fetchImpl = globalThis.fetch,
+  fetchImpl,
 } = {}) {
   const csrf = document.querySelector('meta[name="csrf"]')?.content || '';
-  const api = new ApiClient({ fetchImpl, csrf });
+  const browserFetch = fetchImpl || window?.fetch?.bind(window) || globalThis.fetch?.bind(globalThis);
+  const api = new ApiClient({ fetchImpl: browserFetch, csrf });
   const session = new SessionService({ document });
   const guard = new SessionGuard({ session, window });
 

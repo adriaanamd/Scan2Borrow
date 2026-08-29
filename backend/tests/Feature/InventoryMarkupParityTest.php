@@ -38,4 +38,17 @@ final class InventoryMarkupParityTest extends TestCase
         self::assertStringContainsString('frontend/assets/js/pages/inventory.js', $html);
         self::assertStringContainsString('frontend/assets/css/style.css', $html);
     }
+
+    public function testCanonicalInventoryPageUsesFeatureOwnedController(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'inventory' . DIRECTORY_SEPARATOR . 'inventory.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="staff-inventory"', $html);
+        self::assertStringContainsString('frontend/features/staff/pages/inventory/inventory.page.js', $html);
+        foreach (self::REQUIRED_MARKERS as $marker) {
+            self::assertStringContainsString($marker, $html);
+        }
+    }
 }

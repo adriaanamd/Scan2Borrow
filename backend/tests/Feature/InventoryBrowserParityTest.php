@@ -58,4 +58,19 @@ final class InventoryBrowserParityTest extends TestCase
         self::assertLessThan($status, $publisher);
         self::assertLessThan($location, $status);
     }
+
+    public function testFeatureOwnedInventoryBoundariesExposeServiceAndDrawerContracts(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff';
+        $service = file_get_contents($root . DIRECTORY_SEPARATOR . 'services' . DIRECTORY_SEPARATOR . 'inventory.service.js');
+        $drawer = file_get_contents($root . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'book-drawer' . DIRECTORY_SEPARATOR . 'book-drawer.component.js');
+        self::assertIsString($service);
+        self::assertIsString($drawer);
+        foreach (['/scan2borrow/api/books', 'action', 'ids'] as $marker) {
+            self::assertStringContainsString($marker, $service);
+        }
+        foreach (['book-form', 'bookDrawer', 'cover_file'] as $marker) {
+            self::assertStringContainsString($marker, $drawer);
+        }
+    }
 }

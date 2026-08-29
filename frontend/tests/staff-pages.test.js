@@ -4,6 +4,9 @@ import { normalizeStaffDashboard } from '../features/staff/models/index.js';
 import { StaffApprovalService, StaffDashboardService } from '../features/staff/services/index.js';
 import { OverviewChartComponent } from '../features/staff/components/overview-chart/overview-chart.component.js';
 import { StaffDashboardPage } from '../features/staff/pages/dashboard/staff-dashboard.page.js';
+import { InventoryService } from '../features/staff/services/inventory.service.js';
+import { BookDrawerComponent } from '../features/staff/components/book-drawer/book-drawer.component.js';
+import { InventoryPage } from '../features/staff/pages/inventory/inventory.page.js';
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -48,4 +51,22 @@ test('staff dashboard exposes a feature-owned controller with approval and overv
   for (const method of ['dashboard', 'renderOverview', 'renderApprovals', 'submitBorrowing']) {
     assert.equal(typeof StaffDashboardPage.prototype[method], 'function', method);
   }
+});
+
+test('inventory boundaries preserve list, bulk action, drawer, and page contracts', async () => {
+  const calls = [];
+  const service = new InventoryService({
+    api: {
+      get: async (path, params) => { calls.push({ method: 'GET', path, params }); return { ok: true, data: [] }; },
+      post: async (path, body) => { calls.push({ method: 'POST', path, body }); return { ok: true }; },
+    },
+  });
+  await service.list({ page: 2, per_page: 10, sort: 'created_at', dir: 'desc' });
+  await service.action('archive', { ids: ['1', '2'] });
+  assert.deepEqual(calls, [
+    { method: 'GET', path: '/scan2borrow/api/books', params: { action: 'list', page: 2, per_page: 10, sort: 'created_at', dir: 'desc' } },
+    { method: 'POST', path: '/scan2borrow/api/books', body: { action: 'archive', ids: ['1', '2'] } },
+  ]);
+  assert.equal(typeof BookDrawerComponent.prototype.open, 'function');
+  assert.equal(InventoryPage.name, 'InventoryPage');
 });

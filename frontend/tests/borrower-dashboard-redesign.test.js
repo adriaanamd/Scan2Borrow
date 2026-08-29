@@ -186,3 +186,11 @@ test('borrower dashboards define keyboard focus, reduced motion, and status stat
   assert.match(read('features/student/pages/dashboard/student-dashboard.page.js'), /borrower-dashboard__status/);
   assert.match(read('features/teacher/pages/dashboard/teacher-dashboard.page.js'), /borrower-dashboard__status/);
 });
+
+test('borrower dashboard roles declare responsive compositions', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  assert.match(css, /student-dashboard__identity[\s\S]*flex-direction:\s*column/);
+  assert.match(css, /teacher-dashboard__identity[\s\S]*flex-direction:\s*column/);
+  assert.match(css, /teacher-dashboard__analytics-grid[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /student-dashboard__table[\s\S]*overflow-x:\s*auto/);
+});

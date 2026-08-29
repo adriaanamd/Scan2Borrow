@@ -626,16 +626,41 @@
   .borrower-dashboard__work-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .borrower-dashboard--teacher .teacher-dashboard__analytics-grid,
+  .borrower-dashboard--teacher .teacher-dashboard__insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
   .borrower-dashboard__stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .borrower-dashboard--student .student-dashboard__identity,
+  .borrower-dashboard--teacher .teacher-dashboard__identity {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .borrower-dashboard--student .student-dashboard__hero .btn,
+  .borrower-dashboard--teacher .teacher-dashboard__hero .btn {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 576px) {
   .borrower-dashboard__panel {
     padding: 1rem;
+  }
+
+  .borrower-dashboard--student .student-dashboard__table,
+  .borrower-dashboard--teacher .teacher-dashboard__table {
+    overflow-x: auto;
+  }
+
+  .borrower-dashboard__stats {
+    gap: .75rem;
   }
 }

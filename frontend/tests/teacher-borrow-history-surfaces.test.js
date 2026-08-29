@@ -43,3 +43,16 @@ test('teacher Borrow controller exposes cart presentation hooks', () => {
   assert.match(source, /teacher-borrow-cart-actions/);
   assert.match(source, /teacher-borrow-cart-count/);
 });
+
+test('shared history retains its teacher-compatible route and role boundary', () => {
+  const template = read('features/student/pages/history/history.html');
+  const source = read('features/student/pages/history/student-history.page.js');
+  assert.match(template, /data-navbar-role="session"/);
+  assert.match(template, /id="history-body"/);
+  assert.match(template, /<th>Code<\/th>[\s\S]*<th>Fine<\/th>/);
+  assert.match(template, /student-history\.page\.js/);
+  assert.match(source, /\/scan2borrow\/api\/auth\/session/);
+  assert.match(source, /teacher-history-page/);
+  assert.match(source, /student-history-page/);
+  assert.match(source, /\/scan2borrow\/api\/student\/history/);
+});

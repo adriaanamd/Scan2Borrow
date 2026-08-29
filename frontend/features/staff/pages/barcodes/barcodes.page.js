@@ -30,7 +30,7 @@ export class BarcodePrintPage {
 
   render(batch) {
     const labels = Array.isArray(batch?.labels) ? batch.labels : [];
-    this.subtitle.textContent = `${this.escape(batch?.title || "Book title")} · ${labels.length} label${labels.length === 1 ? "" : "s"} · generated ${this.escape(batch?.created_at || "")}`;
+    this.subtitle.textContent = `${batch?.title || "Book title"} · ${labels.length} label${labels.length === 1 ? "" : "s"} · generated ${batch?.created_at || ""}`;
     this.labels.innerHTML = labels.length
       ? labels.map((label, index) => `<article class="barcode-label"><div class="barcode-label-title">${this.escape(label.title)}</div><div class="barcode-label-author">${this.escape(label.author || "Author not recorded")}</div><svg id="barcode-${index}" role="img" aria-label="Barcode ${this.escape(label.barcode)}"></svg><div class="barcode-label-meta"><strong>${this.escape(label.barcode)}</strong>${label.accession_no ? ` · Accession ${this.escape(label.accession_no)}` : ""}</div><div class="barcode-label-meta">${this.location(label)}</div></article>`).join("")
       : '<div class="barcode-loading">This batch contains no labels.</div>';

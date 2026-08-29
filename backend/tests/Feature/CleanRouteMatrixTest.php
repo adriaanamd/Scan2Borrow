@@ -9,6 +9,19 @@ use PHPUnit\Framework\TestCase;
 
 final class CleanRouteMatrixTest extends TestCase
 {
+    public function testMatrixRecordsKnownExtractionRisks(): void
+    {
+        $matrixPath = dirname(__DIR__, 3)
+            . DIRECTORY_SEPARATOR . 'frontend'
+            . DIRECTORY_SEPARATOR . 'parity'
+            . DIRECTORY_SEPARATOR . 'page-matrix.md';
+        $matrix = (string) file_get_contents($matrixPath);
+
+        foreach (['staff.js', 'inventory.js', 'borrower-dashboard.js', 'inline styles', 'navbar'] as $risk) {
+            self::assertStringContainsString($risk, $matrix, $risk);
+        }
+    }
+
     public function testEveryCurrentRouteIsListedInTheFrontendMatrix(): void
     {
         $matrixPath = dirname(__DIR__, 3)

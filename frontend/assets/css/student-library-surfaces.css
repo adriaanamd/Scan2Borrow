@@ -165,8 +165,22 @@
 }
 
 .student-search-filters__grid > div {
-  flex: 1;
-  min-width: 150px;
+	flex: 1;
+	min-width: 150px;
+}
+
+.student-search-filter-field {
+	align-self: stretch;
+}
+
+.student-search-query-icon {
+	background: transparent;
+	border-right: 0;
+}
+
+.student-search-clear {
+	align-self: flex-end;
+	white-space: nowrap;
 }
 
 .student-search-filters__active {
@@ -196,7 +210,13 @@
   border-radius: 16px;
   color: var(--muted);
   padding: clamp(32px, 7vw, 72px) 20px;
-  text-align: center;
+	text-align: center;
+}
+
+.student-library-state__icon {
+	font-size: 48px;
+	line-height: 1;
+	margin-bottom: 12px;
 }
 
 .student-library-page .student-library-state strong {

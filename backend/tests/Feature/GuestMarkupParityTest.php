@@ -123,4 +123,22 @@ final class GuestMarkupParityTest extends TestCase
             }
         }
     }
+
+    public function testCanonicalGuestCatalogTemplatesUseFeatureModules(): void
+    {
+        foreach ([
+            ['browse/browse.html', 'guest-browse', 'guest-browse.page.js', ['Browse Books', 'name="q"', 'name="category"']],
+            ['borrowed/borrowed.html', 'guest-borrowed', 'guest-borrowed.page.js', ['Borrowed Books', 'currently borrowed books']],
+        ] as [$relativePath, $pageName, $module, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString('frontend/features/guest/pages/' . str_replace('/', '/', dirname($relativePath)) . '/' . $module, $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html);
+            }
+        }
+    }
 }

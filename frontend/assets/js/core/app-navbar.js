@@ -6,8 +6,10 @@ class AppNavbar {
   }
 
   async start() {
-    const initialRole =
-      this.roleHint === "session" ? this.cachedRole() : this.roleHint;
+    const cachedRole = this.roleHint === "session" ? this.cachedRole() : "";
+    const initialRole = this.roleHint === "session"
+      ? (this.roleMatchesCurrentPath(cachedRole) ? cachedRole : "")
+      : this.roleHint;
     if (initialRole) {
       this.render(initialRole);
       this.setActiveLink();
@@ -68,6 +70,18 @@ class AppNavbar {
     } catch {
       return "";
     }
+  }
+
+  roleMatchesCurrentPath(role) {
+    if (!role) return false;
+    const path = window.location.pathname.replace(/\/$/, "");
+    if (path.includes("/staff/")) return role === "admin" || role === "librarian";
+    if (path.includes("/admin/")) return role === "admin";
+    if (path.includes("/student/settings")) return role === "student";
+    if (path.includes("/student/")) return role === "student" || role === "teacher";
+    if (path.includes("/teacher/")) return role === "teacher";
+    if (path.includes("/guest/")) return role === "guest";
+    return true;
   }
 
   cacheRole(role) {

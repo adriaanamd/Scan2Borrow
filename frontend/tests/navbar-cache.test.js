@@ -76,3 +76,39 @@ test('navbar binds the first session fetch to the window', async () => {
 
   assert.equal(fetchCalls, 1);
 });
+
+test('navbar ignores a stale student cache on staff routes', async () => {
+  const values = new Map([['scan2borrow.nav.role', 'student']]);
+  let rendered = '';
+  let fetchCalls = 0;
+  const root = {
+    dataset: { navbarRole: 'session' },
+    querySelectorAll: () => [],
+    replaceChildren() {},
+  };
+  Object.defineProperty(root, 'innerHTML', {
+    set(value) { rendered = value; },
+  });
+  const window = {
+    location: { pathname: '/scan2borrow/staff/dashboard' },
+    sessionStorage: {
+      getItem: (key) => values.get(key) || null,
+      setItem: (key, value) => values.set(key, value),
+    },
+    async fetch(url) {
+      fetchCalls += 1;
+      assert.equal(url, '/scan2borrow/api/auth/session');
+      return { json: async () => ({ ok: true, data: { role: 'admin' } }) };
+    },
+  };
+  const AppNavbar = loadNavbar(window);
+
+  const navbar = new AppNavbar(root);
+  await navbar.start();
+
+  assert.equal(fetchCalls, 1);
+  assert.equal(navbar.renderedRole, 'admin');
+  assert.equal(values.get('scan2borrow.nav.role'), 'admin');
+  assert.match(rendered, /API Docs/);
+  assert.doesNotMatch(rendered, /Search Books/);
+});

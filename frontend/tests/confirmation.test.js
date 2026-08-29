@@ -154,3 +154,24 @@ test('Bootstrap absence falls back to native confirmation', async () => {
   assert.deepEqual(window.confirmCalls, ['Leave the session?']);
   assert.equal(called, false);
 });
+
+function htmlFiles(rootDirectory) {
+  return fs.readdirSync(rootDirectory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(rootDirectory, entry.name);
+    return entry.isDirectory() ? htmlFiles(entryPath) : entry.name.endsWith('.html') ? [entryPath] : [];
+  });
+}
+
+test('session templates load confirmation before the navbar', () => {
+  const templateRoot = path.resolve(testsDirectory, '..');
+  const templates = htmlFiles(path.join(templateRoot, 'features'));
+
+  for (const template of templates) {
+    const source = fs.readFileSync(template, 'utf8');
+    const navbarIndex = source.indexOf('core/app-navbar.js');
+    if (navbarIndex < 0) continue;
+    const confirmationIndex = source.indexOf('core/confirmation.js');
+    assert.ok(confirmationIndex >= 0, path.relative(templateRoot, template));
+    assert.ok(confirmationIndex < navbarIndex, path.relative(templateRoot, template));
+  }
+});

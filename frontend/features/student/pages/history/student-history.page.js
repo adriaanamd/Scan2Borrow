@@ -59,14 +59,14 @@ export class StudentHistoryPage {
         this.render(response.data?.history || []);
       })
       .catch((error) => {
-        this.body.innerHTML = `<tr class="student-history-row student-history-row--error"><td colspan="8" class="student-library-state text-center text-danger">${this.escapeHtml(error.message || "Unable to load history.")}</td></tr>`;
+        this.body.innerHTML = `<tr class="student-history-row student-history-row--error teacher-history-row--error"><td colspan="8" class="student-library-state teacher-history-state teacher-history-state--error text-center text-danger">${this.escapeHtml(error.message || "Unable to load history.")}</td></tr>`;
       });
   }
   render(history) {
     this.body.replaceChildren();
     if (!history.length) {
       this.body.innerHTML =
-        '<tr class="student-history-row student-history-row--empty"><td colspan="8" class="student-library-state text-center text-muted">No borrowing history yet.</td></tr>';
+        '<tr class="student-history-row student-history-row--empty teacher-history-row--empty"><td colspan="8" class="student-library-state teacher-history-state teacher-history-state--empty text-center text-muted">No borrowing history yet.</td></tr>';
       return;
     }
     history.forEach((item) => {

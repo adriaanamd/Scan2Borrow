@@ -149,4 +149,3 @@
 - [ ] Run `npm test` on the merged `master`.
 - [ ] Remove only `.worktrees/teacher-borrow-history-surfaces` and delete `feature/teacher-borrow-history-surfaces` after successful merge.
 - [ ] Confirm the pre-existing `frontend/features/guest/pages/profile/guest-profile.page.js` modification remains untouched.
-

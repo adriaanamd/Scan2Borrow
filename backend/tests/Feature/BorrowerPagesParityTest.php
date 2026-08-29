@@ -45,6 +45,19 @@ final class BorrowerPagesParityTest extends TestCase
         }
     }
 
+    public function testCanonicalStudentSearchUsesFeatureOwnedModule(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'search' . DIRECTORY_SEPARATOR . 'search.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="student-search"', $html);
+        self::assertStringContainsString('frontend/features/student/pages/search/student-search.page.js', $html);
+        foreach (['Book Catalog', 'id="searchForm"', 'name="category_name"', 'name="status"', 'name="floor"', 'name="sort"', 'id="borrowFormModal"', 'Borrow Now'] as $marker) {
+            self::assertStringContainsString($marker, $html, "Missing canonical search marker: {$marker}");
+        }
+    }
+
     public function testHistoryPagePreservesBorrowingRecordTable(): void
     {
         $this->assertPageContains('student-history.html', [

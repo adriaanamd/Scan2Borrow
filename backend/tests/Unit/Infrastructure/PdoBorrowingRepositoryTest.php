@@ -217,6 +217,25 @@ final class PdoBorrowingRepositoryTest extends TestCase
         self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM borrowing_items WHERE transaction_id = 1 AND copy_id = 2')->fetchColumn());
     }
 
+    public function testMixedPinnedAndFallbackCopiesAreAllocatedWithoutDuplicatingThePinnedCopy(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+
+        $result = $repository->createBulkTransaction(
+            new BulkBorrowRequest(8, Role::TEACHER, [new BulkBorrowItem(1, 2, ['COPY-1'])]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-MIXED',
+            'Pending',
+            'pending',
+        );
+
+        self::assertSame(2, $result['copy_count']);
+        self::assertSame(
+            [1, 2],
+            $this->pdo->query('SELECT copy_id FROM borrowing_items WHERE transaction_id = 1 ORDER BY copy_id')->fetchAll(PDO::FETCH_COLUMN),
+        );
+    }
+
     public function testBulkTransactionSupportsTransactionAndCopyReturns(): void
     {
         $repository = new PdoBorrowingRepository($this->pdo);

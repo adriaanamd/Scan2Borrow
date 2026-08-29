@@ -51,6 +51,27 @@ test('teacher Borrow cart keeps rows and controls readable', () => {
   assert.match(styles, /teacher-borrow-cart-count/);
 });
 
+test('teacher Borrow and history styling stays out of shared navigation', () => {
+  const borrowStyles = read('assets/css/borrower-dashboards.css');
+  const historyStyles = read('assets/css/teacher-history.css');
+  const dashboard = read('features/teacher/pages/dashboard/dashboard.html');
+  const history = read('features/student/pages/history/history.html');
+  assert.doesNotMatch(borrowStyles, /\.sidebar|\[data-app-navbar\]/);
+  assert.doesNotMatch(historyStyles, /\.sidebar|\[data-app-navbar\]/);
+  assert.match(dashboard, /\/scan2borrow\/api\/teacher\/dashboard|teacher-dashboard\.page\.js/);
+  assert.match(history, /data-navbar-role="session"/);
+});
+
+test('teacher Borrow and history preserve their existing data contracts', () => {
+  const borrow = read('features/teacher/pages/dashboard/teacher-dashboard.page.js');
+  const history = read('features/student/pages/history/student-history.page.js');
+  assert.match(borrow, /BulkBorrowCart/);
+  assert.match(borrow, /\/scan2borrow\/api\/teacher\/borrow\/lookup/);
+  assert.match(borrow, /items\[\$\{index\}\]\[quantity\]/);
+  assert.match(history, /\/scan2borrow\/api\/student\/history/);
+  assert.match(history, /id|history-body/);
+});
+
 test('shared history retains its teacher-compatible route and role boundary', () => {
   const template = read('features/student/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');

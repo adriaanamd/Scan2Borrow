@@ -170,7 +170,7 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         if ($this->hasTable('book_copies')) {
             $sql = 'SELECT 1 FROM book_copies WHERE barcode = :value AND deleted_at IS NULL';
             $parameters = ['value' => $barcode];
-            if ($exceptId !== null) { $sql .= ' AND id <> :except_id'; $parameters['except_id'] = $exceptId; }
+            if ($exceptId !== null) { $sql .= ' AND title_id <> :except_id'; $parameters['except_id'] = $exceptId; }
             $statement = $this->pdo->prepare($sql . ' LIMIT 1');
             $statement->execute($parameters);
             return $statement->fetchColumn() !== false;
@@ -183,7 +183,7 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         if ($this->hasTable('book_copies')) {
             $sql = 'SELECT 1 FROM book_copies WHERE accession_no = :value AND deleted_at IS NULL';
             $parameters = ['value' => $accessionNo];
-            if ($exceptId !== null) { $sql .= ' AND id <> :except_id'; $parameters['except_id'] = $exceptId; }
+            if ($exceptId !== null) { $sql .= ' AND title_id <> :except_id'; $parameters['except_id'] = $exceptId; }
             $statement = $this->pdo->prepare($sql . ' LIMIT 1');
             $statement->execute($parameters);
             return $statement->fetchColumn() !== false;
@@ -238,6 +238,11 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
 
     public function update(int $id, BookMutationRequest $request): void
     {
+        if ($this->hasTable('book_titles')) {
+            $this->updateTitle($id, $request);
+            return;
+        }
+
         $parameters = $this->parameters($request);
         $parameters['id'] = $id;
         $statement = $this->pdo->prepare(
@@ -247,6 +252,80 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
             'due_date = :due_date, return_date = :return_date, status = :status, description = :description WHERE id = :id'
         );
         $statement->execute($parameters);
+    }
+
+    private function updateTitle(int $id, BookMutationRequest $request): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $copyStatement = $this->pdo->prepare(
+                'SELECT id, status FROM book_copies WHERE title_id = :title_id AND deleted_at IS NULL ORDER BY id'
+            );
+            $copyStatement->execute(['title_id' => $id]);
+            /** @var list<array{id: int|string, status: string}> $copies */
+            $copies = $copyStatement->fetchAll(PDO::FETCH_ASSOC);
+            $currentQuantity = count($copies);
+
+            if ($request->quantity < $currentQuantity) {
+                $removableIds = [];
+                $activeCopyIds = [];
+                if ($this->hasTable('borrowing_items')) {
+                    $activeStatement = $this->pdo->prepare('SELECT copy_id FROM borrowing_items WHERE return_date IS NULL');
+                    $activeStatement->execute();
+                    $activeCopyIds = array_map('intval', $activeStatement->fetchAll(PDO::FETCH_COLUMN));
+                }
+                foreach (array_reverse($copies) as $copy) {
+                    $copyId = (int) $copy['id'];
+                    if ($copy['status'] === 'Available' && !in_array($copyId, $activeCopyIds, true)) {
+                        $removableIds[] = $copyId;
+                    }
+                    if (count($removableIds) === $currentQuantity - $request->quantity) break;
+                }
+                if (count($removableIds) < $currentQuantity - $request->quantity) {
+                    throw new \InvalidArgumentException('Cannot reduce quantity below the number of active copies.');
+                }
+                $placeholders = implode(',', array_fill(0, count($removableIds), '?'));
+                $deleteStatement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (' . $placeholders . ')');
+                $deleteStatement->execute($removableIds);
+            }
+
+            $titleStatement = $this->pdo->prepare(
+                "UPDATE book_titles SET isbn = :isbn, title = :title, author = :author, publisher = :publisher,
+                 description = :description, cover_file = COALESCE(NULLIF(:cover_file, ''), cover_file),
+                 category_name = :category_name, quantity = :quantity WHERE id = :id"
+            );
+            $titleStatement->execute([
+                'isbn' => $this->nullable($request->isbn), 'title' => $request->title,
+                'author' => $this->nullable($request->author), 'publisher' => $this->nullable($request->publisher),
+                'description' => $this->nullable($request->description), 'cover_file' => $this->nullable($request->coverFile),
+                'category_name' => $request->categoryName, 'quantity' => $request->quantity, 'id' => $id,
+            ]);
+
+            $quantityAfterRemoval = min($request->quantity, $currentQuantity);
+            if ($request->quantity > $quantityAfterRemoval) {
+                $copyInsert = $this->pdo->prepare(
+                    'INSERT INTO book_copies (title_id, barcode, accession_no, floor_no, section_name, shelf_no, row_no, due_date, return_date, status) VALUES (:title_id, :barcode, :accession_no, :floor_no, :section_name, :shelf_no, :row_no, :due_date, :return_date, :status)'
+                );
+                for ($index = $quantityAfterRemoval; $index < $request->quantity; $index++) {
+                    $copyInsert->execute([
+                        'title_id' => $id,
+                        'barcode' => $index === 0 && $request->barcode !== '' ? $request->barcode : 'PENDING-' . $id . '-' . ($index + 1) . '-' . bin2hex(random_bytes(3)),
+                        'accession_no' => $index === 0 && $request->accessionNo !== '' ? $request->accessionNo : 'ACC-' . $id . '-' . ($index + 1),
+                        'floor_no' => $request->floorNo !== '' ? $request->floorNo : null,
+                        'section_name' => $request->sectionName !== '' ? $request->sectionName : null,
+                        'shelf_no' => $request->shelfNo !== '' ? $request->shelfNo : null,
+                        'row_no' => $request->rowNo !== '' ? $request->rowNo : null,
+                        'due_date' => $request->dueDate !== '' ? $request->dueDate : null,
+                        'return_date' => $request->returnDate !== '' ? $request->returnDate : null,
+                        'status' => $request->status,
+                    ]);
+                }
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $exception;
+        }
     }
 
     /** @param list<int> $ids */

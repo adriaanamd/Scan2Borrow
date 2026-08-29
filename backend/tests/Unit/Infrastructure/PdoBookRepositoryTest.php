@@ -143,4 +143,43 @@ final class PdoBookRepositoryTest extends TestCase
         self::assertSame('Clean Code', $copy['title']);
         self::assertSame(1, (int) $copy['available_quantity']);
     }
+
+    public function testNormalizedUpdatePersistsQuantityAndCreatesMissingCopies(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL, created_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), due_date DATE, return_date DATE, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (id, title, author, category_name, quantity) VALUES (1, 'Clean Code', 'Robert Martin', 'Computer Science', 2)");
+        $this->pdo->exec("INSERT INTO book_copies (title_id, barcode, accession_no, status) VALUES (1, 'COPY-1', 'ACC-1', 'Available'), (1, 'COPY-2', 'ACC-2', 'Available')");
+
+        $request = new BookMutationRequest(
+            barcode: 'COPY-1',
+            title: 'Clean Code Updated',
+            author: 'Robert Martin',
+            categoryName: 'Computer Science',
+            status: 'Available',
+            quantity: 4,
+        );
+
+        (new PdoBookRepository($this->pdo))->update(1, $request);
+
+        self::assertSame(4, (int) $this->pdo->query('SELECT quantity FROM book_titles WHERE id = 1')->fetchColumn());
+        self::assertSame('Clean Code Updated', $this->pdo->query('SELECT title FROM book_titles WHERE id = 1')->fetchColumn());
+        self::assertSame(4, (int) $this->pdo->query('SELECT COUNT(*) FROM book_copies WHERE title_id = 1 AND deleted_at IS NULL')->fetchColumn());
+    }
+
+    public function testNormalizedUpdateDoesNotRemoveBorrowedCopiesWhenReducingQuantity(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), due_date DATE, return_date DATE, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY AUTOINCREMENT, copy_id INTEGER, return_date DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (id, title, quantity) VALUES (1, 'Clean Code', 2)");
+        $this->pdo->exec("INSERT INTO book_copies (title_id, barcode, status) VALUES (1, 'COPY-1', 'Borrowed'), (1, 'COPY-2', 'Available')");
+        $this->pdo->exec("INSERT INTO borrowing_items (copy_id, return_date) VALUES (1, NULL)");
+
+        (new PdoBookRepository($this->pdo))->update(1, new BookMutationRequest(title: 'Clean Code', quantity: 1));
+
+        self::assertSame(1, (int) $this->pdo->query('SELECT quantity FROM book_titles WHERE id = 1')->fetchColumn());
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM book_copies WHERE title_id = 1 AND deleted_at IS NULL')->fetchColumn());
+        self::assertSame('Borrowed', $this->pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-1'")->fetchColumn());
+    }
 }

@@ -5,6 +5,8 @@ import { GuestDashboardPage } from '../features/guest/pages/dashboard/guest-dash
 import { GuestProfilePage } from '../features/guest/pages/profile/guest-profile.page.js';
 import { GuestBrowsePage } from '../features/guest/pages/browse/guest-browse.page.js';
 import { GuestBorrowedPage } from '../features/guest/pages/borrowed/guest-borrowed.page.js';
+import { GuestHistoryPage } from '../features/guest/pages/history/guest-history.page.js';
+import { GuestBorrowRequestPage } from '../features/guest/pages/borrow-request/guest-borrow-request.page.js';
 
 test('guest bootstrap registers every guest route and excludes borrower/staff auth pages', () => {
   assert.deepEqual(guestPageNames, [
@@ -40,4 +42,11 @@ test('guest browse and borrowed pages expose catalog boundaries', () => {
   assert.equal(typeof GuestBrowsePage.prototype.load, 'function');
   assert.equal(GuestBorrowedPage.name, 'GuestBorrowedPage');
   assert.equal(typeof GuestBorrowedPage.prototype.render, 'function');
+});
+
+test('guest history and borrow request expose protected interaction boundaries', () => {
+  assert.equal(GuestHistoryPage.name, 'GuestHistoryPage');
+  assert.equal(typeof GuestHistoryPage.prototype.render, 'function');
+  assert.equal(GuestBorrowRequestPage.name, 'GuestBorrowRequestPage');
+  assert.equal(typeof GuestBorrowRequestPage.prototype.submit, 'function');
 });

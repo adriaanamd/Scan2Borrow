@@ -141,4 +141,22 @@ final class GuestMarkupParityTest extends TestCase
             }
         }
     }
+
+    public function testCanonicalGuestHistoryAndBorrowRequestTemplatesUseFeatureModules(): void
+    {
+        foreach ([
+            ['history/history.html', 'guest-history', 'guest-history.page.js', ['Borrowing History', 'name="status"', 'name="from"', 'name="to"']],
+            ['borrow-request/borrow-request.html', 'guest-borrow-request', 'guest-borrow-request.page.js', ['Borrow Request', 'id="captureGuideModal"', 'id="government_id_barcode"', 'id="verification_photo"', 'Submit Request']],
+        ] as [$relativePath, $pageName, $module, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString('frontend/features/guest/pages/' . str_replace('/', '/', dirname($relativePath)) . '/' . $module, $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html);
+            }
+        }
+    }
 }

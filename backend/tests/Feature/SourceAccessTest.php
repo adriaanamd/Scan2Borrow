@@ -16,6 +16,8 @@ final class SourceAccessTest extends TestCase
         $rules = file_get_contents($htaccessPath);
         self::assertIsString($rules);
         self::assertStringContainsString('frontend/pages', $rules);
+        self::assertStringContainsString('frontend/features/.+\\.html', $rules);
+        self::assertStringNotContainsString('frontend/features)(?:/|$)', $rules);
         self::assertStringContainsString('backend/src', $rules);
         self::assertStringContainsString('backend/tests', $rules);
         self::assertStringContainsString('backend/config', $rules);

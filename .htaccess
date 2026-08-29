@@ -2,8 +2,11 @@ Options -Indexes
 
 RewriteEngine On
 
-# Application source and private support files are never web-readable.
-RewriteRule ^(?:frontend/pages|backend/src|backend/tests|backend/config|backend/vendor|backend/var)(?:/|$) - [F,L,NC]
+# Server-rendered templates and private support files are never web-readable.
+# Browser-loadable ES modules under frontend/app and frontend/features remain public.
+RewriteRule ^frontend/pages(?:/|$) - [F,L,NC]
+RewriteRule ^frontend/features/.+\.html$ - [F,L,NC]
+RewriteRule ^(?:backend/src|backend/tests|backend/config|backend/vendor|backend/var)(?:/|$) - [F,L,NC]
 RewriteRule ^(?:config|includes|sql)(?:/|$) - [F,L,NC]
 
 # The front controller is the only PHP entry point exposed by Apache.

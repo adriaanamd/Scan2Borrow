@@ -1,8 +1,16 @@
+import { CameraCaptureComponent } from '../../../../app/shared/components/camera-capture/camera-capture.component.js';
+
 export class GuestReturnPage {
   constructor() {
     this.form = document.getElementById("returnForm");
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
-    this.camera = new CameraCapture({
+    this.camera = new CameraCaptureComponent(document.body, {
+      document,
+      window,
+      navigator,
+      videoId: 'cam',
+      canvasId: 'snap',
+      previewId: 'preview',
       fieldId: "return_photo",
       messageId: "camMsg",
       startId: "start",

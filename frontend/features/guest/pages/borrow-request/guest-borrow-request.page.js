@@ -1,8 +1,16 @@
+import { CameraCaptureComponent } from '../../../../app/shared/components/camera-capture/camera-capture.component.js';
+
 export class GuestBorrowRequestPage {
   constructor() {
     this.form = document.getElementById("borrowForm");
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
-    this.camera = new CameraCapture({
+    this.camera = new CameraCaptureComponent(document.body, {
+      document,
+      window,
+      navigator,
+      videoId: 'cam',
+      canvasId: 'snap',
+      previewId: 'preview',
       messageId: "camMsg",
       startId: "start",
       captureId: "capture",

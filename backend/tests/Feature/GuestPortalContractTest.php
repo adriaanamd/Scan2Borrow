@@ -57,4 +57,21 @@ final class GuestPortalContractTest extends TestCase
 
         self::assertNull($receipt);
     }
+
+    public function testCanonicalDashboardAndProfileTemplatesKeepGuestContext(): void
+    {
+        foreach ([
+            ['dashboard/dashboard.html', 'guest-dashboard', ['visitor-name', 'visit-history', 'security-log']],
+            ['profile/profile.html', 'guest-profile', ['guest-profile-form', 'purpose_other', 'Save Changes']],
+        ] as [$relativePath, $pageName, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html);
+            }
+        }
+    }
 }

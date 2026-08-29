@@ -364,6 +364,7 @@ export class InventoryPage {
     if (book) {
       [
         "barcode",
+        "quantity",
         "isbn",
         "title",
         "author",

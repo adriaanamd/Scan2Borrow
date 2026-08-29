@@ -98,4 +98,23 @@ final class BorrowerPagesParityTest extends TestCase
             self::assertStringContainsString($marker, $script);
         }
     }
+
+    public function testCanonicalStudentHistoryAndReceiptUseFeatureModules(): void
+    {
+        $pages = [
+            ['history/history.html', 'student-history', 'frontend/features/student/pages/history/student-history.page.js', ['Your complete borrowing record.', 'No borrowing history yet.']],
+            ['receipt/receipt.html', 'student-receipt', 'frontend/features/student/pages/receipt/receipt.page.js', ['Borrowing Receipt', 'class="no-print', 'window.print()']],
+        ];
+        foreach ($pages as [$relativePath, $pageName, $modulePath, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . $relativePath;
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString($modulePath, $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html, "Missing canonical marker: {$marker}");
+            }
+        }
+    }
 }

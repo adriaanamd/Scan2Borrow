@@ -71,6 +71,14 @@ test('student dashboard uses the shared Scan2Borrow system palette', () => {
   assert.doesNotMatch(studentTokens, /#(?:E8DCC7|D4B895|8B9D83|606C38|B08B6E|C66B3D|C08E3A)/i);
 });
 
+test('student dashboard visual rules stay inside the content region', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  assert.match(css, /\.borrower-dashboard--student \.content a/);
+  assert.doesNotMatch(css, /\.borrower-dashboard--student a\s*\{/);
+  assert.doesNotMatch(css, /\.borrower-dashboard--student h[1-6]/);
+  assert.doesNotMatch(css, /\.borrower-dashboard :is\(/);
+});
+
 test('teacher dashboard declares its Swiss surface and data typography', () => {
   const css = read('assets/css/borrower-dashboards.css');
   assert.match(css, /\.borrower-dashboard--teacher[\s\S]*#F7F7F8/);

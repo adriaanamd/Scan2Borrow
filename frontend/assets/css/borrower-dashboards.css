@@ -37,17 +37,17 @@
   z-index: 0;
 }
 
-.borrower-dashboard--student h1,
-.borrower-dashboard--student h2,
-.borrower-dashboard--student h3,
-.borrower-dashboard--student h4,
-.borrower-dashboard--student h5,
-.borrower-dashboard--student h6 {
+.borrower-dashboard--student .content h1,
+.borrower-dashboard--student .content h2,
+.borrower-dashboard--student .content h3,
+.borrower-dashboard--student .content h4,
+.borrower-dashboard--student .content h5,
+.borrower-dashboard--student .content h6 {
   font-family: Fraunces, Georgia, serif;
   letter-spacing: -.035em;
 }
 
-.borrower-dashboard--student a {
+.borrower-dashboard--student .content a {
   color: var(--borrower-deep);
 }
 
@@ -605,7 +605,7 @@
   min-width: 680px;
 }
 
-.borrower-dashboard :is(a, button, input, select, textarea):focus-visible {
+.borrower-dashboard .content :is(a, button, input, select, textarea):focus-visible {
   outline: 3px solid color-mix(in srgb, var(--borrower-accent) 60%, white);
   outline-offset: 3px;
 }
@@ -628,9 +628,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .borrower-dashboard *,
-  .borrower-dashboard *::before,
-  .borrower-dashboard *::after {
+  .borrower-dashboard .content *,
+  .borrower-dashboard .content *::before,
+  .borrower-dashboard .content *::after {
     scroll-behavior: auto !important;
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;

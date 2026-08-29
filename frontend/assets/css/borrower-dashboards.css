@@ -477,6 +477,39 @@
   --bs-table-hover-bg: var(--borrower-surface);
 }
 
+.borrower-dashboard--teacher .teacher-dashboard__modal {
+  overflow: hidden;
+  border: 1px solid #d4e0e8;
+  border-radius: var(--borrower-radius);
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(16, 47, 82, .16);
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__modal-header {
+  background: var(--borrower-accent) !important;
+  border-bottom: 0;
+  padding: 1rem 1.25rem;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__modal .modal-body {
+  padding: 1.25rem;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__modal .form-control,
+.borrower-dashboard--teacher .teacher-dashboard__modal .form-select {
+  border-color: #b9c9d5;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__cart {
+  min-height: 3.5rem;
+  padding: .75rem;
+  border: 1px dashed #9eb2c1;
+  border-radius: 3px;
+  background: var(--borrower-surface);
+}
+
 .borrower-dashboard--student .student-dashboard__table {
   border: 1px solid rgba(96, 108, 56, .2);
   border-radius: 14px;

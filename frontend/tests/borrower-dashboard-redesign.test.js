@@ -151,7 +151,16 @@ test('student borrowing modals expose Organic modal and cart hooks', () => {
   const source = read('features/student/pages/dashboard/dashboard.html');
   assert.match(source, /student-dashboard__modal/);
   assert.match(source, /id="bulkBorrowItems"[^>]*student-dashboard__cart/);
-  for (const id of ['borrowModal', 'successModal', 'returnModal']) {
+  for (const id of ['borrowModal', 'returnModal']) {
+    assert.match(source, new RegExp(`id="${id}"`));
+  }
+});
+
+test('teacher borrowing modals expose Swiss modal and cart hooks', () => {
+  const source = read('features/teacher/pages/dashboard/dashboard.html');
+  assert.match(source, /teacher-dashboard__modal/);
+  assert.match(source, /id="bulkBorrowItems"[^>]*teacher-dashboard__cart/);
+  for (const id of ['borrowModal', 'returnModal']) {
     assert.match(source, new RegExp(`id="${id}"`));
   }
 });

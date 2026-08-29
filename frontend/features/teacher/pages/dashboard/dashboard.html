@@ -403,11 +403,11 @@
           </div>
           <div class="modal fade" id="borrowModal" tabindex="-1">
             <div class="modal-dialog">
-              <div class="modal-content">
+              <div class="modal-content teacher-dashboard__modal">
                 <form method="POST" id="borrowForm">
                   <input type="hidden" name="book_barcode" data-scan-target="book_barcode" />
                   <div
-                    class="modal-header text-white"
+                    class="modal-header text-white teacher-dashboard__modal-header"
                     style="background: var(--primary)"
                   >
                     <h5 class="modal-title">&#128229; Borrow Books</h5>
@@ -438,7 +438,7 @@
                       </button>
                     </div>
                     <div class="d-flex justify-content-between mb-2"><strong>Borrow cart</strong><span><span id="bulkBorrowCount">0</span> book(s)</span></div>
-                    <div id="bulkBorrowItems" class="mb-2"></div>
+                    <div id="bulkBorrowItems" class="mb-2 teacher-dashboard__cart"></div>
                     <label class="form-label fw-semibold"
                       >Preferred Return Date</label
                     ><input
@@ -482,10 +482,10 @@
           </div>
           <div class="modal fade" id="returnModal" tabindex="-1">
             <div class="modal-dialog">
-              <div class="modal-content">
+              <div class="modal-content teacher-dashboard__modal">
                 <form method="POST" id="returnForm">
                   <div
-                    class="modal-header text-white"
+                    class="modal-header text-white teacher-dashboard__modal-header"
                     style="background: var(--primary)"
                   >
                     <h5 class="modal-title">&#128228; Return a Book</h5>

@@ -71,3 +71,10 @@ test('DOM helpers are bounded and text-safe', () => {
 test('requiredElement reports its missing selector', () => {
   assert.throws(() => requiredElement({ querySelector: () => null }, '#missing'), /#missing/);
 });
+
+test('role bootstrap entrypoints export boot', async () => {
+  for (const name of ['auth-page', 'student-page', 'teacher-page', 'staff-page', 'guest-page']) {
+    const entrypoint = await import('../app/bootstrap/' + name + '.js');
+    assert.equal(typeof entrypoint.boot, 'function', name);
+  }
+});

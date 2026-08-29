@@ -68,7 +68,7 @@
 
 Feature page folders use one directory per page and contain the canonical HTML template, page module, and page-specific CSS only when moving the CSS does not change specificity or rendering. frontend/assets/css/style.css remains the global compatibility stylesheet until visual parity is proven.
 
-Modify backend/src/Http/Routing/PageRouteTable.php and backend/src/Bootstrap/ApplicationFactory.php to point clean routes at canonical feature templates. Modify .htaccess to deny direct frontend/app and frontend/features reads while allowing frontend/assets. Add backend/tests/Support/FrontendPagePaths.php so PHP contract tests use one explicit template map.
+Modify backend/src/Http/Routing/PageRouteTable.php and backend/src/Bootstrap/ApplicationFactory.php to point clean routes at canonical feature templates. Modify .htaccess to deny direct HTML template reads under frontend/pages and frontend/features while allowing the browser-served JavaScript modules under frontend/app and frontend/features. Add backend/tests/Support/FrontendPagePaths.php so PHP contract tests use one explicit template map.
 
 ## Required test cycle
 
@@ -649,7 +649,7 @@ The following 60 commits are the implementation sequence. Each commit is a separ
 
 - [ ] Test: assert every canonical page has one data-app-page marker, one type=module bootstrap, required CSS/CDN assets, and no obsolete direct page/core script.
 - [ ] Run: FrontendModuleLayoutTest and SourceAccessTest; expected FAIL for classic scripts and source rules.
-- [ ] Implement: update all canonical auth/student/teacher/guest/staff templates, extend .htaccess denial to frontend/app and frontend/features, and keep frontend/assets directly served.
+- [ ] Implement: update all canonical auth/student/teacher/guest/staff templates, extend .htaccess denial to HTML templates under frontend/pages and frontend/features, and keep JavaScript modules under frontend/app and frontend/features directly served.
 - [ ] Verify: module/layout/source/visual tests and JS syntax checks pass.
 - [ ] Commit: git add frontend/features .htaccess backend/tests/Feature/FrontendModuleLayoutTest.php backend/tests/Feature/SourceAccessTest.php; git commit -m "security: cut pages to modules and protect source".
 
@@ -689,4 +689,4 @@ Expected final evidence: all applicable tests pass; all canonical routes have ex
 - Placeholder scan: no TBD, TODO, FIXME, or vague implement-later steps are present. Every commit names files, a test, a command, an implementation boundary, and a commit message.
 - Interface consistency: ApiClient precedes service tasks; SessionService precedes bootstraps; component lifecycle is consistent; feature services are injected into page classes; PageRoute signatures remain unchanged.
 - Scope: no backend business-rule redesign or intentional UI/UX change is included.
-- Safety: deletion is delayed until Commit 59 parity is green; direct source access remains denied; existing user changes are protected.
+- Safety: deletion is delayed until Commit 59 parity is green; direct protected HTML template access remains denied while required browser modules remain loadable; existing user changes are protected.

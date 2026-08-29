@@ -135,7 +135,7 @@ frontend/
 
 Each page directory owns its page template, page module, and page-specific styles when styles can be moved without changing specificity or rendering. `frontend/assets/css/style.css` remains the global compatibility stylesheet until the complete visual system has been proven equivalent. Existing specialized stylesheets can be moved only with parity coverage.
 
-The backend page route table will be updated to resolve canonical templates from the new feature locations. Clean URLs and access policies remain unchanged. There will be one canonical template per page; duplicate legacy templates will not become a second source of truth.
+The backend page route table will be updated to resolve canonical templates from the new feature locations. Clean URLs and access policies remain unchanged. There will be one canonical template per page; duplicate legacy templates will not become a second source of truth. Vanilla browser modules are necessarily public resources, so the server protects HTML template delivery and protected routes rather than pretending client JavaScript can be secret.
 
 ## Module and dependency boundaries
 

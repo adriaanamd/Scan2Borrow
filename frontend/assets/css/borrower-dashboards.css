@@ -412,6 +412,39 @@
   font-size: 1.25rem;
 }
 
+.borrower-dashboard--student .student-dashboard__modal {
+  overflow: hidden;
+  border: 1px solid rgba(96, 108, 56, .22);
+  border-radius: 22px;
+  background: #f8f0e4;
+  box-shadow: 0 24px 60px rgba(96, 108, 56, .2);
+}
+
+.borrower-dashboard--student .student-dashboard__modal-header {
+  background: var(--borrower-deep) !important;
+  border-bottom: 0;
+  padding: 1.15rem 1.35rem;
+}
+
+.borrower-dashboard--student .student-dashboard__modal .modal-body {
+  padding: 1.35rem;
+}
+
+.borrower-dashboard--student .student-dashboard__modal .form-control,
+.borrower-dashboard--student .student-dashboard__modal .form-select {
+  border-color: rgba(96, 108, 56, .28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .74);
+}
+
+.borrower-dashboard--student .student-dashboard__cart {
+  min-height: 3.5rem;
+  padding: .75rem;
+  border: 1px dashed rgba(96, 108, 56, .35);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .45);
+}
+
 .borrower-dashboard--teacher .teacher-dashboard__loans {
   background: #fff;
   border: 1px solid #d4e0e8;

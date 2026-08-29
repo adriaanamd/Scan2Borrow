@@ -146,3 +146,12 @@ test('teacher active loans keep quantity and receipt columns inside the faculty 
   }
   assert.match(source, /id="current-loans"/);
 });
+
+test('student borrowing modals expose Organic modal and cart hooks', () => {
+  const source = read('features/student/pages/dashboard/dashboard.html');
+  assert.match(source, /student-dashboard__modal/);
+  assert.match(source, /id="bulkBorrowItems"[^>]*student-dashboard__cart/);
+  for (const id of ['borrowModal', 'successModal', 'returnModal']) {
+    assert.match(source, new RegExp(`id="${id}"`));
+  }
+});

@@ -63,3 +63,24 @@ test('student search controller exposes styled empty, error, and card boundaries
   assert.match(source, /student-search-filter-chip/);
   assert.match(source, /student-search-result/);
 });
+
+test('student search cards use the library surface motion and quantity hierarchy', () => {
+  const source = read('assets/css/student-search.css');
+  assert.match(source, /student-search-card/);
+  assert.match(source, /student-search-result/);
+  assert.match(source, /prefers-reduced-motion/);
+  assert.match(source, /book-card:focus-visible/);
+});
+
+test('student history exposes a styled borrowing ledger boundary', () => {
+  const template = read('features/student/pages/history/history.html');
+  const source = read('features/student/pages/history/student-history.page.js');
+  const styles = read('assets/css/student-history.css');
+  assert.match(template, /student-history-masthead/);
+  assert.match(template, /student-history-ledger/);
+  assert.match(template, /student-history-table/);
+  assert.match(source, /student-history-row/);
+  assert.match(source, /student-history-status/);
+  assert.match(styles, /student-history-ledger/);
+  assert.match(styles, /student-history-row--overdue/);
+});

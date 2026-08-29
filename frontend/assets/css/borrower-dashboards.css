@@ -357,6 +357,48 @@
   grid-template-columns: 1fr;
 }
 
+.borrower-dashboard--teacher .teacher-dashboard__analytics-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .95fr) minmax(0, .95fr);
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__insight-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__analytics-grid > [class*="col-"],
+.borrower-dashboard--teacher .teacher-dashboard__insight-grid > [class*="col-"] {
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: auto;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__panel {
+  background: #FFFFFF;
+  height: 100%;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__panel .section-title {
+  border-bottom: 1px solid #D4E0E8;
+  color: #102F52;
+  padding-bottom: .7rem;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__desk-rail {
+  border-top: 1px solid #D4E0E8;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__activity {
+  border-top: 3px solid #002FA7;
+  margin-bottom: 1rem;
+}
+
 .borrower-dashboard .content {
   background: var(--borrower-surface);
   min-height: calc(100vh - 76px);

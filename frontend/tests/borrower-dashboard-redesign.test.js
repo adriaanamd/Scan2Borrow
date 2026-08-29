@@ -116,3 +116,13 @@ test('student work area exposes capacity, shelf, and achievement composition hoo
     assert.match(source, new RegExp(`id="${id}"`));
   }
 });
+
+test('teacher work area exposes desk, activity, and panel composition hooks', () => {
+  const source = read('features/teacher/pages/dashboard/dashboard.html');
+  for (const selector of ['teacher-dashboard__work-grid', 'teacher-dashboard__panel', 'teacher-dashboard__desk-rail', 'teacher-dashboard__activity']) {
+    assert.match(source, new RegExp(selector));
+  }
+  for (const id of ['capacity-ring', 'due-soon', 'books-per-month', 'risk-level', 'smart-insights', 'current-loans']) {
+    assert.match(source, new RegExp(`id="${id}"`));
+  }
+});

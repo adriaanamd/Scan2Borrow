@@ -60,7 +60,7 @@
                   id="teacher-name"
                 ></h2>
                 <div class="text-muted" id="teacher-meta"></div>
-                <div class="d-flex gap-2 flex-wrap mt-3">
+                <div class="d-flex gap-2 flex-wrap mt-3 teacher-dashboard__desk-rail">
                   <button
                     type="button"
                     class="btn btn-accent"
@@ -129,9 +129,9 @@
             You have <span id="overdue-alert-count">0</span> overdue book(s).
             Please return them to avoid further fines.
           </div>
-          <div class="row g-3 mb-4">
+          <div class="row g-3 mb-4 borrower-dashboard__work-grid teacher-dashboard__work-grid teacher-dashboard__analytics-grid">
             <div class="col-lg-4">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel teacher-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> Book Capacity
                 </div>
@@ -169,7 +169,7 @@
               </div>
             </div>
             <div class="col-lg-4">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel teacher-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> Reading Velocity
                 </div>
@@ -205,7 +205,7 @@
               </div>
             </div>
             <div class="col-lg-4">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel teacher-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> &#9889; Fine Risk Prediction
                 </div>
@@ -249,9 +249,9 @@
               </div>
             </div>
           </div>
-          <div class="row g-3 mb-4">
+          <div class="row g-3 mb-4 borrower-dashboard__work-grid teacher-dashboard__work-grid teacher-dashboard__insight-grid">
             <div class="col-lg-6">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel teacher-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> Subject Expertise
                 </div>
@@ -261,7 +261,7 @@
               </div>
             </div>
             <div class="col-lg-6">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel teacher-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> &#127979; Teacher Profile
                 </div>
@@ -355,7 +355,7 @@
             </div>
           </div>
           <div
-            class="soft-card"
+            class="soft-card borrower-dashboard__panel teacher-dashboard__activity"
             style="
               background: rgba(244, 246, 249, 0.8);
               border: 1px solid #e9ecef;
@@ -376,7 +376,7 @@
               </ul>
             </div>
           </div>
-          <div class="table-card">
+          <div class="table-card borrower-dashboard__table teacher-dashboard__loans">
             <div class="section-title"><span class="dot"></span> My Books</div>
             <div class="table-responsive">
               <table class="table table-hover">

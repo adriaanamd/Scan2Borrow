@@ -67,4 +67,19 @@ final class StaffDashboardFrontendContractTest extends TestCase
         self::assertStringContainsString('pendingRows.length', $source);
     }
 
+    public function testFeatureOwnedStaffDashboardServicesPreservePollingAndApprovalBoundaries(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff';
+        $dashboard = file_get_contents($root . DIRECTORY_SEPARATOR . 'services' . DIRECTORY_SEPARATOR . 'dashboard.service.js');
+        $approval = file_get_contents($root . DIRECTORY_SEPARATOR . 'services' . DIRECTORY_SEPARATOR . 'approval.service.js');
+        self::assertIsString($dashboard);
+        self::assertIsString($approval);
+        foreach (['/scan2borrow/api/staff/dashboard', '/scan2borrow/api/staff/notifications', '5000'] as $marker) {
+            self::assertStringContainsString($marker, $dashboard);
+        }
+        foreach (['/scan2borrow/api/staff/borrowing-action', 'borrowing_id', 'action'] as $marker) {
+            self::assertStringContainsString($marker, $approval);
+        }
+    }
+
 }

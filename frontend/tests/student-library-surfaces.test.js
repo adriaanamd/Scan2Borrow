@@ -38,6 +38,15 @@ test('student search and history retain their existing behavior boundaries', () 
   assert.match(history, /<th>Code<\/th>[\s\S]*<th>Fine<\/th>/);
 });
 
+test('student search exposes catalog masthead, filter, result, and borrow boundaries', () => {
+  const source = read('features/student/pages/search/search.html');
+  assert.match(source, /student-library-masthead/);
+  assert.match(source, /student-search-filters/);
+  assert.match(source, /student-search-results/);
+  assert.match(source, /student-search-results__header/);
+  assert.match(source, /student-search-results__state/);
+});
+
 test('student surface styles remain scoped away from navigation', () => {
   const sources = [
     read('assets/css/student-library-surfaces.css'),

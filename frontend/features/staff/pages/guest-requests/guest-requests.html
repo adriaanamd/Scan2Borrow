@@ -230,13 +230,21 @@
                         rows="2"
                         placeholder="Optional approval note, or rejection reason..."
                       ></textarea>
-                      <form method="post" class="d-flex gap-2">
+                      <form
+                        method="post"
+                        class="d-flex gap-2"
+                        data-confirm-reason-selector="#review-notes"
+                      >
                         <input type="hidden" name="id" id="review-id" />
                         <button
                           class="btn btn-danger flex-fill"
                           name="action"
                           value="reject"
-                          onclick="return document.getElementById('review-notes').value.trim() !== '' || confirm('Reject without a reason?')"
+                          data-confirm-action="reject"
+                          data-confirm-title="Reject guest request"
+                          data-confirm-message="Reject this guest borrow request?"
+                          data-confirm-label="Reject"
+                          data-confirm-class="btn-danger"
                         >
                           &#10008; Reject
                         </button>
@@ -244,6 +252,11 @@
                           class="btn btn-success flex-fill"
                           name="action"
                           value="approve"
+                          data-confirm-action="approve"
+                          data-confirm-title="Approve guest request"
+                          data-confirm-message="Approve this guest borrow request?"
+                          data-confirm-label="Approve"
+                          data-confirm-class="btn-success"
                         >
                           &#10003; Approve & Release
                         </button>

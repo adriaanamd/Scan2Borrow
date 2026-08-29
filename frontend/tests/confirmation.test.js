@@ -175,3 +175,36 @@ test('session templates load confirmation before the navbar', () => {
     assert.ok(confirmationIndex < navbarIndex, path.relative(templateRoot, template));
   }
 });
+
+test('form guards use the clicked submitter action metadata', async () => {
+  const { service, modal } = createConfirmationFixture();
+  let prevented = false;
+  let submitted = 0;
+  const form = {
+    dataset: { confirmAction: 'request' },
+    querySelector: () => ({ value: 'A reason' }),
+    requestSubmit: () => { submitted += 1; },
+  };
+  const submitter = {
+    dataset: {
+      confirmAction: 'reject',
+      confirmTitle: 'Reject guest request',
+      confirmMessage: 'Reject this guest borrow request?',
+      confirmLabel: 'Reject',
+      confirmClass: 'btn-danger',
+    },
+    focus() {},
+  };
+  service.guardForm({
+    target: { closest: () => form },
+    submitter,
+    preventDefault() { prevented = true; },
+  });
+  await Promise.resolve();
+  assert.equal(prevented, true);
+  assert.equal(modal.title.textContent, 'Reject guest request');
+  assert.equal(modal.confirm.textContent, 'Reject');
+  modal.confirm.click();
+  await Promise.resolve();
+  assert.equal(submitted, 1);
+});

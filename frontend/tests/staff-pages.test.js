@@ -17,6 +17,8 @@ const inventorySources = [
 ];
 const staffDashboardSource = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'dashboard', 'staff-dashboard.page.js');
 const adminTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'admin-staff', 'admin-staff.html');
+const dashboardTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'dashboard', 'dashboard.html');
+const guestRequestsTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'guest-requests', 'guest-requests.html');
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -94,4 +96,14 @@ test('staff account actions use shared confirmation and admin markup has no nati
   const template = fs.readFileSync(adminTemplate, 'utf8');
   assert.match(controller, /Scan2BorrowConfirmation\.confirm/);
   assert.doesNotMatch(template, /onsubmit=.*confirm\(/);
+});
+
+test('approval and guest rejection templates use shared confirmation metadata', () => {
+  for (const templatePath of [dashboardTemplate, guestRequestsTemplate]) {
+    const source = fs.readFileSync(templatePath, 'utf8');
+    assert.doesNotMatch(source, /(?:onsubmit|onclick)=.*confirm\(/, templatePath);
+    assert.match(source, /data-confirm-action="approve"/, templatePath);
+    assert.match(source, /data-confirm-action="reject"/, templatePath);
+  }
+  assert.match(fs.readFileSync(staffDashboardSource, 'utf8'), /Scan2BorrowConfirmation\.confirm/);
 });

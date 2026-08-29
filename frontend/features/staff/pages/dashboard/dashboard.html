@@ -767,7 +767,11 @@
                         <form
                           method="POST"
                           class="flex-fill"
-                          onsubmit="return confirm('Approve this borrow request?');"
+                          data-confirm-action="approve"
+                          data-confirm-title="Approve borrow request"
+                          data-confirm-message="Approve this borrow request?"
+                          data-confirm-label="Approve"
+                          data-confirm-class="btn-success"
                         >
                           <input type="hidden" name="action" value="approve" />
                           <input type="hidden" name="borrowing_id" value="" />
@@ -776,7 +780,11 @@
                         <form
                           method="POST"
                           class="flex-fill"
-                          onsubmit="return confirm('Reject this borrow request?');"
+                          data-confirm-action="reject"
+                          data-confirm-title="Reject borrow request"
+                          data-confirm-message="Reject this borrow request?"
+                          data-confirm-label="Reject"
+                          data-confirm-class="btn-danger"
                         >
                           <input type="hidden" name="action" value="reject" />
                           <input type="hidden" name="borrowing_id" value="" />

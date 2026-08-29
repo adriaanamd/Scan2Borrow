@@ -673,11 +673,22 @@ export class StaffDashboardPage {
   async submitBorrowing(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const action = form.dataset.staffAction;
+    const confirmed = await window.Scan2BorrowConfirmation.confirm({
+      title: action === "approve" ? "Approve borrow request" : "Reject borrow request",
+      message: action === "approve"
+        ? "Approve this borrow request?"
+        : "Reject this borrow request?",
+      confirmLabel: action === "approve" ? "Approve" : "Reject",
+      confirmClass: action === "approve" ? "btn-success" : "btn-danger",
+      trigger: form.querySelector('button[type="submit"]'),
+    });
+    if (!confirmed) return;
     try {
       const response = await this.api.post(
         "/scan2borrow/api/staff/borrowing-action",
         {
-          action: form.dataset.staffAction,
+          action,
           borrowing_id: form.elements.borrowing_id.value,
         },
       );

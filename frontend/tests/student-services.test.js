@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeDashboard, normalizeBook, normalizeLoan, normalizeUser } from '../features/student/models/index.js';
+import { StudentDashboardService, StudentSearchService, StudentSettingsService } from '../features/student/services/index.js';
 
 test('student models normalize dashboard defaults without mutating source data', () => {
   const source = {
@@ -36,4 +37,31 @@ test('student models normalize books, loans, and user role fallback', () => {
   assert.deepEqual(normalizeLoan({ title: 'Title', status: 'Overdue' }), {
     title: 'Title', author: '', borrow_date: '', due_date: '', status: 'Overdue', transaction_code: '',
   });
+});
+
+test('student services preserve endpoint paths, query names, and action fields', async () => {
+  const calls = [];
+  const api = {
+    get: async (path, params) => { calls.push({ method: 'GET', path, params }); return { ok: true, data: { user: {} } }; },
+    post: async (path, body) => { calls.push({ method: 'POST', path, body }); return { ok: true, data: {} }; },
+  };
+  const dashboard = new StudentDashboardService({ api });
+  const search = new StudentSearchService({ api });
+  const settings = new StudentSettingsService({ api });
+
+  await dashboard.load();
+  await dashboard.borrow('BOOK-1', '2026-09-01');
+  await dashboard.returnBook('TXN-1');
+  await search.search({ search: 'clean', category_name: 'Programming', floor: '2', sort: 'title' });
+  await search.borrow('BOOK-2');
+  await settings.load();
+
+  assert.deepEqual(calls, [
+    { method: 'GET', path: '/scan2borrow/api/student/dashboard', params: {} },
+    { method: 'POST', path: '/scan2borrow/api/student/dashboard', body: { action: 'borrow', book_barcode: 'BOOK-1', due_date: '2026-09-01' } },
+    { method: 'POST', path: '/scan2borrow/api/student/dashboard', body: { action: 'return_unified', return_input: 'TXN-1' } },
+    { method: 'GET', path: '/scan2borrow/api/student/books', params: { search: 'clean', category_name: 'Programming', floor: '2', sort: 'title' } },
+    { method: 'POST', path: '/scan2borrow/api/student/borrow', body: { action: 'borrow', book_barcode: 'BOOK-2' } },
+    { method: 'GET', path: '/scan2borrow/api/student/dashboard', params: {} },
+  ]);
 });

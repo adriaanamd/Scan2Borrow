@@ -584,6 +584,39 @@
 	font-variant-numeric: tabular-nums;
 }
 
+.borrower-dashboard--teacher .teacher-borrow-cart-row {
+	background: #F7F7F8;
+	border-color: #D4E0E8 !important;
+	border-radius: 3px !important;
+	gap: 1rem;
+	padding: .7rem !important;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-cart-row strong {
+	color: #102F52;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-cart-actions {
+	flex-shrink: 0;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-cart-actions .btn {
+	border-color: #AEBFCB;
+	color: #102F52;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-cart-actions .btn:hover,
+.borrower-dashboard--teacher .teacher-borrow-cart-actions .btn:focus-visible {
+	background: #002FA7;
+	border-color: #002FA7;
+	color: #FFFFFF;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-cart-count {
+	color: #002FA7;
+	font-weight: 800;
+}
+
 .borrower-dashboard--teacher .teacher-borrow-modal__footer {
 	border-top: 1px solid #D4E0E8;
 	gap: .6rem;

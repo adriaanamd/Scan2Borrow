@@ -519,11 +519,101 @@
 }
 
 .borrower-dashboard--teacher .teacher-dashboard__cart {
-  min-height: 3.5rem;
-  padding: .75rem;
-  border: 1px dashed #9eb2c1;
-  border-radius: 3px;
-  background: var(--borrower-surface);
+	min-height: 3.5rem;
+	padding: .75rem;
+	border: 1px dashed #9eb2c1;
+	border-radius: 3px;
+	background: var(--borrower-surface);
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal {
+	border-top: 4px solid #002FA7;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__header {
+	align-items: center;
+	letter-spacing: .01em;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__body {
+	display: grid;
+	gap: .15rem;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__body > .form-label {
+	color: #102F52;
+	font-size: .72rem;
+	letter-spacing: .08em;
+	margin-top: .4rem;
+	text-transform: uppercase;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__scan {
+	border-bottom: 1px solid #D4E0E8;
+	margin-bottom: .7rem !important;
+	padding-bottom: 1rem;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__scan .btn {
+	background: #F7F7F8;
+	border-color: #AEBFCB;
+	color: #102F52;
+	font-weight: 700;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__scan .btn:hover,
+.borrower-dashboard--teacher .teacher-borrow-modal__scan .btn:focus-visible {
+	background: #002FA7;
+	border-color: #002FA7;
+	color: #FFFFFF;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__cart {
+	align-items: baseline;
+	border-bottom: 1px solid #D4E0E8;
+	color: #102F52;
+	display: flex;
+	font-size: .9rem;
+	justify-content: space-between;
+	margin-bottom: .4rem !important;
+	padding-bottom: .7rem;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__cart > span {
+	color: #63798B;
+	font-variant-numeric: tabular-nums;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__footer {
+	border-top: 1px solid #D4E0E8;
+	gap: .6rem;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal__footer .btn-primary {
+	background: #002FA7;
+	border-color: #002FA7;
+}
+
+@media (max-width: 576px) {
+	.borrower-dashboard--teacher .teacher-borrow-modal__body,
+	.borrower-dashboard--teacher .teacher-borrow-modal__footer {
+		padding: 1rem;
+	}
+
+	.borrower-dashboard--teacher .teacher-borrow-modal__footer {
+		align-items: stretch;
+		flex-direction: column-reverse;
+	}
+
+	.borrower-dashboard--teacher .teacher-borrow-modal__footer .btn {
+		width: 100%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.borrower-dashboard--teacher .teacher-borrow-modal * {
+		transition-duration: .01ms !important;
+	}
 }
 
 .borrower-dashboard--student .student-dashboard__table {

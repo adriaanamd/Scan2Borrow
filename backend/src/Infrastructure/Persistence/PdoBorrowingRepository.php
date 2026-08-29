@@ -133,10 +133,14 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
 
         $remaining = $item->quantity - count($selected);
         if ($remaining > 0) {
+            $selectedIds = array_column($selected, 'id');
+            $excludedCopies = $selectedIds === []
+                ? ''
+                : ' AND id NOT IN (' . implode(',', array_fill(0, count($selectedIds), '?')) . ')';
             $statement = $this->pdo->prepare($this->forUpdate(
-                'SELECT id, title_id FROM book_copies WHERE title_id = :title_id AND status = \'Available\' AND deleted_at IS NULL ORDER BY id'
+                'SELECT id, title_id FROM book_copies WHERE title_id = ? AND status = \'Available\' AND deleted_at IS NULL' . $excludedCopies . ' ORDER BY id'
             ));
-            $statement->execute(['title_id' => $item->titleId]);
+            $statement->execute(array_merge([$item->titleId], $selectedIds));
             /** @var list<array<string, mixed>> $rows */
             $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
             foreach (array_slice($rows, 0, $remaining) as $row) {

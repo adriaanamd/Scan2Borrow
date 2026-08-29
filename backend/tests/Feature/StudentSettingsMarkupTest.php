@@ -36,4 +36,17 @@ final class StudentSettingsMarkupTest extends TestCase
         self::assertStringContainsString('/scan2borrow/student/settings', $navbar);
         self::assertStringNotContainsString('href="/scan2borrow/settings"', $html);
     }
+
+    public function testCanonicalStudentSettingsUsesFeatureOwnedModule(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'settings' . DIRECTORY_SEPARATOR . 'settings.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="student-settings"', $html);
+        self::assertStringContainsString('frontend/features/student/pages/settings/student-settings.page.js', $html);
+        foreach (['id="student-settings-form"', 'data-navbar-role="student"', 'student-settings-error'] as $marker) {
+            self::assertStringContainsString($marker, $html);
+        }
+    }
 }

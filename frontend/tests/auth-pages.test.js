@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AuthService } from '../features/auth/services/auth.service.js';
 import { LoginPage } from '../features/auth/pages/login/login.page.js';
+import { RegistrationPage } from '../features/auth/pages/register/register.page.js';
 
 test('AuthService preserves borrower and staff login endpoints', async () => {
   const calls = [];
@@ -48,4 +49,26 @@ test('LoginPage submits the bounded form and follows the API redirect', async ()
   page.start();
   await submit({ preventDefault() {} });
   assert.equal(redirected, '/next');
+});
+
+test('RegistrationPage preserves preselected role and details step', () => {
+  const form = { addEventListener() {}, reportValidity: () => true };
+  const role = { value: '' };
+  const document = {
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    getElementById(id) {
+      if (id === 'reg-form') return form;
+      if (id === 'role_select') return role;
+      return null;
+    },
+  };
+  const page = new RegistrationPage({ querySelector: () => null }, {
+    document,
+    window: { location: { search: '?role=teacher' } },
+    auth: { register: async () => ({ ok: true }) },
+  });
+
+  assert.equal(page.currentStep, 'details');
+  assert.equal(role.value, 'teacher');
 });

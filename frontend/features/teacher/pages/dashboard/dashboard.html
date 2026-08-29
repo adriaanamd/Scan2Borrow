@@ -403,6 +403,7 @@
             <div class="modal-dialog">
               <div class="modal-content">
                 <form method="POST" id="borrowForm">
+                  <input type="hidden" name="book_barcode" data-scan-target="book_barcode" />
                   <div
                     class="modal-header text-white"
                     style="background: var(--primary)"
@@ -421,18 +422,21 @@
                     <div class="input-group mb-3">
                       <input
                         type="text"
-                        name="book_barcode"
+                        id="bulk-scan-barcode"
                         class="form-control"
                         placeholder="Scan barcode or type here..."
                         autofocus
                       /><button
                         type="button"
                         class="btn btn-outline-secondary"
-                        data-scan-target="book_barcode"
+                        id="bulk-scan-add"
+                        data-scan-target="bulk-scan-barcode"
                       >
                         Scan
                       </button>
                     </div>
+                    <div class="d-flex justify-content-between mb-2"><strong>Borrow cart</strong><span><span id="bulkBorrowCount">0</span> book(s)</span></div>
+                    <div id="bulkBorrowItems" class="mb-2"></div>
                     <label class="form-label fw-semibold"
                       >Preferred Return Date</label
                     ><input

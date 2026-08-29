@@ -78,6 +78,18 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
 
     public function receipt(int $userId, string $transactionCode): ?array
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->prepare(
+                'SELECT bt.transaction_code, bt.borrow_date, bt.due_date, bi.return_date, bi.status, bi.fine_amount, t.title, t.author, c.barcode
+                 FROM borrowing_transactions bt JOIN borrowing_items bi ON bi.transaction_id = bt.id
+                 JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
+                 WHERE bt.user_id = :user_id AND bt.transaction_code = :code ORDER BY bi.id'
+            );
+            $statement->execute(['user_id' => $userId, 'code' => trim($transactionCode)]);
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            if ($rows === []) return null;
+            return ['transaction_code' => (string) $rows[0]['transaction_code'], 'books' => $rows];
+        }
         $statement = $this->pdo->prepare(
             'SELECT br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount, b.title, b.author, b.barcode '
             . 'FROM borrowing br JOIN books b ON b.id = br.book_id WHERE br.user_id = :user_id AND br.transaction_code = :code ORDER BY br.id'
@@ -94,6 +106,17 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     /** @return list<array<string, mixed>> */
     private function loans(int $userId, bool $includeReturned): array
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statusClause = $includeReturned ? '' : ' AND bi.return_date IS NULL';
+            $statement = $this->pdo->prepare(
+                'SELECT bi.id, bt.transaction_code, bt.borrow_date, bt.due_date, bi.return_date, bi.status, bi.fine_amount, t.title, t.author, c.barcode
+                 FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
+                 WHERE bt.user_id = :user_id' . $statusClause . ' ORDER BY bt.borrow_date DESC, bi.id DESC'
+            );
+            $statement->execute(['user_id' => $userId]);
+            return $statement->fetchAll(PDO::FETCH_ASSOC);
+        }
         $statusClause = $includeReturned ? '' : " AND br.return_date IS NULL";
         $statement = $this->pdo->prepare(
             'SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount, b.title, b.author, b.barcode '
@@ -110,6 +133,20 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     /** @return array{returned_count: int, on_time_count: int} */
     private function historySummary(int $userId): array
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->prepare(
+                "SELECT COUNT(*) AS returned_count,
+                        COALESCE(SUM(CASE WHEN COALESCE(bi.return_date, '') <= COALESCE(bt.due_date, '') THEN 1 ELSE 0 END), 0) AS on_time_count
+                 FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 WHERE bt.user_id = :user_id AND bi.status = 'Returned'"
+            );
+            $statement->execute(['user_id' => $userId]);
+            $summary = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
+            return [
+                'returned_count' => is_numeric($summary['returned_count'] ?? null) ? (int) $summary['returned_count'] : 0,
+                'on_time_count' => is_numeric($summary['on_time_count'] ?? null) ? (int) $summary['on_time_count'] : 0,
+            ];
+        }
         $statement = $this->pdo->prepare(
             "SELECT COUNT(*) AS returned_count,
                     COALESCE(SUM(CASE WHEN COALESCE(return_date, '') <= COALESCE(due_date, '') THEN 1 ELSE 0 END), 0) AS on_time_count
@@ -138,6 +175,14 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     /** @return list<array<string, mixed>> */
     private function recommendations(): array
     {
+        if ($this->hasTable('book_titles')) {
+            $statement = $this->pdo->query(
+                "SELECT t.title, t.author, t.category_name AS category, MIN(c.floor_no) AS floor_no
+                 FROM book_titles t JOIN book_copies c ON c.title_id = t.id
+                 WHERE c.status = 'Available' AND c.deleted_at IS NULL GROUP BY t.id ORDER BY t.created_at DESC LIMIT 6"
+            );
+            return $statement === false ? [] : $statement->fetchAll(PDO::FETCH_ASSOC);
+        }
         $statement = $this->pdo->query(
             "SELECT title, author, category_name AS category, floor_no FROM books WHERE status = 'Available' AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 6"
         );
@@ -154,5 +199,16 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     private function stringValue(mixed $value): string
     {
         return is_string($value) ? $value : '';
+    }
+
+    private function hasTable(string $table): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1");
+        } else {
+            $statement = $this->pdo->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table LIMIT 1');
+        }
+        $statement->execute(['table' => $table]);
+        return $statement->fetchColumn() !== false;
     }
 }

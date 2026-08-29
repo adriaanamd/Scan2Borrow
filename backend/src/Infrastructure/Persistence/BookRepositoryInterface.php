@@ -10,4 +10,7 @@ use App\Domain\Book\BookSearchResult;
 interface BookRepositoryInterface
 {
     public function search(BookSearchCriteria $criteria): BookSearchResult;
+
+    /** @return array<string, mixed>|null */
+    public function lookupCopyByBarcode(string $barcode): ?array;
 }

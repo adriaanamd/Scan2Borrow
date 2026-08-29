@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Infrastructure;
 
+use App\Application\DTO\BulkBorrowItem;
+use App\Application\DTO\BulkBorrowRequest;
+use App\Domain\Auth\Role;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
 use DateTimeImmutable;
 use PDO;
@@ -29,8 +32,31 @@ final class PdoBorrowingRepositoryTest extends TestCase
             'due_date DATE NOT NULL, return_date DATETIME, status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0)'
         );
         $this->pdo->exec(
+            'CREATE TABLE book_titles (' .
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, quantity INTEGER NOT NULL DEFAULT 0)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE book_copies (' .
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL UNIQUE, ' .
+            'status VARCHAR(20) NOT NULL, deleted_at DATETIME, due_date DATE, return_date DATE)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE borrowing_transactions (' .
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code VARCHAR(40) NOT NULL UNIQUE, user_id INTEGER NOT NULL, ' .
+            'processed_by INTEGER, approval_status VARCHAR(20) NOT NULL, borrow_date DATETIME NOT NULL, due_date DATE NOT NULL, ' .
+            'return_date DATETIME, status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0, requested_at DATETIME, ' .
+            'approved_at DATETIME, approved_by INTEGER)'
+        );
+        $this->pdo->exec(
+            'CREATE TABLE borrowing_items (' .
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_id INTEGER NOT NULL, copy_id INTEGER NOT NULL, ' .
+            'return_date DATETIME, status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0)'
+        );
+        $this->pdo->exec(
             "INSERT INTO books (barcode, title, author, status) VALUES ('BK-1', 'Clean Code', 'Robert Martin', 'Available')"
         );
+        $this->pdo->exec("INSERT INTO book_titles (title, quantity) VALUES ('Clean Code', 3), ('Algorithms', 1)");
+        $this->pdo->exec("INSERT INTO book_copies (title_id, barcode, status) VALUES (1, 'COPY-1', 'Available'), (1, 'COPY-2', 'Available'), (1, 'COPY-3', 'Available'), (2, 'COPY-4', 'Available')");
     }
 
     public function testCreateLoanPreservesBorrowingColumnsAndMarksBookBorrowed(): void
@@ -105,5 +131,89 @@ final class PdoBorrowingRepositoryTest extends TestCase
         $repository = new PdoBorrowingRepository($this->pdo);
 
         self::assertSame(3, $repository->activeApprovedCount(7));
+    }
+
+    public function testCreateBulkTransactionReservesEverySelectedCopyUnderOneCode(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+
+        $result = $repository->createBulkTransaction(
+            new BulkBorrowRequest(7, Role::STUDENT, [
+                new BulkBorrowItem(1, 2, ['COPY-1', 'COPY-2']),
+                new BulkBorrowItem(2, 1),
+            ]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-BULK01',
+            'Pending',
+            'pending',
+        );
+
+        self::assertSame('S2B-20260828-BULK01', $result['transaction_code']);
+        self::assertSame(3, $result['copy_count']);
+        self::assertSame(2, $result['title_count']);
+        self::assertSame(3, (int) $this->pdo->query("SELECT COUNT(*) FROM borrowing_items WHERE transaction_id = 1")->fetchColumn());
+        self::assertSame(3, (int) $this->pdo->query("SELECT COUNT(*) FROM book_copies WHERE status = 'Reserved'")->fetchColumn());
+    }
+
+    public function testBulkTransactionRollsBackWhenOneTitleCannotSupplyItsQuantity(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+
+        $this->expectException(\RuntimeException::class);
+        try {
+            $repository->createBulkTransaction(
+                new BulkBorrowRequest(7, Role::STUDENT, [
+                    new BulkBorrowItem(1, 2),
+                    new BulkBorrowItem(2, 2),
+                ]),
+                new DateTimeImmutable('2026-09-04'),
+                'S2B-20260828-ROLLBK',
+                'Pending',
+                'pending',
+            );
+        } finally {
+            self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM borrowing_transactions')->fetchColumn());
+            self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM borrowing_items')->fetchColumn());
+            self::assertSame(4, (int) $this->pdo->query("SELECT COUNT(*) FROM book_copies WHERE status = 'Available'")->fetchColumn());
+        }
+    }
+
+    public function testReservedCopiesCannotBeAllocatedAgain(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+        $repository->createBulkTransaction(
+            new BulkBorrowRequest(7, Role::STUDENT, [new BulkBorrowItem(1, 3)]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-FIRST',
+            'Pending',
+            'pending',
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $repository->createBulkTransaction(
+            new BulkBorrowRequest(8, Role::STUDENT, [new BulkBorrowItem(1, 1)]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-SECOND',
+            'Pending',
+            'pending',
+        );
+    }
+
+    public function testBulkTransactionSupportsTransactionAndCopyReturns(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+        $repository->createBulkTransaction(
+            new BulkBorrowRequest(7, Role::STUDENT, [new BulkBorrowItem(1, 2)]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-RETURNB',
+            'Borrowed',
+            'approved',
+        );
+
+        $loans = $repository->activeByTransaction(7, 'S2B-20260828-RETURNB');
+        self::assertCount(2, $loans);
+        $repository->completeReturn($loans[0]->id(), $loans[0]->bookId(), 0.0);
+        self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = {$loans[0]->bookId()}")->fetchColumn());
+        self::assertCount(1, $repository->activeByTransaction(7, 'S2B-20260828-RETURNB'));
     }
 }

@@ -112,6 +112,24 @@ final readonly class BookController
         ]);
     }
 
+    public function borrowLookup(ServerRequest $request): JsonResponse
+    {
+        if (!$this->hasRole([Role::STUDENT, Role::TEACHER])) {
+            return $this->unauthorized();
+        }
+
+        $barcode = $this->string($request->query(), 'barcode');
+        if ($barcode === '') {
+            return new JsonResponse(422, ['ok' => false, 'errors' => ['Book barcode is required.']]);
+        }
+        $copy = $this->books->lookupCopyByBarcode($barcode);
+        if ($copy === null) {
+            return new JsonResponse(404, ['ok' => false, 'errors' => ['Book copy not found.']]);
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $copy]);
+    }
+
     /** @param list<Role> $roles */
     private function hasRole(array $roles): bool
     {
@@ -169,6 +187,8 @@ final readonly class BookController
             $this->string($body, 'due_date'),
             $this->string($body, 'return_date'),
             $this->string($body, 'status') === '' ? 'Available' : $this->string($body, 'status'),
+            [],
+            max(1, $this->positiveInt($body['quantity'] ?? 1)),
         );
     }
 

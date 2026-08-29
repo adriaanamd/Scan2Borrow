@@ -14,6 +14,8 @@ final class BookRouteTable
         return [
             Route::create('GET', '/api/books', [$controller, 'inventory']),
             Route::create('GET', '/api/student/books', [$controller, 'studentSearch']),
+            Route::create('GET', '/api/student/borrow/lookup', [$controller, 'borrowLookup']),
+            Route::create('GET', '/api/teacher/borrow/lookup', [$controller, 'borrowLookup']),
             Route::create('POST', '/api/books', [$controller, 'mutate']),
         ];
     }

@@ -20,6 +20,13 @@ test('student search exposes a feature-owned page controller with catalog render
   }
 });
 
+test('student borrowing surfaces expose bulk cart submission boundaries', () => {
+  assert.equal(typeof StudentSearchPage.prototype.submitCart, 'function');
+  assert.equal(typeof StudentSearchPage.prototype.renderCart, 'function');
+  assert.equal(typeof StudentDashboardPage.prototype.submitCart, 'function');
+  assert.equal(typeof StudentDashboardPage.prototype.renderCart, 'function');
+});
+
 test('student history and receipt expose bounded page controllers', () => {
   assert.equal(StudentHistoryPage.name, 'StudentHistoryPage');
   assert.equal(typeof StudentHistoryPage.prototype.render, 'function');

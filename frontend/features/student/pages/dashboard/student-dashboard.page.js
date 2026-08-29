@@ -1,3 +1,5 @@
+import { BulkBorrowCart } from "../../../../app/core/models/bulk-borrow-cart.js";
+
 export class StudentDashboardPage {
   constructor() {
     this.api = "/scan2borrow/api/student/dashboard";
@@ -5,6 +7,7 @@ export class StudentDashboardPage {
     this.$ = (id) => document.getElementById(id);
     this.borrowForm = this.$("borrowForm");
     this.returnForm = this.$("returnForm");
+    this.cart = new BulkBorrowCart();
     this.bindEvents();
     this.load();
   }
@@ -277,9 +280,7 @@ export class StudentDashboardPage {
   bindEvents() {
     this.borrowForm?.addEventListener("submit", (event) => {
       event.preventDefault();
-      this.submitForm(this.borrowForm, "borrow", "book_barcode", (data) =>
-        this.showBorrowSuccess(data),
-      );
+      this.submitCart();
     });
     this.returnForm?.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -297,6 +298,54 @@ export class StudentDashboardPage {
     window.addEventListener("load", () =>
       this.renderBarcode(this.$("borrower-barcode").textContent),
     );
+    this.$("bulk-scan-add")?.addEventListener("click", () => {
+      const input = this.$("bulk-scan-barcode");
+      this.lookupAndAdd(input.value.trim());
+      input.value = "";
+    });
+    this.$("bulk-scan-barcode")?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") { event.preventDefault(); this.$("bulk-scan-add").click(); }
+    });
+    this.$("bulkBorrowItems")?.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-cart-action]");
+      if (!button) return;
+      const id = Number(button.dataset.titleId);
+      if (button.dataset.cartAction === "remove") this.cart.removeTitle(id);
+      else this.cart.setQuantity(id, this.cart.lines.get(id).quantity + (button.dataset.cartAction === "increase" ? 1 : -1));
+      this.renderCart();
+    });
+  }
+
+  renderCart() {
+    const host = this.$("bulkBorrowItems");
+    if (!host) return;
+    host.replaceChildren();
+    this.cart.linesForDisplay().forEach((line) => {
+      const row = document.createElement("div");
+      row.className = "d-flex justify-content-between align-items-center border rounded p-2 mb-2";
+      row.innerHTML = `<div><strong>${this.escapeHtml(line.title)}</strong><div class="small text-muted">${this.escapeHtml(line.author)} · ${line.quantity} copy/copies</div></div><div class="btn-group btn-group-sm"><button type="button" data-cart-action="decrease" data-title-id="${line.title_id}" class="btn btn-outline-secondary">−</button><span class="btn btn-light">${line.quantity}</span><button type="button" data-cart-action="increase" data-title-id="${line.title_id}" class="btn btn-outline-secondary">+</button><button type="button" data-cart-action="remove" data-title-id="${line.title_id}" class="btn btn-outline-danger">×</button></div>`;
+      host.appendChild(row);
+    });
+    const count = this.$("bulkBorrowCount");
+    if (count) count.textContent = String(this.cart.totalQuantity());
+  }
+
+  lookupAndAdd(barcode) {
+    if (!barcode) return;
+    fetch(`/scan2borrow/api/student/borrow/lookup?barcode=${encodeURIComponent(barcode)}`, { headers: { "X-Requested-With": "fetch" } })
+      .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
+      .then(({ ok, payload }) => { if (!ok) throw new Error(payload.message || "Book copy not found."); this.cart.addTitle(payload.data, 1, barcode); this.renderCart(); })
+      .catch((error) => this.showToast(error.message, false));
+  }
+
+  submitCart() {
+    if (this.cart.totalQuantity() === 0) { this.showToast("Add at least one book to your cart.", false); return; }
+    const body = new FormData(); body.append("action", "borrow"); body.append("csrf", this.csrf);
+    this.cart.items().forEach((item, index) => { body.append(`items[${index}][title_id]`, String(item.title_id)); body.append(`items[${index}][quantity]`, String(item.quantity)); item.barcodes.forEach((barcode) => body.append(`items[${index}][barcodes][]`, barcode)); });
+    this.request(this.api, { method: "POST", body }).then((response) => {
+      if (!response.ok) throw new Error(response.errors?.[0] || response.message || "Borrow request failed.");
+      this.cart.clear(); this.renderCart(); this.showBorrowSuccess(response.data || response);
+    }).catch((error) => this.showToast(error.message, false));
   }
 }
 

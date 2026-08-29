@@ -288,6 +288,25 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
     public function pendingBorrowings(): array
     {
+        if ($this->hasTable('borrowing_transactions')) {
+            $statement = $this->pdo->query(
+                "SELECT bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.status, bt.user_id,
+                        u.firstname, u.lastname, u.barcode AS id_barcode, GROUP_CONCAT(DISTINCT t.title) AS title,
+                        COUNT(bi.id) AS book_count
+                 FROM borrowing_transactions bt JOIN borrowing_items bi ON bi.transaction_id = bt.id
+                 JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
+                 JOIN users u ON u.id = bt.user_id
+                 WHERE bt.approval_status = 'pending' AND bi.return_date IS NULL
+                 GROUP BY bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.status, bt.user_id,
+                          u.firstname, u.lastname, u.barcode, bt.requested_at
+                 ORDER BY bt.requested_at ASC, bt.id ASC"
+            );
+            if ($statement === false) return [];
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$row) $row['borrower'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
+            unset($row);
+            return $rows;
+        }
         $statement = $this->pdo->query(
             "SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.status, br.user_id, br.book_id,
                     u.firstname, u.lastname, u.barcode AS id_barcode,
@@ -565,6 +584,20 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         $this->pdo->beginTransaction();
         try {
             $status = $approve ? 'approved' : 'rejected';
+            if ($this->hasTable('borrowing_transactions')) {
+                $statement = $this->pdo->prepare(
+                    "UPDATE borrowing_transactions SET approval_status = :approval_status,
+                     status = CASE WHEN :is_approved = 1 THEN 'Borrowed' ELSE 'Returned' END,
+                     approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id AND approval_status = 'pending'"
+                );
+                $statement->execute(['approval_status' => $status, 'is_approved' => $approve ? 1 : 0, 'staff_id' => $staffId, 'id' => $borrowingId]);
+                $copyStatus = $approve ? 'Borrowed' : 'Available';
+                $this->pdo->prepare("UPDATE book_copies SET status = :status, due_date = CASE WHEN :approve = 1 THEN due_date ELSE NULL END WHERE id IN (SELECT copy_id FROM borrowing_items WHERE transaction_id = :transaction_id)")
+                    ->execute(['status' => $copyStatus, 'approve' => $approve ? 1 : 0, 'transaction_id' => $borrowingId]);
+                $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE related_id = :id AND user_id = :staff_id')->execute(['id' => $borrowingId, 'staff_id' => $staffId]);
+                $this->pdo->commit();
+                return;
+            }
             $statement = $this->pdo->prepare(
                 'UPDATE borrowing SET approval_status = :approval_status, status = CASE WHEN :is_approved = 1 THEN \'Borrowed\' ELSE status END,
                  approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id'
@@ -602,6 +635,17 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
 
         return (int) $statement->fetchColumn();
+    }
+
+    private function hasTable(string $table): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1");
+        } else {
+            $statement = $this->pdo->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table LIMIT 1');
+        }
+        $statement->execute(['table' => $table]);
+        return $statement->fetchColumn() !== false;
     }
 
     /** @return array{total_books: int, available_books: int, borrowed_books: int, borrowers: int, active_loans: int, overdue_loans: int, pending_approvals: int} */

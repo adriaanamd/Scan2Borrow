@@ -92,4 +92,17 @@ final class StaffDashboardFrontendContractTest extends TestCase
         }
     }
 
+    public function testCanonicalStaffDashboardUsesFeatureOwnedController(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'dashboard.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="staff-dashboard"', $html);
+        self::assertStringContainsString('frontend/features/staff/pages/dashboard/staff-dashboard.page.js', $html);
+        foreach (['pending-approvals-count', 'overview-activity', 'overview-borrowers-modal', 'Borrowing Overview'] as $marker) {
+            self::assertStringContainsString($marker, $html);
+        }
+    }
+
 }

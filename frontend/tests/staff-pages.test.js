@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { normalizeStaffDashboard } from '../features/staff/models/index.js';
 import { StaffApprovalService, StaffDashboardService } from '../features/staff/services/index.js';
 import { OverviewChartComponent } from '../features/staff/components/overview-chart/overview-chart.component.js';
+import { StaffDashboardPage } from '../features/staff/pages/dashboard/staff-dashboard.page.js';
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -40,4 +41,11 @@ test('overview chart component exposes all staff dashboard visualization boundar
   }
   assert.equal(OverviewChartComponent.CHART_WIDTH, 720);
   assert.equal(OverviewChartComponent.CHART_HEIGHT, 240);
+});
+
+test('staff dashboard exposes a feature-owned controller with approval and overview boundaries', () => {
+  assert.equal(StaffDashboardPage.name, 'StaffDashboardPage');
+  for (const method of ['dashboard', 'renderOverview', 'renderApprovals', 'submitBorrowing']) {
+    assert.equal(typeof StaffDashboardPage.prototype[method], 'function', method);
+  }
 });

@@ -129,9 +129,11 @@ final class FrontendVisualSystemTest extends TestCase
         ] as $relativePath) {
             $source = $this->read($relativePath);
             self::assertStringContainsString('auth-split', $source, $relativePath . ' must use the split auth layout.');
-            self::assertStringContainsString('/scan2borrow/public/logo.png', $source, $relativePath . ' must use the existing BCC logo.');
             self::assertStringContainsString('/scan2borrow/public/favicon.png', $source, $relativePath . ' must use the existing favicon.');
         }
+
+        $brand = $this->read('frontend/assets/js/core/auth-brand.js');
+        self::assertStringContainsString('/scan2borrow/public/logo.png', $brand, 'The shared auth brand must use the existing BCC logo.');
 
         $styles = $this->read('frontend/assets/css/style.css');
         self::assertStringContainsString(

@@ -14,7 +14,7 @@ final class ApiEndpointCatalogTest extends TestCase
         $endpoints = (new ApiEndpointCatalog())->all();
         $paths = array_map(static fn (array $endpoint): string => $endpoint['method'] . ' ' . $endpoint['path'], $endpoints);
 
-        self::assertCount(51, $endpoints);
+        self::assertCount(53, $endpoints);
         self::assertCount(count(array_unique($paths)), $paths);
         self::assertContains('GET /api/admin/api-docs', $paths);
         self::assertContains('POST /api/student/borrow', $paths);
@@ -22,6 +22,8 @@ final class ApiEndpointCatalogTest extends TestCase
         self::assertContains('POST /api/admin/staff-action', $paths);
         self::assertContains('GET /api/book-copies', $paths);
         self::assertContains('POST /api/book-copies', $paths);
+        self::assertContains('GET /api/barcode-print-batches', $paths);
+        self::assertContains('POST /api/barcode-print-batches', $paths);
     }
 
     public function testCatalogEntriesContainSwaggerOperationFields(): void

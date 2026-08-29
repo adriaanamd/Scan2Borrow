@@ -220,6 +220,7 @@ test('borrower dashboard redesign preserves content and controller parity', () =
   }
   assert.match(student, /Number\(loan\.quantity \|\| 1\)/);
   assert.match(teacher, /Number\(loan\.quantity \|\| 1\)/);
+  assert.match(teacher, /badge bg-\$\{type\} borrower-dashboard__status/);
 });
 
 test('borrower dashboards keep shared icon integration and avoid admin-only navigation', () => {
@@ -234,4 +235,14 @@ test('borrower dashboards keep shared icon integration and avoid admin-only navi
     assert.ok(source.indexOf('borrower-dashboards.css') > source.indexOf('assets/css/style.css'));
   }
   assert.doesNotMatch(read('assets/css/borrower-dashboards.css'), /[\u{1F300}-\u{1FAFF}]/u);
+});
+
+test('borrower dashboards wire shared stats and activity presentation hooks', () => {
+  const student = read('features/student/pages/dashboard/dashboard.html');
+  const teacher = read('features/teacher/pages/dashboard/dashboard.html');
+  assert.match(student, /class="row g-3 mb-4 borrower-dashboard__stats"/);
+  assert.match(teacher, /class="row g-3 mb-4 borrower-dashboard__stats"/);
+  assert.doesNotMatch(teacher, /class="[^\"]*teacher-dashboard__activity[^\"]*"\s+style=/);
+  assert.match(teacher, /teacher-dashboard__insights-list/);
+  assert.match(teacher, /teacher-dashboard__insights-item/);
 });

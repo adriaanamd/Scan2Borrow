@@ -69,9 +69,19 @@ export class TeacherDashboardPage {
     }
     loans.forEach((loan) => {
       const row = document.createElement("tr");
-      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author || "")}</span></td><td>${Number(loan.quantity || 1)}</td><td>${this.escapeHtml(loan.borrow_date || "")}</td><td>${this.escapeHtml(loan.due_date || "")}</td><td><span class="borrower-dashboard__status">${this.escapeHtml(loan.status || "")}</span></td><td><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" class="btn btn-outline-secondary btn-sm">View</a></td>`;
+      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author || "")}</span></td><td>${Number(loan.quantity || 1)}</td><td>${this.escapeHtml(loan.borrow_date || "")}</td><td>${this.escapeHtml(loan.due_date || "")}</td><td>${this.badge(loan.status || "")}</td><td><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" class="btn btn-outline-secondary btn-sm">View</a></td>`;
       body.appendChild(row);
     });
+  }
+  badge(status) {
+    const type =
+      {
+        Borrowed: "primary",
+        Overdue: "danger",
+        Pending: "warning text-dark",
+        Returned: "success",
+      }[status] || "secondary";
+    return `<span class="badge bg-${type} borrower-dashboard__status">${this.escapeHtml(status)}</span>`;
   }
   renderBarcode(value) {
     if (value && window.JsBarcode)

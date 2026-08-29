@@ -395,8 +395,20 @@
 }
 
 .borrower-dashboard--teacher .teacher-dashboard__activity {
+  background: #fff;
+  border: 1px solid #d4e0e8;
   border-top: 3px solid #002FA7;
   margin-bottom: 1rem;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__insights-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__insights-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #d4e0e8;
 }
 
 .borrower-dashboard--student .student-dashboard__loans {
@@ -562,6 +574,10 @@
   gap: 1rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.borrower-dashboard__stats > [class*="col-"] {
+  width: auto;
 }
 
 .borrower-dashboard__work-grid {

@@ -1,0 +1,168 @@
+.student-history-masthead__mark {
+	align-items: flex-end;
+	border: 1px solid rgba(255, 255, 255, .28);
+	border-radius: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	justify-content: center;
+	height: 76px;
+	padding: 18px;
+	width: 76px;
+}
+
+.student-history-masthead__mark span {
+	background: var(--accent);
+	display: block;
+	height: 3px;
+	width: 30px;
+}
+
+.student-history-masthead__mark span:nth-child(2) {
+	width: 22px;
+}
+
+.student-history-masthead__mark span:nth-child(3) {
+	width: 14px;
+}
+
+.student-history-ledger {
+	overflow: hidden;
+}
+
+.student-history-ledger__header {
+	align-items: center;
+	border-bottom: 1px solid var(--border);
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 8px;
+	padding-bottom: 18px;
+}
+
+.student-history-ledger__header h3 {
+	color: var(--navy);
+	font-family: Fraunces, Georgia, serif;
+	font-size: 1.45rem;
+}
+
+.student-history-ledger__rule {
+	background: var(--accent);
+	display: block;
+	height: 4px;
+	width: 56px;
+}
+
+.student-history-ledger__table {
+	margin-inline: -6px;
+}
+
+.student-history-table {
+	margin-bottom: 0;
+	min-width: 860px;
+}
+
+.student-history-table thead th {
+	border-bottom: 1px solid var(--border-strong);
+	color: var(--muted);
+	font-size: .7rem;
+	font-weight: 800;
+	letter-spacing: .08em;
+	padding: 14px 12px;
+	text-transform: uppercase;
+}
+
+.student-history-table tbody td {
+	border-bottom-color: var(--border);
+	color: var(--text);
+	font-size: .88rem;
+	padding: 16px 12px;
+	vertical-align: middle;
+}
+
+.student-history-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.student-history-table tbody tr.row-overdue,
+.student-history-table tbody tr.student-history-row--overdue {
+	border-left: 4px solid var(--danger);
+}
+
+.student-history-table code {
+	background: var(--sky);
+	border-radius: 6px;
+	color: var(--primary-dark);
+	font-size: .76rem;
+	padding: 4px 6px;
+}
+
+.student-history-status {
+	white-space: nowrap;
+}
+
+.student-history-status-badge {
+	border-radius: 999px;
+	font-size: .72rem;
+	letter-spacing: .02em;
+	padding: .45rem .7rem;
+}
+
+.student-history-status--returned {
+	background: var(--success) !important;
+}
+
+.student-history-status--borrowed {
+	background: var(--primary) !important;
+}
+
+.student-history-status--overdue {
+	background: var(--danger) !important;
+}
+
+.student-history-status--default {
+	background: var(--muted) !important;
+}
+
+.student-history-fine {
+	color: var(--danger);
+	font-weight: 800;
+	white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+	.student-history-masthead__mark {
+		height: 58px;
+		padding: 13px;
+		width: 58px;
+	}
+
+	.student-history-masthead__mark span {
+		width: 22px;
+	}
+
+	.student-history-masthead__mark span:nth-child(2) {
+		width: 16px;
+	}
+
+	.student-history-masthead__mark span:nth-child(3) {
+		width: 10px;
+	}
+
+	.student-history-ledger {
+		padding: 16px 10px;
+	}
+
+	.student-history-ledger__header {
+		padding-inline: 6px;
+	}
+
+	.student-history-ledger__table {
+		margin-inline: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.student-history-table tbody tr {
+		transition: none;
+	}
+}

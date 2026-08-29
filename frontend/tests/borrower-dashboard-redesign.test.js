@@ -106,3 +106,13 @@ test('teacher statistics expose the Swiss stat hooks without changing their data
     assert.match(source, new RegExp(`teacher-dashboard__stat[\\s\\S]*id="${id}"`));
   }
 });
+
+test('student work area exposes capacity, shelf, and achievement composition hooks', () => {
+  const source = read('features/student/pages/dashboard/dashboard.html');
+  for (const selector of ['student-dashboard__work-grid', 'student-dashboard__panel', 'student-dashboard__shelf', 'student-dashboard__achievement-grid']) {
+    assert.match(source, new RegExp(selector));
+  }
+  for (const id of ['capacity-ring', 'due-soon', 'recommendations', 'achievements']) {
+    assert.match(source, new RegExp(`id="${id}"`));
+  }
+});

@@ -137,9 +137,9 @@
             Please return them to avoid further fines.
           </div>
 
-          <div class="row g-3 mb-4">
+          <div class="row g-3 mb-4 borrower-dashboard__work-grid student-dashboard__work-grid">
             <div class="col-lg-4">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel student-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> Book Capacity
                 </div>
@@ -179,22 +179,24 @@
             </div>
 
             <div class="col-lg-4">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel student-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> Recommended for You
                 </div>
                 <div class="text-muted small mb-2" id="recommendation-reason">
                   Popular available titles
                 </div>
-                <div id="recommendations" class="text-muted small">
-                  No available books to recommend right now. Try searching for
-                  something you like!
+                <div class="student-dashboard__shelf">
+                  <div id="recommendations" class="text-muted small">
+                    No available books to recommend right now. Try searching for
+                    something you like!
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="col-lg-4">
-              <div class="soft-card">
+              <div class="soft-card borrower-dashboard__panel student-dashboard__panel">
                 <div class="section-title">
                   <span class="dot"></span> Achievements
                   <span
@@ -203,7 +205,7 @@
                     >0/6</span
                   >
                 </div>
-                <div class="badge-grid" id="achievements"></div>
+                <div class="badge-grid student-dashboard__achievement-grid" id="achievements"></div>
               </div>
             </div>
           </div>

@@ -312,6 +312,51 @@
   font-variant-numeric: tabular-nums;
 }
 
+.borrower-dashboard--student .student-dashboard__work-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr) minmax(0, .95fr);
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.borrower-dashboard--student .student-dashboard__work-grid > [class*="col-"] {
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: auto;
+}
+
+.borrower-dashboard--student .student-dashboard__panel {
+  background: rgba(255, 255, 255, .38);
+  height: 100%;
+}
+
+.borrower-dashboard--student .student-dashboard__panel .section-title {
+  border-bottom: 1px solid rgba(96, 108, 56, .22);
+  color: var(--borrower-deep);
+  padding-bottom: .75rem;
+}
+
+.borrower-dashboard--student .student-dashboard__shelf {
+  display: grid;
+  gap: .25rem;
+}
+
+.borrower-dashboard--student .student-dashboard__shelf .rec {
+  border-bottom-color: rgba(96, 108, 56, .2);
+  padding: .75rem .25rem;
+}
+
+.borrower-dashboard--student .student-dashboard__shelf .rec-cover {
+  background: var(--borrower-terracotta);
+  border-radius: 8px 3px 3px 8px;
+  color: #E8DCC7;
+  box-shadow: 4px 3px 0 rgba(96, 108, 56, .16);
+}
+
+.borrower-dashboard--student .student-dashboard__achievement-grid {
+  grid-template-columns: 1fr;
+}
+
 .borrower-dashboard .content {
   background: var(--borrower-surface);
   min-height: calc(100vh - 76px);

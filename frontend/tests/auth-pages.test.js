@@ -4,6 +4,7 @@ import { AuthService } from '../features/auth/services/auth.service.js';
 import { LoginPage } from '../features/auth/pages/login/login.page.js';
 import { RegistrationPage } from '../features/auth/pages/register/register.page.js';
 import { OtpPage } from '../features/auth/pages/otp/otp.page.js';
+import { GuestRegistrationPage } from '../features/auth/pages/guest-registration/guest-registration.page.js';
 
 test('AuthService preserves borrower and staff login endpoints', async () => {
   const calls = [];
@@ -131,4 +132,50 @@ test('OtpPage verifies, resends, sanitizes input, and counts down', async () => 
   assert.equal(countdown.textContent, '4:59');
   assert.equal(messages.get('form-success').textContent, 'Sent again.');
   page.destroy();
+});
+
+test('GuestRegistrationPage preserves purpose controls, photo steps, and redirect', async () => {
+  let purposeChange;
+  let submit;
+  let redirected = '';
+  const purposeWrap = { classList: { toggle(name, hidden) { purposeWrap.hidden = hidden; } } };
+  const purpose = {
+    value: 'Others',
+    addEventListener(name, callback) { if (name === 'change') purposeChange = callback; },
+  };
+  const form = {
+    reportValidity: () => true,
+    addEventListener(name, callback) { if (name === 'submit') submit = callback; },
+  };
+  const sections = [
+    { dataset: { guestRegistrationStep: 'details' } },
+    { dataset: { guestRegistrationStep: 'photo' } },
+  ];
+  const document = {
+    getElementById(id) {
+      if (id === 'guest-reg-form') return form;
+      if (id === 'purpose') return purpose;
+      if (id === 'otherPurposeWrap') return purposeWrap;
+      return null;
+    },
+    querySelectorAll(selector) {
+      if (selector === '[data-guest-registration-step]') return sections;
+      return [];
+    },
+  };
+  const page = new GuestRegistrationPage({}, {
+    document,
+    window: { location: { set href(value) { redirected = value; } } },
+    camera: { stop() {} },
+    auth: { registerGuest: async () => ({ ok: true }) },
+    formDataFactory: () => ({ form }),
+  });
+
+  assert.equal(page.currentStep, 'details');
+  assert.equal(purposeWrap.hidden, false);
+  purpose.value = 'Reading';
+  purposeChange();
+  assert.equal(purposeWrap.hidden, true);
+  await submit({ preventDefault() {} });
+  assert.equal(redirected, '/scan2borrow/guest/verify-otp');
 });

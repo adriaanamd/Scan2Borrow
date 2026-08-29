@@ -75,6 +75,17 @@ final class GuestMarkupParityTest extends TestCase
         self::assertStringContainsString('showStep("details")', $controller);
     }
 
+    public function testCanonicalGuestRegistrationFeatureControllerPreservesBoundaries(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'auth' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'guest-registration' . DIRECTORY_SEPARATOR . 'guest-registration.page.js';
+        self::assertFileExists($path);
+        $script = file_get_contents($path);
+        self::assertIsString($script);
+        foreach (['guest-reg-form', 'photo_data', 'otherPurposeWrap', 'guest-details-continue', 'guest-photo-back', 'registerGuest'] as $marker) {
+            self::assertStringContainsString($marker, $script, "Missing canonical guest registration marker: {$marker}");
+        }
+    }
+
     public function testGuestBrowseControllerPreservesBookRequestAction(): void
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'guest' . DIRECTORY_SEPARATOR . 'browse.js';

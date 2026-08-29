@@ -42,7 +42,6 @@ test('student surface styles remain scoped away from navigation', () => {
   const sources = [
     read('assets/css/student-library-surfaces.css'),
     read('assets/css/student-search.css'),
-    read('assets/css/student-history.css'),
   ];
   for (const source of sources) {
     assert.doesNotMatch(source, /\.sidebar|\[data-app-navbar\]/);

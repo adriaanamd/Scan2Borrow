@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bootPage,
+  bootDocument,
   pageNameFromDocument,
   registerPage,
 } from '../app/bootstrap/page-registry.js';
@@ -28,6 +29,24 @@ test('registered page factory starts with the supplied context', async () => {
 
   assert.equal(await bootPage('test-page', { value: 1 }), 'started');
   assert.deepEqual(received, { value: 1 });
+});
+
+test('document bootstrap creates and passes an injected context', async () => {
+  let received;
+  registerPage('context-page', (context) => ({
+    start() {
+      received = context;
+    },
+  }));
+  const document = { body: { dataset: { appPage: 'context-page' } } };
+
+  await bootDocument(document, (currentDocument) => ({
+    document: currentDocument,
+    marker: 'injected',
+  }));
+
+  assert.equal(received.document, document);
+  assert.equal(received.marker, 'injected');
 });
 
 test('unknown page names fail clearly', async () => {

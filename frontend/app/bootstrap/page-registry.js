@@ -16,3 +16,8 @@ export async function bootPage(name, context = {}) {
 
   return factory(context).start();
 }
+
+export async function bootDocument(document, contextFactory = () => ({ document })) {
+  const context = await contextFactory(document);
+  return bootPage(pageNameFromDocument(document), context);
+}

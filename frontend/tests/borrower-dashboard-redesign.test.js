@@ -99,3 +99,10 @@ test('student statistics expose the Organic stat hooks without changing their da
     assert.match(source, new RegExp(`student-dashboard__stat[\\s\\S]*id="${id}"`));
   }
 });
+
+test('teacher statistics expose the Swiss stat hooks without changing their data IDs', () => {
+  const source = read('features/teacher/pages/dashboard/dashboard.html');
+  for (const id of ['active-count', 'overdue-count', 'fine-total', 'on-time-rate']) {
+    assert.match(source, new RegExp(`teacher-dashboard__stat[\\s\\S]*id="${id}"`));
+  }
+});

@@ -21,6 +21,40 @@
   --borrower-radius: 4px;
 }
 
+.borrower-dashboard--student .content {
+  color: var(--borrower-deep);
+  font-family: Epilogue, "Segoe UI", system-ui, sans-serif;
+  position: relative;
+}
+
+.borrower-dashboard--student .content::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+  content: "";
+  inset: 0;
+  opacity: .02;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.borrower-dashboard--student h1,
+.borrower-dashboard--student h2,
+.borrower-dashboard--student h3,
+.borrower-dashboard--student h4,
+.borrower-dashboard--student h5,
+.borrower-dashboard--student h6 {
+  font-family: Fraunces, Georgia, serif;
+  letter-spacing: -.035em;
+}
+
+.borrower-dashboard--student a {
+  color: var(--borrower-deep);
+}
+
+.borrower-dashboard--student .borrower-dashboard__panel {
+  border-radius: 22px;
+}
+
 .borrower-dashboard .content {
   background: var(--borrower-surface);
   min-height: calc(100vh - 76px);

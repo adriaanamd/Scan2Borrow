@@ -53,3 +53,10 @@ test('borrower dashboards expose shared layout primitives', () => {
     assert.match(css, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
 });
+
+test('student dashboard declares its Organic surface and display typography', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  assert.match(css, /\.borrower-dashboard--student[\s\S]*background:\s*var\(--borrower-surface\)/);
+  assert.match(css, /Fraunces/);
+  assert.match(css, /border-radius:\s*22px/);
+});

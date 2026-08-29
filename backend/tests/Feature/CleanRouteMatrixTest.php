@@ -9,6 +9,31 @@ use PHPUnit\Framework\TestCase;
 
 final class CleanRouteMatrixTest extends TestCase
 {
+    public function testEveryCurrentRouteIsListedInTheFrontendMatrix(): void
+    {
+        $matrixPath = dirname(__DIR__, 3)
+            . DIRECTORY_SEPARATOR . 'frontend'
+            . DIRECTORY_SEPARATOR . 'parity'
+            . DIRECTORY_SEPARATOR . 'page-matrix.md';
+        self::assertFileExists($matrixPath);
+
+        $matrix = (string) file_get_contents($matrixPath);
+        foreach ([
+            '/', '/login', '/staff/login', '/register', '/verify-otp',
+            '/guest/registration', '/guest/verify-otp', '/settings',
+            '/student/settings', '/teacher/settings', '/staff/dashboard',
+            '/staff/books', '/staff/students', '/staff/borrower', '/staff/notify',
+            '/staff/overdue', '/staff/reports', '/staff/guest-requests',
+            '/student/dashboard', '/student/search', '/student/history', '/receipt',
+            '/teacher/dashboard', '/guest/dashboard', '/guest/profile',
+            '/guest/profile-verify-otp', '/guest/browse', '/guest/borrowed',
+            '/guest/history', '/guest/borrow-request', '/guest/return-book',
+            '/guest/pass', '/guest/receipt', '/admin/staff', '/admin/api-docs',
+        ] as $route) {
+            self::assertStringContainsString('| ' . $route . ' |', $matrix, $route);
+        }
+    }
+
     public function testAllExtractedPageRoutesHaveExplicitPolicies(): void
     {
         $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages');

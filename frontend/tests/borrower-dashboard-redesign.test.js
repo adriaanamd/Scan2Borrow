@@ -126,3 +126,13 @@ test('teacher work area exposes desk, activity, and panel composition hooks', ()
     assert.match(source, new RegExp(`id="${id}"`));
   }
 });
+
+test('student active loans keep quantity and receipt columns inside the reading surface', () => {
+  const source = read('features/student/pages/dashboard/dashboard.html');
+  assert.match(source, /student-dashboard__loans/);
+  assert.match(source, /student-dashboard__table/);
+  for (const heading of ['Book', 'Quantity', 'Borrowed', 'Due', 'Status', 'Receipt']) {
+    assert.match(source, new RegExp(`<th>${heading}<\\/th>`));
+  }
+  assert.match(source, /id="current-loans"/);
+});

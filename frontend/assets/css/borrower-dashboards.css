@@ -399,6 +399,38 @@
   margin-bottom: 1rem;
 }
 
+.borrower-dashboard--student .student-dashboard__loans {
+  background: rgba(255, 255, 255, .5);
+  border: 1px solid rgba(96, 108, 56, .24);
+  border-radius: 22px;
+  box-shadow: 0 10px 24px rgba(96, 108, 56, .08);
+}
+
+.borrower-dashboard--student .student-dashboard__loans .section-title {
+  color: var(--borrower-deep);
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.25rem;
+}
+
+.borrower-dashboard--student .student-dashboard__table {
+  border: 1px solid rgba(96, 108, 56, .2);
+  border-radius: 14px;
+}
+
+.borrower-dashboard--student .student-dashboard__table .table thead th {
+  background: var(--borrower-deep);
+  border-bottom: 0;
+  color: #E8DCC7;
+}
+
+.borrower-dashboard--student .student-dashboard__table .table tbody td {
+  border-color: rgba(96, 108, 56, .18);
+}
+
+.borrower-dashboard--student .student-dashboard__table .table tbody tr:hover {
+  --bs-table-hover-bg: rgba(139, 157, 131, .18);
+}
+
 .borrower-dashboard .content {
   background: var(--borrower-surface);
   min-height: calc(100vh - 76px);

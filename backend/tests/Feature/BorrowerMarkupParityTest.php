@@ -42,4 +42,17 @@ final class BorrowerMarkupParityTest extends TestCase
         self::assertStringContainsString('frontend/assets/js/pages/borrower-dashboard.js', $html);
         self::assertStringContainsString('frontend/assets/css/style.css', $html);
     }
+
+    public function testCanonicalStudentDashboardUsesFeatureOwnedModule(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'dashboard' . DIRECTORY_SEPARATOR . 'dashboard.html';
+        self::assertFileExists($path);
+        $html = file_get_contents($path);
+        self::assertIsString($html);
+        self::assertStringContainsString('data-app-page="student-dashboard"', $html);
+        self::assertStringContainsString('frontend/features/student/pages/dashboard/student-dashboard.page.js', $html);
+        foreach (self::REQUIRED_MARKERS as $marker) {
+            self::assertStringContainsString($marker, $html, "Missing canonical borrower marker: {$marker}");
+        }
+    }
 }

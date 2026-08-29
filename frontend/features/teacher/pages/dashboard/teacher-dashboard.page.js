@@ -145,11 +145,12 @@ export class TeacherDashboardPage {
     const host = document.getElementById("bulkBorrowItems"); if (!host) return;
     host.replaceChildren();
     this.cart.linesForDisplay().forEach((line) => {
-      const row = document.createElement("div"); row.className = "d-flex justify-content-between align-items-center border rounded p-2 mb-2";
+      const row = document.createElement("div"); row.className = "d-flex justify-content-between align-items-center border rounded p-2 mb-2 teacher-borrow-cart-row";
       row.innerHTML = `<div><strong>${this.escapeHtml(line.title)}</strong><div class="small text-muted">${this.escapeHtml(line.author)} · ${line.quantity} copy/copies</div></div><div class="btn-group btn-group-sm"><button type="button" data-cart-action="decrease" data-title-id="${line.title_id}" class="btn btn-outline-secondary">−</button><span class="btn btn-light">${line.quantity}</span><button type="button" data-cart-action="increase" data-title-id="${line.title_id}" class="btn btn-outline-secondary">+</button><button type="button" data-cart-action="remove" data-title-id="${line.title_id}" class="btn btn-outline-danger">×</button></div>`;
+      row.querySelector(".btn-group")?.classList.add("teacher-borrow-cart-actions");
       host.appendChild(row);
     });
-    const count = document.getElementById("bulkBorrowCount"); if (count) count.textContent = String(this.cart.totalQuantity());
+    const count = document.getElementById("bulkBorrowCount"); if (count) { count.classList.add("teacher-borrow-cart-count"); count.textContent = String(this.cart.totalQuantity()); }
   }
 
   lookupAndAdd(barcode) {

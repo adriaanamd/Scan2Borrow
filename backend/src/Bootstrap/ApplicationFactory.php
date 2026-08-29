@@ -30,6 +30,7 @@ use App\Application\Validators\BookMutationValidator;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookCopyController;
+use App\Http\Controllers\BarcodePrintController;
 use App\Http\Controllers\BorrowerController;
 use App\Http\Controllers\GuestAuthController;
 use App\Http\Controllers\GuestBorrowingController;
@@ -43,6 +44,7 @@ use App\Http\Middleware\SessionPageAccessAuthorizer;
 use App\Http\Responses\ResponseEmitter;
 use App\Http\Routing\AuthRouteTable;
 use App\Http\Routing\BookRouteTable;
+use App\Http\Routing\BarcodePrintRouteTable;
 use App\Http\Routing\BorrowerRouteTable;
 use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
@@ -53,6 +55,7 @@ use App\Infrastructure\Database\DatabaseConfig;
 use App\Infrastructure\Database\PdoConnectionFactory;
 use App\Infrastructure\Persistence\PdoUserRepository;
 use App\Infrastructure\Persistence\PdoBookRepository;
+use App\Infrastructure\Persistence\PdoBarcodePrintRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
 use App\Infrastructure\Persistence\PdoGuestIdentityRepository;
@@ -101,6 +104,11 @@ final class ApplicationFactory
             $sessions,
             $bookRepository,
             new \App\Application\Validators\BookCopyMutationValidator(),
+            $csrf,
+        );
+        $barcodePrintController = new BarcodePrintController(
+            $sessions,
+            new \App\Application\Services\BarcodePrintService(new PdoBarcodePrintRepository($pdo)),
             $csrf,
         );
         $borrowings = new PdoBorrowingRepository($pdo);
@@ -152,6 +160,7 @@ final class ApplicationFactory
         $apiRouter = new Router(array_merge(
             (new AuthRouteTable())->routes($authController, $registration),
             (new BookRouteTable())->routes($bookController, $bookCopyController),
+            (new BarcodePrintRouteTable())->routes($barcodePrintController),
             (new BorrowerRouteTable())->routes($borrowerController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
             (new StaffRouteTable())->routes($staffController, $apiDocumentationController),

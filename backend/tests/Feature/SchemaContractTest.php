@@ -54,6 +54,7 @@ final class SchemaContractTest extends TestCase
             'upgrade.sql', 'upgrade_add_teacher_fields.sql', 'upgrade_approval_system.sql',
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
+            'upgrade_barcode_printing.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
             self::assertFileExists($path, "Missing SQL migration or seed file: {$filename}");
@@ -92,6 +93,24 @@ final class SchemaContractTest extends TestCase
         ] as $marker) {
             self::assertStringContainsString($marker, $migration, 'Migration is not safe for legacy text collations: ' . $marker);
         }
+    }
+
+    public function testBarcodePrintingMigrationAddsIrreversibleCopyMarkerAndBatchSnapshots(): void
+    {
+        $migration = str_replace(["\r\n", "\r"], "\n", $this->readSql('upgrade_barcode_printing.sql'));
+
+        foreach ([
+            'ALTER TABLE `book_copies`', '`printed_at` DATETIME DEFAULT NULL',
+            'CREATE TABLE IF NOT EXISTS `barcode_print_batches`', '`batch_token`', '`printed_by`',
+            'CREATE TABLE IF NOT EXISTS `barcode_print_batch_items`', '`batch_id`', '`copy_id`',
+            '`barcode`', '`accession_no`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $migration, "Barcode printing migration missing marker: {$marker}");
+        }
+
+        self::assertStringContainsString('ADD COLUMN IF NOT EXISTS `printed_at`', $migration);
+        self::assertStringContainsString('UNIQUE KEY `uq_barcode_print_batch_copy`', $migration);
+        self::assertStringContainsString('Run after `upgrade_bulk_borrowing.sql`', $migration);
     }
 
     private function readSql(string $filename): string

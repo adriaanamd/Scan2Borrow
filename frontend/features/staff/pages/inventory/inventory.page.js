@@ -32,6 +32,10 @@ export class InventoryPage {
       body: this.$("copy-body"),
       title: this.$("copy-title-name"),
       error: this.$("copy-error"),
+      notice: this.$("copy-notice"),
+      exportButton: this.$("copy-export-unprinted"),
+      summary: this.$("copy-print-summary"),
+      history: this.$("copy-print-history"),
       csrf: this.csrf,
       onChanged: () => this.load(),
     });

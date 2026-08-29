@@ -68,3 +68,15 @@ test('teacher dashboard declares its Swiss surface and data typography', () => {
   assert.match(css, /font-variant-numeric:\s*tabular-nums/);
   assert.match(css, /\.borrower-dashboard--teacher[\s\S]*border:\s*1px solid/);
 });
+
+test('student profile block exposes the Organic hero composition hooks', () => {
+  const source = read('features/student/pages/dashboard/dashboard.html');
+  for (const selector of ['student-dashboard__hero', 'student-dashboard__identity', 'student-dashboard__library-card']) {
+    assert.match(source, new RegExp(selector));
+  }
+  assert.match(source, /id="borrower-name"/);
+  assert.match(source, /id="borrower-meta"/);
+  assert.match(source, /id="borrower-barcode"/);
+  assert.match(source, /data-bs-target="#borrowModal"/);
+  assert.match(source, /data-bs-target="#returnModal"/);
+});

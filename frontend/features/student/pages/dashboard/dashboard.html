@@ -16,6 +16,10 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
+      rel="stylesheet"
+    />
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
     <link href="/scan2borrow/frontend/assets/css/borrower-dashboards.css" rel="stylesheet" />
     <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
@@ -39,8 +43,8 @@
           </div>
         </header>
         <div class="content" data-page="student-dashboard">
-          <div class="hero-card mb-4">
-            <div class="d-flex align-items-center flex-wrap gap-4">
+          <div class="hero-card mb-4 borrower-dashboard__hero student-dashboard__hero">
+            <div class="d-flex align-items-center flex-wrap gap-4 student-dashboard__identity">
               <div class="avatar-placeholder" aria-hidden="true">&#128100;</div>
               <div class="flex-grow-1">
                 <div
@@ -79,7 +83,7 @@
                 </div>
               </div>
 
-              <div class="libcard">
+              <div class="libcard student-dashboard__library-card">
                 <div class="libcard-top">
                   <span> Library Card</span><span>S2B</span>
                 </div>

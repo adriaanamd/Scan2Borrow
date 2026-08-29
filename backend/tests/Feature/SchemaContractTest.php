@@ -80,6 +80,20 @@ final class SchemaContractTest extends TestCase
         }
     }
 
+    public function testBulkMigrationHandlesLegacyCollationsAndGroupsDuplicateIsbnsAsOneTitle(): void
+    {
+        $migration = str_replace(["\r\n", "\r"], "\n", $this->readSql('upgrade_bulk_borrowing.sql'));
+
+        foreach ([
+            "GROUP BY\n    NULLIF(TRIM(source_book.`isbn`), '')",
+            'existing_title.`title` COLLATE utf8mb4_unicode_ci = source_book.`title` COLLATE utf8mb4_unicode_ci',
+            'existing_copy.`barcode` COLLATE utf8mb4_unicode_ci = source_book.`barcode` COLLATE utf8mb4_unicode_ci',
+            'existing_transaction.`transaction_code` COLLATE utf8mb4_unicode_ci',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $migration, 'Migration is not safe for legacy text collations: ' . $marker);
+        }
+    }
+
     private function readSql(string $filename): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;

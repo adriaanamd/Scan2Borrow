@@ -1,0 +1,27 @@
+.borrower-dashboard {
+  min-height: 100vh;
+}
+
+.borrower-dashboard--student {
+  --borrower-surface: #E8DCC7;
+  --borrower-panel: #D4B895;
+  --borrower-accent: #8B9D83;
+  --borrower-deep: #606C38;
+  --borrower-clay: #B08B6E;
+  --borrower-terracotta: #C66B3D;
+  --borrower-ochre: #C08E3A;
+  --borrower-radius: 22px;
+}
+
+.borrower-dashboard--teacher {
+  --borrower-surface: #F7F7F8;
+  --borrower-panel: #FFFFFF;
+  --borrower-accent: #002FA7;
+  --borrower-deep: #002FA7;
+  --borrower-radius: 4px;
+}
+
+.borrower-dashboard .content {
+  background: var(--borrower-surface);
+  min-height: calc(100vh - 76px);
+}

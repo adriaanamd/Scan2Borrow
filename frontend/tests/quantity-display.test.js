@@ -14,6 +14,19 @@ test('inventory and catalog cards expose total and available quantities', () => 
   assert.match(read('features/staff/pages/inventory/inventory.html'), /<th[^>]*>Quantity<\/th>/i);
 });
 
+test('barcode lookup does not pin an unavailable copy when the title has other available copies', () => {
+  for (const relative of [
+    'features/student/pages/search/student-search.page.js',
+    'features/student/pages/dashboard/student-dashboard.page.js',
+  ]) {
+    assert.match(
+      read(relative),
+      /copy\.status === ["']Available["'] \? barcode : ["']["']/,
+      `${relative} must let the server allocate another available copy for a title.`,
+    );
+  }
+});
+
 test('borrower, receipt, and staff approval surfaces render quantities', () => {
   assert.match(read('features/student/pages/dashboard/student-dashboard.page.js'), /loan\.quantity/);
   assert.match(read('features/student/pages/history/student-history.page.js'), /item\.quantity/);

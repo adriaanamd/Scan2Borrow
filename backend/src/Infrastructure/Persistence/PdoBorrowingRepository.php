@@ -126,9 +126,6 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
             $statement->execute(array_merge([$item->titleId], $requestedBarcodes));
             /** @var list<array<string, mixed>> $rows */
             $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
-            if (count($rows) !== count($requestedBarcodes)) {
-                throw new \RuntimeException('One or more scanned copies are unavailable.');
-            }
             foreach ($rows as $row) {
                 $selected[] = ['id' => (int) $row['id'], 'title_id' => (int) $row['title_id']];
             }

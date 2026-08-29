@@ -199,6 +199,24 @@ final class PdoBorrowingRepositoryTest extends TestCase
         );
     }
 
+    public function testBorrowingAUsedCopyBarcodeFallsBackToAnotherAvailableCopyOfTheTitle(): void
+    {
+        $this->pdo->exec("UPDATE book_copies SET status = 'Borrowed' WHERE barcode = 'COPY-1'");
+        $repository = new PdoBorrowingRepository($this->pdo);
+
+        $result = $repository->createBulkTransaction(
+            new BulkBorrowRequest(8, Role::STUDENT, [new BulkBorrowItem(1, 1, ['COPY-1'])]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-FALLBK',
+            'Pending',
+            'pending',
+        );
+
+        self::assertSame(1, $result['copy_count']);
+        self::assertSame('Reserved', $this->pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-2'")->fetchColumn());
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM borrowing_items WHERE transaction_id = 1 AND copy_id = 2')->fetchColumn());
+    }
+
     public function testBulkTransactionSupportsTransactionAndCopyReturns(): void
     {
         $repository = new PdoBorrowingRepository($this->pdo);

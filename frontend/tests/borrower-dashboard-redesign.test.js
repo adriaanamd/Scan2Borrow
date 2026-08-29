@@ -194,3 +194,30 @@ test('borrower dashboard roles declare responsive compositions', () => {
   assert.match(css, /teacher-dashboard__analytics-grid[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /student-dashboard__table[\s\S]*overflow-x:\s*auto/);
 });
+
+test('borrower dashboard redesign preserves content and controller parity', () => {
+  const sharedIds = [
+    'active-count', 'overdue-count', 'fine-total', 'on-time-rate',
+    'capacity-ring', 'capacity-value', 'capacity-remaining', 'capacity-limit',
+    'due-soon', 'current-loans', 'borrowModal', 'borrowForm',
+    'bulk-scan-barcode', 'bulk-scan-add', 'bulkBorrowCount', 'bulkBorrowItems',
+    'borrow-error', 'borrow-message', 'returnModal', 'returnForm',
+    'return_input', 'return-message', 'return-error', 'toast-host',
+  ];
+  for (const relative of [
+    'features/student/pages/dashboard/dashboard.html',
+    'features/teacher/pages/dashboard/dashboard.html',
+  ]) {
+    const source = read(relative);
+    for (const id of sharedIds) assert.match(source, new RegExp(`id="${id}"`), `${relative} must preserve ${id}`);
+  }
+
+  const student = read('features/student/pages/dashboard/student-dashboard.page.js');
+  const teacher = read('features/teacher/pages/dashboard/teacher-dashboard.page.js');
+  for (const method of ['load', 'render', 'renderLoans', 'renderCart', 'lookupAndAdd', 'submitCart']) {
+    assert.match(student, new RegExp(`${method}\\(`));
+    assert.match(teacher, new RegExp(`${method}\\(`));
+  }
+  assert.match(student, /Number\(loan\.quantity \|\| 1\)/);
+  assert.match(teacher, /Number\(loan\.quantity \|\| 1\)/);
+});

@@ -1,7 +1,40 @@
 export class StudentHistoryPage {
   constructor() {
     this.body = document.getElementById("history-body");
-    this.load();
+    this.applyRole(this.cachedRole());
+    this.resolveRole().then((role) => {
+      this.applyRole(role);
+      this.load();
+    });
+  }
+  cachedRole() {
+    try {
+      return window.sessionStorage?.getItem("scan2borrow.nav.role") || "";
+    } catch {
+      return "";
+    }
+  }
+  async resolveRole() {
+    const cached = this.cachedRole();
+    if (cached === "teacher" || cached === "student") return cached;
+    try {
+      const response = await window.fetch("/scan2borrow/api/auth/session", {
+        headers: { Accept: "application/json" },
+      });
+      const payload = await response.json();
+      return payload.ok === true && payload.data?.role === "teacher"
+        ? "teacher"
+        : "student";
+    } catch {
+      return "student";
+    }
+  }
+  applyRole(role) {
+    const teacher = role === "teacher";
+    document.body.classList.toggle("teacher-history-page", teacher);
+    document.body.classList.toggle("student-history-page", !teacher);
+    const roleHost = document.getElementById("current-user-role");
+    if (roleHost) roleHost.textContent = teacher ? "Teacher" : "Student";
   }
   escapeHtml(value) {
     return String(value == null ? "" : value).replace(

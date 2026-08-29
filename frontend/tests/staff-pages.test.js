@@ -15,6 +15,8 @@ const testsDirectory = path.dirname(fileURLToPath(import.meta.url));
 const inventorySources = [
   path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'inventory', 'inventory.page.js'),
 ];
+const staffDashboardSource = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'dashboard', 'staff-dashboard.page.js');
+const adminTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'admin-staff', 'admin-staff.html');
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -85,4 +87,11 @@ test('inventory controllers use the shared confirmation service for destructive 
     assert.match(source, /Scan2BorrowConfirmation\.confirm/, sourcePath);
     assert.doesNotMatch(source, /window\.confirm/, sourcePath);
   }
+});
+
+test('staff account actions use shared confirmation and admin markup has no native confirm', () => {
+  const controller = fs.readFileSync(staffDashboardSource, 'utf8');
+  const template = fs.readFileSync(adminTemplate, 'utf8');
+  assert.match(controller, /Scan2BorrowConfirmation\.confirm/);
+  assert.doesNotMatch(template, /onsubmit=.*confirm\(/);
 });

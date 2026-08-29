@@ -103,7 +103,7 @@ export class AppNavbarComponent {
   }
 
   logoutLink() {
-    return '<a href="/scan2borrow/logout" class="nav-logout"><span class="nav-icon">&#9211;</span>Logout</a>';
+    return '<a href="/scan2borrow/logout" class="nav-logout" data-confirm-action="logout" data-confirm-title="Log out?" data-confirm-message="Are you sure you want to log out?" data-confirm-label="Log out" data-confirm-class="btn-danger"><span class="nav-icon">&#9211;</span>Logout</a>';
   }
 
   setActiveLink() {

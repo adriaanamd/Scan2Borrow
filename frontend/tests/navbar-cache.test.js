@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const navbarPath = path.resolve(testDirectory, '..', 'assets', 'js', 'core', 'app-navbar.js');
+const appNavbarPath = path.resolve(testDirectory, '..', 'app', 'shared', 'components', 'app-navbar', 'app-navbar.component.js');
 
 function loadNavbar(window) {
   const document = { addEventListener() {} };
@@ -75,6 +76,13 @@ test('navbar binds the first session fetch to the window', async () => {
   await new AppNavbar(root).start();
 
   assert.equal(fetchCalls, 1);
+});
+
+test('navbar implementations identify logout as a confirmed action', () => {
+  for (const sourcePath of [navbarPath, appNavbarPath]) {
+    const source = fs.readFileSync(sourcePath, 'utf8');
+    assert.match(source, /data-confirm-action=.*logout|data-confirm-action.*logout/, sourcePath);
+  }
 });
 
 test('navbar ignores a stale student cache on staff routes', async () => {

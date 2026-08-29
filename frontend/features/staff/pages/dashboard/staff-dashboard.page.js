@@ -1202,12 +1202,20 @@ export class StaffDashboardPage {
     this.root
       .querySelectorAll("[data-toggle-user], [data-demote-user]")
       .forEach((button) =>
-        button.addEventListener("click", () =>
-          this.adminAction(
-            button.dataset.toggleUser ? "toggle_status" : "demote",
-            button.dataset.toggleUser || button.dataset.demoteUser,
-          ),
-        ),
+        button.addEventListener("click", async () => {
+          const action = button.dataset.toggleUser ? "toggle_status" : "demote";
+          const userId = button.dataset.toggleUser || button.dataset.demoteUser;
+          await window.Scan2BorrowConfirmation.confirm({
+            title: action === "demote" ? "Demote staff account" : "Change account status",
+            message: action === "demote"
+              ? "Change this librarian back to a borrower?"
+              : "Change this staff account status?",
+            confirmLabel: action === "demote" ? "Demote" : "Change status",
+            confirmClass: action === "demote" ? "btn-danger" : "btn-warning",
+            trigger: button,
+            onConfirm: () => this.adminAction(action, userId),
+          });
+        }),
       );
     this.root
       .querySelectorAll("#promoteModal form, #pwModal form")

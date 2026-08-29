@@ -93,7 +93,15 @@
                       >
                         Reset Password
                       </button>
-                      <form method="POST" class="d-inline">
+                      <form
+                        method="POST"
+                        class="d-inline"
+                        data-confirm-action="toggle_status"
+                        data-confirm-title="Change account status"
+                        data-confirm-message="Change this staff account status?"
+                        data-confirm-label="Change status"
+                        data-confirm-class="btn-warning"
+                      >
                         <input type="hidden" name="user_id" value="" />
                         <input
                           type="hidden"
@@ -106,7 +114,11 @@
                       <form
                         method="POST"
                         class="d-inline"
-                        onsubmit="return confirm('Change this librarian back to a borrower?');"
+                        data-confirm-action="demote"
+                        data-confirm-title="Demote staff account"
+                        data-confirm-message="Change this librarian back to a borrower?"
+                        data-confirm-label="Demote"
+                        data-confirm-class="btn-danger"
                       >
                         <input type="hidden" name="user_id" value="" />
                         <input type="hidden" name="action" value="demote" />

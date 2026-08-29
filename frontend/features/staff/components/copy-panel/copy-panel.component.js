@@ -11,6 +11,7 @@ export class CopyPanelComponent {
     this.history = history;
     this.onChanged = onChanged;
     this.titleId = 0;
+    this.unprintedCount = 0;
     this.exportButton?.addEventListener("click", () => this.exportUnprinted());
   }
 
@@ -40,6 +41,7 @@ export class CopyPanelComponent {
 
   render(copies) {
     const unprinted = copies.filter((copy) => !copy.deleted_at && !copy.printed_at).length;
+    this.unprintedCount = unprinted;
     if (this.summary) this.summary.textContent = `${unprinted} barcode${unprinted === 1 ? "" : "s"} ready to export · printed markers cannot be reversed.`;
     if (this.exportButton) this.exportButton.disabled = unprinted === 0;
     if (!copies.length) {
@@ -115,7 +117,7 @@ export class CopyPanelComponent {
       if (printWindow) printWindow.close();
       this.showError(error.message);
     } finally {
-      this.exportButton.disabled = false;
+      this.exportButton.disabled = this.unprintedCount === 0;
       this.exportButton.textContent = "Export unprinted barcodes";
     }
   }

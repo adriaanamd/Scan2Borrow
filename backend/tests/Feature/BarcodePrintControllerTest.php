@@ -52,6 +52,29 @@ final class BarcodePrintControllerTest extends TestCase
         self::assertStringContainsString('batch_token', $controller->index(ServerRequest::fromGlobals())->toString());
     }
 
+    public function testBatchLookupRejectsMalformedTokenAndUnknownBatch(): void
+    {
+        $store = new BarcodePrintControllerSessionStore(new \App\Domain\Auth\SessionIdentity(7, Role::ADMIN, 'staff'));
+        $controller = $this->controller($store);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/api/barcode-print-batches?batch_token=bad';
+        $_POST = [];
+
+        self::assertSame(422, $controller->index(ServerRequest::fromGlobals())->statusCode());
+    }
+
+    public function testCreateRejectsNonPositiveTitleId(): void
+    {
+        $store = new BarcodePrintControllerSessionStore(new \App\Domain\Auth\SessionIdentity(7, Role::ADMIN, 'staff'));
+        $controller = $this->controller($store);
+        $csrf = (new CsrfService($store))->token();
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/api/barcode-print-batches';
+        $_POST = ['title_id' => '0', 'csrf' => $csrf];
+
+        self::assertSame(422, $controller->create(ServerRequest::fromGlobals())->statusCode());
+    }
+
     private function controller(BarcodePrintControllerSessionStore $store): BarcodePrintController
     {
         return new BarcodePrintController(

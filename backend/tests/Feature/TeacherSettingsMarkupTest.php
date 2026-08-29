@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class TeacherSettingsMarkupTest extends TestCase
 {
     public function testTeacherDashboardKeepsATeacherSettingsLink(): void
     {
-        $dashboard = $this->read('frontend/pages/teacher-dashboard.html');
+        $dashboard = file_get_contents(FrontendPagePaths::path('teacher-dashboard'));
+        self::assertIsString($dashboard);
         $navbar = $this->read('frontend/assets/js/core/app-navbar.js');
 
         self::assertStringContainsString('data-navbar-role="teacher"', $dashboard);
@@ -19,12 +21,13 @@ final class TeacherSettingsMarkupTest extends TestCase
 
     public function testTeacherSettingsKeepsTeacherScopedNavigationAndAccountSurface(): void
     {
-        $settings = $this->read('frontend/pages/teacher-settings.html');
+        $settings = file_get_contents(FrontendPagePaths::path('teacher-settings'));
+        self::assertIsString($settings);
 
         self::assertStringContainsString('<title>Settings | Scan2Borrow</title>', $settings);
         self::assertStringContainsString('data-page="teacher-settings"', $settings);
         self::assertStringContainsString('data-navbar-role="teacher"', $settings);
-        self::assertStringContainsString('frontend/assets/js/pages/student-settings.js', $settings);
+        self::assertStringContainsString('frontend/features/teacher/pages/settings/teacher-settings.page.js', $settings);
 
         $navbar = $this->read('frontend/assets/js/core/app-navbar.js');
         self::assertStringContainsString('/scan2borrow/teacher/settings', $navbar);

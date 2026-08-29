@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class StaffReportsContractTest extends TestCase
 {
     public function testReportsPageHasOneDataDrivenPrintableReportDocument(): void
     {
-        $source = $this->read('frontend/pages/staff-reports.html');
+        $source = file_get_contents(FrontendPagePaths::path('staff-reports'));
+        self::assertIsString($source);
 
         foreach ([
             'id="staff-report-document"',

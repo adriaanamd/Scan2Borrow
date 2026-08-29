@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class ApiDocumentationMarkupTest extends TestCase
 {
     public function testAdminNavigationLinksToTheProtectedApiDocsPage(): void
     {
-        $source = $this->read('frontend/pages/admin-staff.html');
+        $source = file_get_contents(FrontendPagePaths::path('admin-staff'));
+        self::assertIsString($source);
         $navbar = $this->read('frontend/assets/js/core/app-navbar.js');
 
         self::assertStringContainsString('data-app-navbar', $source);
@@ -20,7 +22,8 @@ final class ApiDocumentationMarkupTest extends TestCase
 
     public function testApiDocsPageContainsSwaggerStyleHooks(): void
     {
-        $source = $this->read('frontend/pages/admin-api-docs.html');
+        $source = file_get_contents(FrontendPagePaths::path('admin-api-docs'));
+        self::assertIsString($source);
 
         foreach (['data-page="admin-api-docs"', 'api-docs-tags', 'api-docs-operations', 'OpenAPI 3.0.3', 'api-docs.js'] as $marker) {
             self::assertStringContainsString($marker, $source, $marker . ' is missing.');

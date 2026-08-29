@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\FrontendPagePaths;
 
 final class FrontendVisualSystemTest extends TestCase
 {
@@ -30,9 +31,7 @@ final class FrontendVisualSystemTest extends TestCase
 
     public function testAllApplicationPagesKeepTheSharedShellStylesheet(): void
     {
-        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages';
-        $pages = glob($root . DIRECTORY_SEPARATOR . '*.html');
-        self::assertIsArray($pages);
+        $pages = $this->canonicalPages();
 
         foreach ($pages as $page) {
             $source = file_get_contents($page);
@@ -71,9 +70,7 @@ final class FrontendVisualSystemTest extends TestCase
 
     public function testEveryApplicationPageLoadsTheSharedSvgIconSystem(): void
     {
-        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages';
-        $pages = glob($root . DIRECTORY_SEPARATOR . '*.html');
-        self::assertIsArray($pages);
+        $pages = $this->canonicalPages();
 
         foreach ($pages as $page) {
             $source = file_get_contents($page);
@@ -93,7 +90,8 @@ final class FrontendVisualSystemTest extends TestCase
 
     public function testRegistrationPresentsRoleSelectionInsideTheRegistrationSurface(): void
     {
-        $registration = $this->read('frontend/pages/register.html');
+        $registration = file_get_contents(FrontendPagePaths::path('register'));
+        self::assertIsString($registration);
 
         self::assertStringContainsString('registration-role-picker', $registration);
         self::assertStringContainsString('id="chooseStudent"', $registration);
@@ -105,29 +103,25 @@ final class FrontendVisualSystemTest extends TestCase
 
     public function testRegistrationSeparatesDetailsAndCameraIntoDistinctSteps(): void
     {
-        $registration = $this->read('frontend/pages/register.html');
-        $controller = $this->read('frontend/assets/js/pages/registration.js');
+        $registration = file_get_contents(FrontendPagePaths::path('register'));
+        $controller = $this->read('frontend/features/auth/pages/register/register.page.js');
+        self::assertIsString($registration);
 
         foreach (['registration-progress', 'registration-details-step', 'registration-photo-step', 'registration-continue', 'registration-back'] as $marker) {
             self::assertStringContainsString($marker, $registration, $marker . ' is missing from registration flow.');
         }
 
         self::assertStringContainsString('showStep', $controller);
-        self::assertStringContainsString('showStep("photo")', $controller);
+        self::assertStringContainsString("showStep('photo')", $controller);
     }
 
     public function testAuthScreensUseTheExistingBrandAssetsAndSplitLayout(): void
     {
         foreach ([
-            'frontend/pages/login.html',
-            'frontend/pages/register.html',
-            'frontend/pages/staff-login.html',
-            'frontend/pages/guest-registration.html',
-            'frontend/pages/verify-otp.html',
-            'frontend/pages/guest-verify-otp.html',
-            'frontend/pages/guest-profile-verify-otp.html',
+            'login', 'register', 'staff-login', 'guest-registration', 'verify-otp', 'guest-verify-otp', 'guest-profile-verify-otp',
         ] as $relativePath) {
-            $source = $this->read($relativePath);
+            $source = file_get_contents(FrontendPagePaths::path($relativePath));
+            self::assertIsString($source);
             self::assertStringContainsString('auth-split', $source, $relativePath . ' must use the split auth layout.');
             self::assertStringContainsString('/scan2borrow/public/favicon.png', $source, $relativePath . ' must use the existing favicon.');
         }
@@ -155,9 +149,7 @@ final class FrontendVisualSystemTest extends TestCase
 
     public function testEveryApplicationPageUsesTheExistingFavicon(): void
     {
-        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'pages';
-        $pages = glob($root . DIRECTORY_SEPARATOR . '*.html');
-        self::assertIsArray($pages);
+        $pages = $this->canonicalPages();
 
         foreach ($pages as $page) {
             $source = file_get_contents($page);
@@ -178,5 +170,16 @@ final class FrontendVisualSystemTest extends TestCase
         self::assertIsString($source);
 
         return $source;
+    }
+
+    /** @return list<string> */
+    private function canonicalPages(): array
+    {
+        return array_map(
+            static fn (string $relativePath): string => dirname(__DIR__, 3)
+                . DIRECTORY_SEPARATOR . 'frontend'
+                . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath),
+            FrontendPagePaths::all(),
+        );
     }
 }

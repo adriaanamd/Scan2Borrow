@@ -182,7 +182,6 @@
                     id="barcode"
                     class="form-control"
                     placeholder="Scan or type barcode"
-                    required
                   />
                   <button
                     type="button"
@@ -192,6 +191,8 @@
                     Scan
                   </button>
                 </div>
+                <label class="form-label">Quantity</label>
+                <input type="number" name="quantity" class="form-control mb-3" min="1" value="1" required />
                 <label class="form-label">ISBN</label
                 ><input type="text" name="isbn" class="form-control mb-3" />
                 <label class="form-label">Title *</label

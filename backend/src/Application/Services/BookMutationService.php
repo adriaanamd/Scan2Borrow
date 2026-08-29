@@ -24,11 +24,11 @@ final class BookMutationService
             return BookMutationResult::failure($validationError);
         }
 
-        if ($this->books->barcodeExists($request->barcode)) {
+        if ($request->quantity === 1 && $this->books->barcodeExists($request->barcode)) {
             return BookMutationResult::failure('A book with this barcode already exists.');
         }
 
-        if ($request->accessionNo !== '' && $this->books->accessionExists($request->accessionNo)) {
+        if ($request->quantity === 1 && $request->accessionNo !== '' && $this->books->accessionExists($request->accessionNo)) {
             return BookMutationResult::failure('A book with this accession number already exists.');
         }
 

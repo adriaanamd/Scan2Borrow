@@ -19,4 +19,10 @@ final class BookQueryService
     {
         return $this->books->search($criteria);
     }
+
+    /** @return array<string, mixed>|null */
+    public function lookupCopyByBarcode(string $barcode): ?array
+    {
+        return $this->books->lookupCopyByBarcode($barcode);
+    }
 }

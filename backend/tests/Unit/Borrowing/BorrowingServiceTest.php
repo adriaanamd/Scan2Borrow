@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Borrowing;
 
 use App\Application\DTO\BorrowRequest;
+use App\Application\DTO\BulkBorrowRequest;
 use App\Application\Services\BorrowingService;
 use App\Application\Services\ClockInterface;
 use App\Domain\Auth\Role;
@@ -108,5 +109,10 @@ final class FakeBorrowingRepository implements BorrowingRepositoryInterface
         $this->dueDate = $dueDate;
 
         return 1;
+    }
+
+    public function createBulkTransaction(BulkBorrowRequest $request, DateTimeImmutable $dueDate, string $transactionCode, string $status, string $approvalStatus): array
+    {
+        return ['transaction_code' => $transactionCode, 'copy_count' => 1, 'title_count' => count($request->items)];
     }
 }

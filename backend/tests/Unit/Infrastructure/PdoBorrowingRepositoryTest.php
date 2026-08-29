@@ -198,4 +198,22 @@ final class PdoBorrowingRepositoryTest extends TestCase
             'pending',
         );
     }
+
+    public function testBulkTransactionSupportsTransactionAndCopyReturns(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+        $repository->createBulkTransaction(
+            new BulkBorrowRequest(7, Role::STUDENT, [new BulkBorrowItem(1, 2)]),
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-RETURNB',
+            'Borrowed',
+            'approved',
+        );
+
+        $loans = $repository->activeByTransaction(7, 'S2B-20260828-RETURNB');
+        self::assertCount(2, $loans);
+        $repository->completeReturn($loans[0]->id(), $loans[0]->bookId(), 0.0);
+        self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = {$loans[0]->bookId()}")->fetchColumn());
+        self::assertCount(1, $repository->activeByTransaction(7, 'S2B-20260828-RETURNB'));
+    }
 }

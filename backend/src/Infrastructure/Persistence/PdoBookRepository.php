@@ -17,6 +17,10 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
 
     public function search(BookSearchCriteria $criteria): BookSearchResult
     {
+        if ($this->hasTable('book_titles')) {
+            return $this->searchTitles($criteria);
+        }
+
         $where = [$criteria->archived() ? 'deleted_at IS NOT NULL' : 'deleted_at IS NULL'];
         $parameters = [];
 
@@ -65,18 +69,162 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         return new BookSearchResult($books, $total);
     }
 
+    public function lookupCopyByBarcode(string $barcode): ?array
+    {
+        if (!$this->hasTable('book_copies')) {
+            return null;
+        }
+        $statement = $this->pdo->prepare(
+            "SELECT c.id AS copy_id, c.title_id, c.barcode, c.status, t.title, t.author, t.quantity,
+                    (SELECT COUNT(*) FROM book_copies available_copy WHERE available_copy.title_id = c.title_id
+                        AND available_copy.status = 'Available' AND available_copy.deleted_at IS NULL) AS available_quantity
+             FROM book_copies c JOIN book_titles t ON t.id = c.title_id
+             WHERE c.barcode = :barcode AND c.deleted_at IS NULL LIMIT 1"
+        );
+        $statement->execute(['barcode' => trim($barcode)]);
+        /** @var array<string, mixed>|false $row */
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return $row === false ? null : $row;
+    }
+
+    private function searchTitles(BookSearchCriteria $criteria): BookSearchResult
+    {
+        $where = [$criteria->archived()
+            ? 'NOT EXISTS (SELECT 1 FROM book_copies archived_copy WHERE archived_copy.title_id = t.id AND archived_copy.deleted_at IS NULL)'
+            : 'EXISTS (SELECT 1 FROM book_copies live_copy WHERE live_copy.title_id = t.id AND live_copy.deleted_at IS NULL)'];
+        $parameters = [];
+
+        if ($criteria->search() !== '') {
+            $search = '%' . $criteria->search() . '%';
+            $where[] = '(t.title LIKE :title_search OR t.author LIKE :author_search OR t.publisher LIKE :publisher_search OR t.category_name LIKE :category_search OR t.isbn LIKE :isbn_search)';
+            $parameters = [
+                'title_search' => $search,
+                'author_search' => $search,
+                'publisher_search' => $search,
+                'category_search' => $search,
+                'isbn_search' => $search,
+            ];
+        }
+
+        if ($criteria->status() !== null) {
+            $status = $criteria->status()->value;
+            $where[] = match ($status) {
+                'Available' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Available' AND status_copy.deleted_at IS NULL)",
+                'Borrowed' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Borrowed' AND status_copy.deleted_at IS NULL)",
+                'Reserved' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Reserved' AND status_copy.deleted_at IS NULL)",
+            };
+        }
+
+        $condition = implode(' AND ', $where);
+        $countStatement = $this->pdo->prepare('SELECT COUNT(*) FROM book_titles t WHERE ' . $condition);
+        $countStatement->execute($parameters);
+        $total = (int) $countStatement->fetchColumn();
+        $offset = ($criteria->page() - 1) * $criteria->perPage();
+        $sort = in_array($criteria->sort(), ['title', 'author', 'publisher', 'category_name', 'created_at'], true)
+            ? 't.' . $criteria->sort()
+            : 't.created_at';
+        $statement = $this->pdo->prepare(
+            'SELECT t.id, t.id AS title_id, NULL AS barcode, t.isbn, t.title, t.author, t.publisher, t.category_name, '
+            . 't.cover_file, t.description, t.quantity, '
+            . "SUM(CASE WHEN c.status = 'Available' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS available_quantity, "
+            . "SUM(CASE WHEN c.status = 'Reserved' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS reserved_quantity, "
+            . "SUM(CASE WHEN c.status = 'Borrowed' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS borrowed_quantity, "
+            . 'MIN(c.floor_no) AS floor_no, MIN(c.section_name) AS section_name, MIN(c.shelf_no) AS shelf_no, MIN(c.row_no) AS row_no '
+            . 'FROM book_titles t LEFT JOIN book_copies c ON c.title_id = t.id WHERE ' . $condition
+            . ' GROUP BY t.id ORDER BY ' . $sort . ' ' . $criteria->direction() . ' LIMIT :limit OFFSET :offset'
+        );
+        foreach ($parameters as $key => $value) {
+            $statement->bindValue($key, $value);
+        }
+        $statement->bindValue('limit', $criteria->perPage(), PDO::PARAM_INT);
+        $statement->bindValue('offset', $offset, PDO::PARAM_INT);
+        $statement->execute();
+        /** @var list<array<string, mixed>> $books */
+        $books = $statement->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($books as &$book) {
+            $available = (int) ($book['available_quantity'] ?? 0);
+            $book['status'] = $available > 0 ? 'Available' : ((int) ($book['borrowed_quantity'] ?? 0) > 0 ? 'Borrowed' : 'Reserved');
+        }
+        unset($book);
+
+        return new BookSearchResult($books, $total);
+    }
+
+    private function hasTable(string $table): bool
+    {
+        $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $statement = $this->pdo->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1");
+            $statement->execute(['table' => $table]);
+        } else {
+            $statement = $this->pdo->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table LIMIT 1');
+            $statement->execute(['table' => $table]);
+        }
+
+        return $statement->fetchColumn() !== false;
+    }
+
     public function barcodeExists(string $barcode, ?int $exceptId = null): bool
     {
+        if ($this->hasTable('book_copies')) {
+            $sql = 'SELECT 1 FROM book_copies WHERE barcode = :value AND deleted_at IS NULL';
+            $parameters = ['value' => $barcode];
+            if ($exceptId !== null) { $sql .= ' AND id <> :except_id'; $parameters['except_id'] = $exceptId; }
+            $statement = $this->pdo->prepare($sql . ' LIMIT 1');
+            $statement->execute($parameters);
+            return $statement->fetchColumn() !== false;
+        }
         return $this->exists('barcode', $barcode, $exceptId);
     }
 
     public function accessionExists(string $accessionNo, ?int $exceptId = null): bool
     {
+        if ($this->hasTable('book_copies')) {
+            $sql = 'SELECT 1 FROM book_copies WHERE accession_no = :value AND deleted_at IS NULL';
+            $parameters = ['value' => $accessionNo];
+            if ($exceptId !== null) { $sql .= ' AND id <> :except_id'; $parameters['except_id'] = $exceptId; }
+            $statement = $this->pdo->prepare($sql . ' LIMIT 1');
+            $statement->execute($parameters);
+            return $statement->fetchColumn() !== false;
+        }
         return $accessionNo !== '' && $this->exists('accession_no', $accessionNo, $exceptId);
     }
 
     public function create(BookMutationRequest $request): int
     {
+        if ($this->hasTable('book_titles')) {
+            $this->pdo->beginTransaction();
+            try {
+                $titleStatement = $this->pdo->prepare(
+                    'INSERT INTO book_titles (isbn, title, author, publisher, description, cover_file, category_name, quantity) VALUES (:isbn, :title, :author, :publisher, :description, :cover_file, :category_name, :quantity)'
+                );
+                $titleStatement->execute([
+                    'isbn' => $request->isbn, 'title' => $request->title, 'author' => $request->author,
+                    'publisher' => $request->publisher, 'description' => $request->description,
+                    'cover_file' => $request->coverFile, 'category_name' => $request->categoryName, 'quantity' => $request->quantity,
+                ]);
+                $titleId = (int) $this->pdo->lastInsertId();
+                $copyStatement = $this->pdo->prepare(
+                    'INSERT INTO book_copies (title_id, barcode, accession_no, floor_no, section_name, shelf_no, row_no, due_date, return_date, status) VALUES (:title_id, :barcode, :accession_no, :floor_no, :section_name, :shelf_no, :row_no, :due_date, :return_date, :status)'
+                );
+                for ($index = 0; $index < $request->quantity; $index++) {
+                    $barcode = $index === 0 && $request->barcode !== '' ? $request->barcode : 'PENDING-' . $titleId . '-' . ($index + 1) . '-' . bin2hex(random_bytes(3));
+                    $accession = $index === 0 && $request->accessionNo !== '' ? $request->accessionNo : 'ACC-' . $titleId . '-' . ($index + 1);
+                    $copyStatement->execute([
+                        'title_id' => $titleId, 'barcode' => $barcode, 'accession_no' => $accession,
+                        'floor_no' => $request->floorNo, 'section_name' => $request->sectionName,
+                        'shelf_no' => $request->shelfNo, 'row_no' => $request->rowNo, 'due_date' => $request->dueDate ?: null,
+                        'return_date' => $request->returnDate ?: null, 'status' => $request->status,
+                    ]);
+                }
+                $this->pdo->commit();
+                return $titleId;
+            } catch (\Throwable $exception) {
+                if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+                throw $exception;
+            }
+        }
         $statement = $this->pdo->prepare(
             'INSERT INTO books (barcode, accession_no, isbn, title, author, publisher, category_name, cover_file, ' .
             'floor_no, section_name, shelf_no, row_no, due_date, return_date, status, description) VALUES ' .

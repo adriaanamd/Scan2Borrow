@@ -13,6 +13,12 @@ export class TeacherDashboardService {
     return this.api.post('/scan2borrow/api/teacher/dashboard', body);
   }
 
+  borrowBulk(items, dueDate = '') {
+    const body = { action: 'borrow', items };
+    if (dueDate) body.due_date = dueDate;
+    return this.api.post('/scan2borrow/api/teacher/dashboard', body);
+  }
+
   returnBook(returnInput) {
     return this.api.post('/scan2borrow/api/teacher/dashboard', {
       action: 'return_unified',

@@ -182,13 +182,13 @@
                   </div>
                   <div class="modal-body">
                     <div id="borrow-error" class="alert alert-danger" hidden></div>
-                    <div class="mb-3">
-                      <label class="form-label fw-semibold">Book Title</label>
-                      <p
-                        id="modal-book-title"
-                        style="font-size: 14px; color: #666"
-                      ></p>
+                    <label class="form-label fw-semibold">Scan a copy</label>
+                    <div class="input-group mb-3">
+                      <input id="bulk-scan-barcode" class="form-control" placeholder="Scan barcode to add a copy" data-scan-target="bulk-scan-barcode" />
+                      <button type="button" id="bulk-scan-add" class="btn btn-outline-secondary">Add</button>
                     </div>
+                    <div class="d-flex justify-content-between mb-2"><strong>Borrow cart</strong><span><span id="bulkBorrowCount">0</span> book(s)</span></div>
+                    <div id="bulkBorrowItems" class="mb-2"></div>
                   </div>
                   <div class="modal-footer">
                     <button
@@ -212,6 +212,7 @@
       src="/scan2borrow/frontend/assets/js/core/media.js"
       defer
     ></script>
+    <script src="/scan2borrow/frontend/assets/js/core/scanner.js" defer></script>
     <script type="module" src="/scan2borrow/frontend/features/student/pages/search/student-search.page.js"></script>
     <script src="/scan2borrow/frontend/assets/js/core/icons.js" defer></script>
   </body>

@@ -27,6 +27,7 @@ final readonly class BookMutationRequest
         public string $returnDate = '',
         public string $status = 'Available',
         public array $keywords = [],
+        public int $quantity = 1,
     ) {
     }
 
@@ -50,6 +51,7 @@ final readonly class BookMutationRequest
             $this->returnDate,
             $status,
             $this->keywords,
+            $this->quantity,
         );
     }
 }

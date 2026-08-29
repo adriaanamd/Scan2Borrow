@@ -18,6 +18,16 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
 
     public function findBook(string $barcode): ?array
     {
+        if ($this->hasTable('book_copies')) {
+            $statement = $this->pdo->prepare(
+                "SELECT c.id, c.id AS copy_id, c.title_id, c.barcode, t.title, t.author, c.status, c.due_date,
+                        NULL AS return_date FROM book_copies c JOIN book_titles t ON t.id = c.title_id
+                 WHERE c.barcode = :barcode AND c.deleted_at IS NULL LIMIT 1"
+            );
+            $statement->execute(['barcode' => trim($barcode)]);
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            return $row === false ? null : $row;
+        }
         $statement = $this->pdo->prepare(
             'SELECT id, barcode, title, author, status, due_date, return_date FROM books WHERE barcode = :barcode AND deleted_at IS NULL LIMIT 1'
         );
@@ -150,6 +160,16 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
 
     public function activeApprovedCount(int $userId): int
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 WHERE bt.user_id = :user_id AND bi.return_date IS NULL
+                   AND bt.approval_status IN ('pending', 'approved') AND bi.status IN ('Pending', 'Borrowed', 'Overdue')"
+            );
+            $statement->execute(['user_id' => $userId]);
+            $normalizedCount = (int) $statement->fetchColumn();
+            if ($normalizedCount > 0 || $this->tableCount('borrowing_transactions') > 0) return $normalizedCount;
+        }
         $statement = $this->pdo->prepare(
             "SELECT COUNT(*) FROM borrowing
              WHERE user_id = :user_id
@@ -193,6 +213,17 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
     /** @return list<LoanRecord> */
     public function activeByTransaction(int $userId, string $transactionCode): array
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->prepare(
+                "SELECT bi.id, bi.copy_id AS book_id, bt.transaction_code, bt.due_date
+                 FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 WHERE bt.user_id = :user_id AND bt.transaction_code = :transaction_code
+                   AND bi.return_date IS NULL AND bt.approval_status = 'approved' ORDER BY bi.id"
+            );
+            $statement->execute(['user_id' => $userId, 'transaction_code' => trim($transactionCode)]);
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            if ($rows !== [] || $this->tableCount('borrowing_transactions') > 0) return $this->loanRecords($rows);
+        }
         $statement = $this->pdo->prepare(
             "SELECT id, book_id, transaction_code, due_date FROM borrowing WHERE user_id = :user_id AND transaction_code = :transaction_code AND return_date IS NULL AND approval_status = 'approved'"
         );
@@ -211,6 +242,20 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
 
     public function activeByBook(int $userId, int $bookId): ?LoanRecord
     {
+        if ($this->hasTable('borrowing_items')) {
+            $statement = $this->pdo->prepare(
+                "SELECT bi.id, bi.copy_id AS book_id, bt.transaction_code, bt.due_date
+                 FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 WHERE bt.user_id = :user_id AND bi.copy_id = :book_id AND bi.return_date IS NULL
+                   AND bt.approval_status = 'approved' LIMIT 1"
+            );
+            $statement->execute(['user_id' => $userId, 'book_id' => $bookId]);
+            $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            if ($rows !== [] || $this->tableCount('borrowing_transactions') > 0) {
+                $records = $this->loanRecords($rows);
+                return $records[0] ?? null;
+            }
+        }
         $statement = $this->pdo->prepare(
             "SELECT id, book_id, transaction_code, due_date FROM borrowing WHERE user_id = :user_id AND book_id = :book_id AND return_date IS NULL AND approval_status = 'approved' LIMIT 1"
         );
@@ -224,6 +269,14 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
 
     public function completeReturn(int $loanId, int $bookId, float $fine): void
     {
+        if ($this->hasTable('borrowing_items') && $this->itemExists($loanId)) {
+            $this->pdo->prepare(
+                "UPDATE borrowing_items SET return_date = CURRENT_TIMESTAMP, status = 'Returned', fine_amount = :fine WHERE id = :id"
+            )->execute(['fine' => $fine, 'id' => $loanId]);
+            $this->pdo->prepare("UPDATE book_copies SET status = 'Available', return_date = CURRENT_DATE WHERE id = :id")
+                ->execute(['id' => $bookId]);
+            return;
+        }
         $statement = $this->pdo->prepare(
             'UPDATE borrowing SET return_date = CURRENT_TIMESTAMP, status = \'Returned\', fine_amount = :fine WHERE id = :id'
         );
@@ -275,5 +328,28 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
     private function stringValue(mixed $value): string
     {
         return is_string($value) ? $value : '';
+    }
+
+    private function hasTable(string $table): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1");
+        } else {
+            $statement = $this->pdo->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table LIMIT 1');
+        }
+        $statement->execute(['table' => $table]);
+        return $statement->fetchColumn() !== false;
+    }
+
+    private function tableCount(string $table): int
+    {
+        return (int) $this->pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
+    }
+
+    private function itemExists(int $itemId): bool
+    {
+        $statement = $this->pdo->prepare('SELECT 1 FROM borrowing_items WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => $itemId]);
+        return $statement->fetchColumn() !== false;
     }
 }

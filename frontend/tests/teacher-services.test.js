@@ -25,11 +25,13 @@ test('teacher services preserve due-date and contact-number payload branches', a
   const settings = new TeacherSettingsService({ api });
   await dashboard.load();
   await dashboard.borrow('BOOK-9', '2026-09-30');
+  await dashboard.borrowBulk([{ title_id: 12, quantity: 2, barcodes: ['C-01', 'C-02'] }], '2026-09-30');
   await dashboard.returnBook('TXN-9');
   await settings.load();
   assert.deepEqual(calls, [
     { method: 'GET', path: '/scan2borrow/api/teacher/dashboard', params: {} },
     { method: 'POST', path: '/scan2borrow/api/teacher/dashboard', body: { action: 'borrow', book_barcode: 'BOOK-9', due_date: '2026-09-30' } },
+    { method: 'POST', path: '/scan2borrow/api/teacher/dashboard', body: { action: 'borrow', items: [{ title_id: 12, quantity: 2, barcodes: ['C-01', 'C-02'] }], due_date: '2026-09-30' } },
     { method: 'POST', path: '/scan2borrow/api/teacher/dashboard', body: { action: 'return_unified', return_input: 'TXN-9' } },
     { method: 'GET', path: '/scan2borrow/api/teacher/dashboard', params: {} },
   ]);

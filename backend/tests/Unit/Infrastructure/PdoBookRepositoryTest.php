@@ -113,4 +113,34 @@ final class PdoBookRepositoryTest extends TestCase
 
         $repository->delete([1]);
     }
+
+    public function testSearchReturnsOneTitleWithTotalAndAvailableCopyCounts(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL, created_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (isbn, title, author, category_name, quantity) VALUES ('978-1', 'Clean Code', 'Robert Martin', 'Computer Science', 3)");
+        $this->pdo->exec("INSERT INTO book_copies (title_id, barcode, status) VALUES (1, 'COPY-1', 'Available'), (1, 'COPY-2', 'Borrowed'), (1, 'COPY-3', 'Available')");
+
+        $result = (new PdoBookRepository($this->pdo))->search(BookSearchCriteria::fromArray(['search' => 'clean']));
+
+        self::assertSame(1, $result->total());
+        self::assertSame(1, $result->books()[0]['id']);
+        self::assertSame(3, (int) $result->books()[0]['quantity']);
+        self::assertSame(2, (int) $result->books()[0]['available_quantity']);
+    }
+
+    public function testLookupReturnsCopyAndTitleAvailabilityForScannerInput(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, author VARCHAR(150), quantity INTEGER NOT NULL)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (title, author, quantity) VALUES ('Clean Code', 'Robert Martin', 2)");
+        $this->pdo->exec("INSERT INTO book_copies (title_id, barcode, status) VALUES (1, 'COPY-1', 'Available'), (1, 'COPY-2', 'Borrowed')");
+
+        $copy = (new PdoBookRepository($this->pdo))->lookupCopyByBarcode('COPY-1');
+
+        self::assertIsArray($copy);
+        self::assertSame(1, (int) $copy['title_id']);
+        self::assertSame('Clean Code', $copy['title']);
+        self::assertSame(1, (int) $copy['available_quantity']);
+    }
 }

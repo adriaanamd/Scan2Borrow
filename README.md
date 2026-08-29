@@ -5,7 +5,7 @@ Scan2Borrow is a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. Import `sql/database.sql` (or the existing `scan2borrow_2_0.sql` dump) into MySQL. Apply the upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, then `upgrade_bulk_borrowing.sql`. Existing databases must run all applicable scripts; fresh installs should also run `upgrade_bulk_borrowing.sql` after the base import so the catalog/copy data is backfilled.
+2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql` to backfill the seeded legacy rows into the catalog/copy model. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, then `upgrade_bulk_borrowing.sql`. The bulk migration is required in both cases.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 

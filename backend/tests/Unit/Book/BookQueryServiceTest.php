@@ -60,4 +60,9 @@ final class FakeBookRepository implements BookRepositoryInterface
 
         return new \App\Domain\Book\BookSearchResult([], 0);
     }
+
+    public function lookupCopyByBarcode(string $barcode): ?array
+    {
+        return null;
+    }
 }

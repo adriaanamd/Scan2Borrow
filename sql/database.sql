@@ -66,15 +66,20 @@ CREATE TABLE `borrowing` (
     `user_id`          INT NOT NULL,
     `book_id`          INT NOT NULL,
     `processed_by`     INT DEFAULT NULL,          -- librarian who handled it
+    `approval_status`  ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
     `borrow_date`      DATETIME NOT NULL,
     `due_date`         DATE NOT NULL,
     `return_date`      DATETIME DEFAULT NULL,
     `status`           ENUM('Pending','Borrowed','Returned','Overdue') NOT NULL DEFAULT 'Borrowed',
     `fine_amount`      DECIMAL(8,2) NOT NULL DEFAULT 0.00,
+    `requested_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `approved_at`      TIMESTAMP NULL DEFAULT NULL,
+    `approved_by`      INT DEFAULT NULL,
     `created_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_borrow_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_borrow_book` FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_borrow_staff` FOREIGN KEY (`processed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+    ,CONSTRAINT `fk_borrow_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ---- Bulk borrowing catalog and transaction model ------------------------
@@ -174,7 +179,7 @@ VALUES
 
 -- Sample books.
 INSERT INTO `books`
-    (barcode, isbn, title, author, category, floor_no, section_name, shelf_no, row_no, status)
+    (barcode, isbn, title, author, category_name, floor_no, section_name, shelf_no, row_no, status)
 VALUES
     ('BK-0001', '9780262033848', 'Introduction to Algorithms',          'Cormen et al.',      'Computer Science', '2', 'IT Section',      'A1', '1', 'Available'),
     ('BK-0002', '9780132350884', 'Clean Code',                          'Robert C. Martin',   'Computer Science', '2', 'IT Section',      'A1', '2', 'Available'),

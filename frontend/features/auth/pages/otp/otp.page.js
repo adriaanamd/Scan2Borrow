@@ -35,6 +35,10 @@ export class OtpPage {
     });
   }
 
+  start() {
+    return this;
+  }
+
   startCountdown() {
     const node = this.document.getElementById('countdown');
     this.intervalId = this.window.setInterval(() => {

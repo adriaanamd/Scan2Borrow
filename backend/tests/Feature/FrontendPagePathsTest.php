@@ -25,4 +25,11 @@ final class FrontendPagePathsTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         FrontendPagePaths::path('missing');
     }
+
+    public function testAllCanonicalTemplatesExist(): void
+    {
+        foreach (FrontendPagePaths::all() as $name => $relativePath) {
+            self::assertFileExists(FrontendPagePaths::path($name), $relativePath);
+        }
+    }
 }

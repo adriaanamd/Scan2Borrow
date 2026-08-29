@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence;
 
 use App\Application\DTO\BookMutationRequest;
+use App\Application\DTO\BookCopyMutationRequest;
 use App\Domain\Book\BookSearchCriteria;
 use App\Domain\Book\BookSearchResult;
 use PDO;
@@ -143,8 +144,11 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         /** @var list<array<string, mixed>> $books */
         $books = $statement->fetchAll(PDO::FETCH_ASSOC);
         foreach ($books as &$book) {
-            $available = (int) ($book['available_quantity'] ?? 0);
-            $book['status'] = $available > 0 ? 'Available' : ((int) ($book['borrowed_quantity'] ?? 0) > 0 ? 'Borrowed' : 'Reserved');
+            $availableValue = $book['available_quantity'] ?? 0;
+            $borrowedValue = $book['borrowed_quantity'] ?? 0;
+            $available = is_numeric($availableValue) ? (int) $availableValue : 0;
+            $borrowed = is_numeric($borrowedValue) ? (int) $borrowedValue : 0;
+            $book['status'] = $available > 0 ? 'Available' : ($borrowed > 0 ? 'Borrowed' : 'Reserved');
         }
         unset($book);
 
@@ -168,9 +172,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     public function barcodeExists(string $barcode, ?int $exceptId = null): bool
     {
         if ($this->hasTable('book_copies')) {
-            $sql = 'SELECT 1 FROM book_copies WHERE barcode = :value AND deleted_at IS NULL';
+            $sql = 'SELECT 1 FROM book_copies WHERE barcode = :value';
             $parameters = ['value' => $barcode];
-            if ($exceptId !== null) { $sql .= ' AND title_id <> :except_id'; $parameters['except_id'] = $exceptId; }
+            if ($exceptId !== null) { $sql .= ' AND id <> :except_id'; $parameters['except_id'] = $exceptId; }
             $statement = $this->pdo->prepare($sql . ' LIMIT 1');
             $statement->execute($parameters);
             return $statement->fetchColumn() !== false;
@@ -181,9 +185,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     public function accessionExists(string $accessionNo, ?int $exceptId = null): bool
     {
         if ($this->hasTable('book_copies')) {
-            $sql = 'SELECT 1 FROM book_copies WHERE accession_no = :value AND deleted_at IS NULL';
+            $sql = 'SELECT 1 FROM book_copies WHERE accession_no = :value';
             $parameters = ['value' => $accessionNo];
-            if ($exceptId !== null) { $sql .= ' AND title_id <> :except_id'; $parameters['except_id'] = $exceptId; }
+            if ($exceptId !== null) { $sql .= ' AND id <> :except_id'; $parameters['except_id'] = $exceptId; }
             $statement = $this->pdo->prepare($sql . ' LIMIT 1');
             $statement->execute($parameters);
             return $statement->fetchColumn() !== false;
@@ -194,6 +198,7 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     public function create(BookMutationRequest $request): int
     {
         if ($this->hasTable('book_titles')) {
+            $this->assertNormalizedSchema();
             $this->pdo->beginTransaction();
             try {
                 $titleStatement = $this->pdo->prepare(
@@ -214,8 +219,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                     $copyStatement->execute([
                         'title_id' => $titleId, 'barcode' => $barcode, 'accession_no' => $accession,
                         'floor_no' => $request->floorNo, 'section_name' => $request->sectionName,
-                        'shelf_no' => $request->shelfNo, 'row_no' => $request->rowNo, 'due_date' => $request->dueDate ?: null,
-                        'return_date' => $request->returnDate ?: null, 'status' => $request->status,
+                        'shelf_no' => $request->shelfNo, 'row_no' => $request->rowNo,
+                        'due_date' => $request->dueDate !== '' ? $request->dueDate : null,
+                        'return_date' => $request->returnDate !== '' ? $request->returnDate : null, 'status' => $request->status,
                     ]);
                 }
                 $this->pdo->commit();
@@ -224,6 +230,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                 if ($this->pdo->inTransaction()) $this->pdo->rollBack();
                 throw $exception;
             }
+        }
+        if ($request->quantity > 1) {
+            throw new \InvalidArgumentException('Run sql/upgrade_bulk_borrowing.sql before managing quantities.');
         }
         $statement = $this->pdo->prepare(
             'INSERT INTO books (barcode, accession_no, isbn, title, author, publisher, category_name, cover_file, ' .
@@ -239,8 +248,12 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     public function update(int $id, BookMutationRequest $request): void
     {
         if ($this->hasTable('book_titles')) {
+            $this->assertNormalizedSchema();
             $this->updateTitle($id, $request);
             return;
+        }
+        if ($request->quantity > 1) {
+            throw new \InvalidArgumentException('Run sql/upgrade_bulk_borrowing.sql before managing quantities.');
         }
 
         $parameters = $this->parameters($request);
@@ -264,6 +277,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
             $copyStatement->execute(['title_id' => $id]);
             /** @var list<array{id: int|string, status: string}> $copies */
             $copies = $copyStatement->fetchAll(PDO::FETCH_ASSOC);
+            if ($copies === [] && !$this->titleExists($id)) {
+                throw new \InvalidArgumentException('Book title not found.');
+            }
             $currentQuantity = count($copies);
 
             if ($request->quantity < $currentQuantity) {
@@ -331,6 +347,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     /** @param list<int> $ids */
     public function archive(array $ids): int
     {
+        if ($this->hasTable('book_titles')) {
+            return $this->setTitleArchived($ids, true);
+        }
         $this->assertNoActiveLoans($ids, 'archive');
 
         return $this->setArchived($ids, true);
@@ -339,12 +358,25 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     /** @param list<int> $ids */
     public function restore(array $ids): int
     {
+        if ($this->hasTable('book_titles')) {
+            return $this->setTitleArchived($ids, false);
+        }
+
         return $this->setArchived($ids, false);
     }
 
     /** @param list<int> $ids */
     public function delete(array $ids): int
     {
+        if ($this->hasTable('book_titles')) {
+            $this->assertTitleIds($ids);
+            $this->assertNoActiveTitleLoans($ids, 'delete');
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $statement = $this->pdo->prepare('DELETE FROM book_titles WHERE id IN (' . $placeholders . ')');
+            $statement->execute($ids);
+
+            return $statement->rowCount();
+        }
         $this->assertIds($ids);
         $this->assertNoActiveLoans($ids, 'delete');
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -352,6 +384,228 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         $statement->execute($ids);
 
         return $statement->rowCount();
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function copies(int $titleId): array
+    {
+        $this->assertNormalizedSchema();
+        if ($titleId < 1) {
+            return [];
+        }
+        $statement = $this->pdo->prepare(
+            'SELECT c.id AS copy_id, c.title_id, c.barcode, c.accession_no, c.floor_no, c.section_name,
+                    c.shelf_no, c.row_no, c.due_date, c.return_date, c.status, c.deleted_at, t.title
+             FROM book_copies c JOIN book_titles t ON t.id = c.title_id
+             WHERE c.title_id = :title_id
+             ORDER BY c.deleted_at IS NOT NULL, c.id'
+        );
+        $statement->execute(['title_id' => $titleId]);
+
+        /** @var list<array<string, mixed>> $copies */
+        $copies = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        return $copies;
+    }
+
+    public function updateCopy(BookCopyMutationRequest $request): void
+    {
+        $this->assertNormalizedSchema();
+        if ($request->copyId < 1) {
+            throw new \InvalidArgumentException('A valid copy is required.');
+        }
+
+        $copy = $this->copyRecord($request->copyId);
+        if ($copy === null) {
+            throw new \InvalidArgumentException('Book copy not found.');
+        }
+        if ($this->copyIdentifierExists('barcode', $request->barcode, $request->copyId)) {
+            throw new \InvalidArgumentException('Another copy already uses this barcode.');
+        }
+        if ($request->accessionNo !== '' && $this->copyIdentifierExists('accession_no', $request->accessionNo, $request->copyId)) {
+            throw new \InvalidArgumentException('Another copy already uses this accession number.');
+        }
+        if ($request->status === 'Available' && $this->copyHasActiveLoan($request->copyId)) {
+            throw new \InvalidArgumentException('A borrowed copy cannot be marked available.');
+        }
+        $copyStatus = is_string($copy['status'] ?? null) ? $copy['status'] : '';
+        if ($request->status !== $copyStatus) {
+            throw new \InvalidArgumentException('Copy status is managed by the borrowing workflow.');
+        }
+
+        $statement = $this->pdo->prepare(
+            'UPDATE book_copies SET barcode = :barcode, accession_no = :accession_no, floor_no = :floor_no,
+             section_name = :section_name, shelf_no = :shelf_no, row_no = :row_no, due_date = :due_date,
+             return_date = :return_date, status = :status WHERE id = :id'
+        );
+        $statement->execute([
+            'barcode' => $request->barcode,
+            'accession_no' => $this->nullable($request->accessionNo),
+            'floor_no' => $this->nullable($request->floorNo),
+            'section_name' => $this->nullable($request->sectionName),
+            'shelf_no' => $this->nullable($request->shelfNo),
+            'row_no' => $this->nullable($request->rowNo),
+            'due_date' => $this->nullable($request->dueDate),
+            'return_date' => $this->nullable($request->returnDate),
+            'status' => $request->status,
+            'id' => $request->copyId,
+        ]);
+    }
+
+    /** @param list<int> $ids */
+    public function archiveCopies(array $ids): int
+    {
+        return $this->setCopyArchived($ids, true);
+    }
+
+    /** @param list<int> $ids */
+    public function restoreCopies(array $ids): int
+    {
+        return $this->setCopyArchived($ids, false);
+    }
+
+    /** @param list<int> $ids */
+    public function deleteCopies(array $ids): int
+    {
+        $this->assertNormalizedSchema();
+        $this->assertCopyIds($ids);
+        $this->assertNoActiveCopyLoans($ids, 'delete');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->pdo->prepare('DELETE FROM book_copies WHERE id IN (' . $placeholders . ')');
+        $statement->execute($ids);
+
+        return $statement->rowCount();
+    }
+
+    /** @return array<string, mixed>|null */
+    private function copyRecord(int $copyId): ?array
+    {
+        $statement = $this->pdo->prepare('SELECT * FROM book_copies WHERE id = :id AND deleted_at IS NULL LIMIT 1');
+        $statement->execute(['id' => $copyId]);
+        /** @var array<string, mixed>|false $copy */
+        $copy = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return $copy === false ? null : $copy;
+    }
+
+    private function copyIdentifierExists(string $column, string $value, int $exceptId): bool
+    {
+        if (!in_array($column, ['barcode', 'accession_no'], true) || $value === '') {
+            return false;
+        }
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM book_copies WHERE ' . $column . ' = :value AND id <> :id LIMIT 1'
+        );
+        $statement->execute(['value' => $value, 'id' => $exceptId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    private function copyHasActiveLoan(int $copyId): bool
+    {
+        if (!$this->hasTable('borrowing_items')) {
+            return false;
+        }
+        $statement = $this->pdo->prepare('SELECT 1 FROM borrowing_items WHERE copy_id = :copy_id AND return_date IS NULL LIMIT 1');
+        $statement->execute(['copy_id' => $copyId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param list<int> $ids */
+    private function setCopyArchived(array $ids, bool $archived): int
+    {
+        $this->assertNormalizedSchema();
+        $this->assertCopyIds($ids);
+        if ($archived) {
+            $this->assertNoActiveCopyLoans($ids, 'archive');
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
+        $statement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = ' . $value . ' WHERE id IN (' . $placeholders . ')');
+        $statement->execute($ids);
+
+        return $statement->rowCount();
+    }
+
+    /** @param list<int> $ids */
+    private function setTitleArchived(array $ids, bool $archived): int
+    {
+        $this->assertNormalizedSchema();
+        $this->assertTitleIds($ids);
+        if ($archived) {
+            $this->assertNoActiveTitleLoans($ids, 'archive');
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
+        $statement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = ' . $value . ' WHERE title_id IN (' . $placeholders . ')');
+        $statement->execute($ids);
+
+        return $statement->rowCount();
+    }
+
+    /** @param list<int> $ids */
+    private function assertTitleIds(array $ids): void
+    {
+        if ($ids === [] || array_filter($ids, static fn (int $id): bool => $id < 1) !== []) {
+            throw new \InvalidArgumentException('No books selected.');
+        }
+    }
+
+    /** @param list<int> $ids */
+    private function assertNoActiveTitleLoans(array $ids, string $operation): void
+    {
+        if (!$this->hasTable('borrowing_items')) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM borrowing_items bi JOIN book_copies bc ON bc.id = bi.copy_id
+             WHERE bi.return_date IS NULL AND bc.title_id IN (' . $placeholders . ')'
+        );
+        $statement->execute($ids);
+        if ((int) $statement->fetchColumn() > 0) {
+            throw new \InvalidArgumentException('Cannot ' . $operation . ' books with active loans.');
+        }
+    }
+
+    private function assertNormalizedSchema(): void
+    {
+        if (!$this->hasTable('book_titles') || !$this->hasTable('book_copies')) {
+            throw new \InvalidArgumentException('Run sql/upgrade_bulk_borrowing.sql before managing quantities.');
+        }
+    }
+
+    private function titleExists(int $titleId): bool
+    {
+        $statement = $this->pdo->prepare('SELECT 1 FROM book_titles WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => $titleId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param list<int> $ids */
+    private function assertCopyIds(array $ids): void
+    {
+        if ($ids === [] || array_filter($ids, static fn (int $id): bool => $id < 1) !== []) {
+            throw new \InvalidArgumentException('No book copies selected.');
+        }
+    }
+
+    /** @param list<int> $ids */
+    private function assertNoActiveCopyLoans(array $ids, string $operation): void
+    {
+        if (!$this->hasTable('borrowing_items')) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM borrowing_items WHERE return_date IS NULL AND copy_id IN (' . $placeholders . ')'
+        );
+        $statement->execute($ids);
+        if ((int) $statement->fetchColumn() > 0) {
+            throw new \InvalidArgumentException('Cannot ' . $operation . ' copies with active loans.');
+        }
     }
 
     private function exists(string $column, string $value, ?int $exceptId): bool

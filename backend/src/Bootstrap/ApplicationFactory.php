@@ -29,6 +29,7 @@ use App\Domain\Borrowing\BorrowingPolicy;
 use App\Application\Validators\BookMutationValidator;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\BookCopyController;
 use App\Http\Controllers\BorrowerController;
 use App\Http\Controllers\GuestAuthController;
 use App\Http\Controllers\GuestBorrowingController;
@@ -96,6 +97,12 @@ final class ApplicationFactory
             new BookArchiveService($bookRepository),
             $csrf,
         );
+        $bookCopyController = new BookCopyController(
+            $sessions,
+            $bookRepository,
+            new \App\Application\Validators\BookCopyMutationValidator(),
+            $csrf,
+        );
         $borrowings = new PdoBorrowingRepository($pdo);
         $borrowerController = new BorrowerController(
             $sessions,
@@ -144,7 +151,7 @@ final class ApplicationFactory
         $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());
         $apiRouter = new Router(array_merge(
             (new AuthRouteTable())->routes($authController, $registration),
-            (new BookRouteTable())->routes($bookController),
+            (new BookRouteTable())->routes($bookController, $bookCopyController),
             (new BorrowerRouteTable())->routes($borrowerController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
             (new StaffRouteTable())->routes($staffController, $apiDocumentationController),

@@ -24,11 +24,11 @@ final class BookMutationService
             return BookMutationResult::failure($validationError);
         }
 
-        if ($request->quantity === 1 && $this->books->barcodeExists($request->barcode)) {
+        if ($request->barcode !== '' && $this->books->barcodeExists($request->barcode)) {
             return BookMutationResult::failure('A book with this barcode already exists.');
         }
 
-        if ($request->quantity === 1 && $request->accessionNo !== '' && $this->books->accessionExists($request->accessionNo)) {
+        if ($request->accessionNo !== '' && $this->books->accessionExists($request->accessionNo)) {
             return BookMutationResult::failure('A book with this accession number already exists.');
         }
 
@@ -44,14 +44,6 @@ final class BookMutationService
         $validationError = $this->validator->firstError($request);
         if ($validationError !== null) {
             return BookMutationResult::failure($validationError);
-        }
-
-        if ($this->books->barcodeExists($request->barcode, $id)) {
-            return BookMutationResult::failure('Another book already uses this barcode.');
-        }
-
-        if ($request->accessionNo !== '' && $this->books->accessionExists($request->accessionNo, $id)) {
-            return BookMutationResult::failure('Another book already uses this accession number.');
         }
 
         $this->books->update($id, $request);

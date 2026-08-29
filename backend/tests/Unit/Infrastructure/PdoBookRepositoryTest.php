@@ -167,6 +167,20 @@ final class PdoBookRepositoryTest extends TestCase
         self::assertSame(4, (int) $this->pdo->query('SELECT COUNT(*) FROM book_copies WHERE title_id = 1 AND deleted_at IS NULL')->fetchColumn());
     }
 
+    public function testNormalizedCreateGeneratesUniqueIdentifiersForEveryRequestedCopy(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL, created_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL UNIQUE, accession_no VARCHAR(50), floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), due_date DATE, return_date DATE, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+
+        $titleId = (new PdoBookRepository($this->pdo))->create(new BookMutationRequest(title: 'Clean Code', quantity: 3));
+        $rows = $this->pdo->query('SELECT barcode, accession_no FROM book_copies WHERE title_id = ' . $titleId . ' ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+
+        self::assertCount(3, $rows);
+        self::assertCount(3, array_unique(array_column($rows, 'barcode')));
+        self::assertCount(3, array_unique(array_column($rows, 'accession_no')));
+        self::assertStringStartsWith('PENDING-' . $titleId . '-', $rows[0]['barcode']);
+    }
+
     public function testNormalizedUpdateDoesNotRemoveBorrowedCopiesWhenReducingQuantity(): void
     {
         $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL)');
@@ -181,5 +195,52 @@ final class PdoBookRepositoryTest extends TestCase
         self::assertSame(1, (int) $this->pdo->query('SELECT quantity FROM book_titles WHERE id = 1')->fetchColumn());
         self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM book_copies WHERE title_id = 1 AND deleted_at IS NULL')->fetchColumn());
         self::assertSame('Borrowed', $this->pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-1'")->fetchColumn());
+    }
+
+    public function testNormalizedCopyUpdateUsesCopyIdAndReturnsTitleScopedCopies(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, quantity INTEGER NOT NULL)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), due_date DATE, return_date DATE, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (id, title, quantity) VALUES (1, 'Clean Code', 2)");
+        $this->pdo->exec("INSERT INTO book_copies (id, title_id, barcode, accession_no, status) VALUES (11, 1, 'COPY-1', 'ACC-1', 'Available'), (12, 1, 'COPY-2', 'ACC-2', 'Available')");
+
+        $repository = new PdoBookRepository($this->pdo);
+        $copies = $repository->copies(1);
+
+        self::assertCount(2, $copies);
+        $repository->updateCopy(new \App\Application\DTO\BookCopyMutationRequest(12, 'COPY-2-UPDATED', 'ACC-2', status: 'Available'));
+
+        self::assertSame('COPY-2-UPDATED', $this->pdo->query('SELECT barcode FROM book_copies WHERE id = 12')->fetchColumn());
+        self::assertSame('COPY-1', $this->pdo->query('SELECT barcode FROM book_copies WHERE id = 11')->fetchColumn());
+    }
+
+    public function testNormalizedCopyUpdateRejectsDuplicateBarcode(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, quantity INTEGER NOT NULL)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (id, title, quantity) VALUES (1, 'Clean Code', 2)");
+        $this->pdo->exec("INSERT INTO book_copies (id, title_id, barcode, status) VALUES (11, 1, 'COPY-1', 'Available'), (12, 1, 'COPY-2', 'Available')");
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Another copy already uses this barcode.');
+
+        (new PdoBookRepository($this->pdo))->updateCopy(
+            new \App\Application\DTO\BookCopyMutationRequest(12, 'COPY-1'),
+        );
+    }
+
+    public function testNormalizedCopyUpdateDoesNotAllowInventoryToChangeBorrowingStatus(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, quantity INTEGER NOT NULL)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (id, title, quantity) VALUES (1, 'Clean Code', 1)");
+        $this->pdo->exec("INSERT INTO book_copies (id, title_id, barcode, status) VALUES (11, 1, 'COPY-1', 'Available')");
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Copy status is managed by the borrowing workflow.');
+
+        (new PdoBookRepository($this->pdo))->updateCopy(
+            new \App\Application\DTO\BookCopyMutationRequest(11, 'COPY-1', status: 'Borrowed'),
+        );
     }
 }

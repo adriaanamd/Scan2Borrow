@@ -49,7 +49,7 @@ final class ApiDocumentationControllerTest extends TestCase
 
         self::assertSame(200, $response->statusCode());
         self::assertTrue($payload['ok']);
-        self::assertCount(49, $payload['data']['endpoints']);
+        self::assertCount(51, $payload['data']['endpoints']);
     }
 
     private function controller(ApiDocumentationSessionStore $store): ApiDocumentationController

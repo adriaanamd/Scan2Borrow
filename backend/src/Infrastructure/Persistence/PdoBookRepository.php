@@ -169,6 +169,32 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         return $statement->fetchColumn() !== false;
     }
 
+    private function hasColumn(string $table, string $column): bool
+    {
+        $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $statement = $this->pdo->query('PRAGMA table_info(' . $table . ')');
+            if ($statement === false) {
+                return false;
+            }
+            while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+                if ((string) ($row['name'] ?? '') === $column) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() '
+            . 'AND table_name = :table AND column_name = :column LIMIT 1'
+        );
+        $statement->execute(['table' => $table, 'column' => $column]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
     public function barcodeExists(string $barcode, ?int $exceptId = null): bool
     {
         if ($this->hasTable('book_copies')) {
@@ -393,9 +419,10 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         if ($titleId < 1) {
             return [];
         }
+        $printedColumn = $this->hasColumn('book_copies', 'printed_at') ? 'c.printed_at' : 'NULL';
         $statement = $this->pdo->prepare(
             'SELECT c.id AS copy_id, c.title_id, c.barcode, c.accession_no, c.floor_no, c.section_name,
-                    c.shelf_no, c.row_no, c.due_date, c.return_date, c.status, c.deleted_at, t.title
+                    c.shelf_no, c.row_no, c.due_date, c.return_date, c.status, c.deleted_at, ' . $printedColumn . ' AS printed_at, t.title
              FROM book_copies c JOIN book_titles t ON t.id = c.title_id
              WHERE c.title_id = :title_id
              ORDER BY c.deleted_at IS NOT NULL, c.id'

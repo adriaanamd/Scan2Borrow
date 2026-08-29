@@ -25,6 +25,7 @@ Legacy page controllers and templates remain in the repository as compatibility 
 ## Verification
 
 - `npm test` — 68 passing native-module tests, including served feature-template parity.
+- `powershell -File tests/browser/frontend-module-parity.ps1` — local HTTP route/module/source protection smoke check passed.
 - PHP lint passed for every changed PHP contract and support file.
 - `git diff --check` passed for the refactor changes.
 - Full PHPUnit execution is not available in this checkout because Composer dependencies (`vendor/bin/phpunit`) are absent; the project’s PHP runtime is available at `C:\xampp\php\php.exe`.

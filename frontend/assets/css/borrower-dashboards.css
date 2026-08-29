@@ -228,6 +228,52 @@
   box-shadow: 8px 8px 0 rgba(16, 47, 82, .08);
 }
 
+.borrower-dashboard--student .student-dashboard__stat {
+  align-items: flex-end;
+  background: rgba(255, 255, 255, .42);
+  border: 1px solid rgba(96, 108, 56, .24);
+  border-bottom: 5px solid var(--borrower-accent);
+  border-radius: 18px;
+  box-shadow: 0 8px 18px rgba(96, 108, 56, .08);
+  min-height: 128px;
+  padding: 1.15rem;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.borrower-dashboard--student .student-dashboard__stat:hover {
+  box-shadow: 0 14px 24px rgba(96, 108, 56, .14);
+  transform: translateY(-3px);
+}
+
+.borrower-dashboard--student .student-dashboard__stat .icon {
+  background: rgba(96, 108, 56, .1);
+  border: 0;
+  border-radius: 50%;
+  color: var(--borrower-deep);
+  height: 38px;
+  width: 38px;
+}
+
+.borrower-dashboard--student .student-dashboard__stat .label {
+  color: var(--borrower-deep);
+  font-size: .72rem;
+  letter-spacing: .08em;
+}
+
+.borrower-dashboard--student .student-dashboard__stat .value {
+  color: var(--borrower-deep);
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+}
+
+.borrower-dashboard--student .student-dashboard__stat.stat-danger {
+  border-bottom-color: var(--borrower-terracotta);
+}
+
+.borrower-dashboard--student .student-dashboard__stat.stat-warning {
+  border-bottom-color: var(--borrower-ochre);
+}
+
 .borrower-dashboard .content {
   background: var(--borrower-surface);
   min-height: calc(100vh - 76px);

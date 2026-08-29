@@ -92,3 +92,10 @@ test('teacher profile block exposes the Swiss hero composition hooks', () => {
   assert.match(source, /data-bs-target="#borrowModal"/);
   assert.match(source, /data-bs-target="#returnModal"/);
 });
+
+test('student statistics expose the Organic stat hooks without changing their data IDs', () => {
+  const source = read('features/student/pages/dashboard/dashboard.html');
+  for (const id of ['active-count', 'overdue-count', 'fine-total', 'on-time-rate']) {
+    assert.match(source, new RegExp(`student-dashboard__stat[\\s\\S]*id="${id}"`));
+  }
+});

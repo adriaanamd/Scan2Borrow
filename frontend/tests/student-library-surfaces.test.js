@@ -51,9 +51,21 @@ test('student surface styles remain scoped away from navigation', () => {
   const sources = [
     read('assets/css/student-library-surfaces.css'),
     read('assets/css/student-search.css'),
+    read('assets/css/student-history.css'),
   ];
   for (const source of sources) {
     assert.doesNotMatch(source, /\.sidebar|\[data-app-navbar\]/);
+  }
+});
+
+test('student search and history share typography and palette contracts', () => {
+  const search = read('features/student/pages/search/search.html');
+  const history = read('features/student/pages/history/history.html');
+  for (const source of [search, history]) {
+    assert.match(source, /student-library-surfaces\.css/);
+    assert.match(source, /fonts\.googleapis\.com/);
+    assert.match(source, /style\.css/);
+    assert.match(source, /data-navbar-role="session"/);
   }
 });
 

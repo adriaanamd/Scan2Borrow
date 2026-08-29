@@ -17,26 +17,11 @@
       rel="stylesheet"
     />
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
   </head>
   <body>
     <div class="app">
-      <aside class="sidebar">
-        <div class="sidebar-brand">
-          <span class="brand-mark">&#128218;</span><span>Scan2Borrow</span>
-        </div>
-        <nav class="sidebar-nav">
-          <a href="/scan2borrow/teacher/settings" class="active"
-            ><span class="nav-icon">&#9881;</span>Settings</a
-          ><a href="/scan2borrow/teacher/dashboard"
-            ><span class="nav-icon">&#127968;</span>My Dashboard</a
-          ><a href="/scan2borrow/student/search"
-            ><span class="nav-icon">&#128269;</span>Search Books</a
-          ><a href="/scan2borrow/student/history"
-            ><span class="nav-icon">&#128220;</span>My History</a
-          ><a href="/scan2borrow/logout" class="nav-logout"
-            ><span class="nav-icon">&#9211;</span>Logout</a
-          >
-        </nav>
+      <aside class="sidebar" data-app-navbar data-navbar-role="teacher">
       </aside>
       <main class="main">
         <header class="topbar">

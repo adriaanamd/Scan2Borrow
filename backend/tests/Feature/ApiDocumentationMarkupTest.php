@@ -11,9 +11,11 @@ final class ApiDocumentationMarkupTest extends TestCase
     public function testAdminNavigationLinksToTheProtectedApiDocsPage(): void
     {
         $source = $this->read('frontend/pages/admin-staff.html');
+        $navbar = $this->read('frontend/assets/js/core/app-navbar.js');
 
-        self::assertStringContainsString('href="/scan2borrow/admin/api-docs"', $source);
-        self::assertStringContainsString('API Docs', $source);
+        self::assertStringContainsString('data-app-navbar', $source);
+        self::assertStringContainsString('/scan2borrow/admin/api-docs', $navbar);
+        self::assertStringContainsString('API Docs', $navbar);
     }
 
     public function testApiDocsPageContainsSwaggerStyleHooks(): void

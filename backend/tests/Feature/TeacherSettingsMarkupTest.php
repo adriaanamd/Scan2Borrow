@@ -11,8 +11,10 @@ final class TeacherSettingsMarkupTest extends TestCase
     public function testTeacherDashboardKeepsATeacherSettingsLink(): void
     {
         $dashboard = $this->read('frontend/pages/teacher-dashboard.html');
+        $navbar = $this->read('frontend/assets/js/core/app-navbar.js');
 
-        self::assertStringContainsString('href="/scan2borrow/teacher/settings"', $dashboard);
+        self::assertStringContainsString('data-navbar-role="teacher"', $dashboard);
+        self::assertStringContainsString('/scan2borrow/teacher/settings', $navbar);
     }
 
     public function testTeacherSettingsKeepsTeacherScopedNavigationAndAccountSurface(): void
@@ -21,9 +23,12 @@ final class TeacherSettingsMarkupTest extends TestCase
 
         self::assertStringContainsString('<title>Settings | Scan2Borrow</title>', $settings);
         self::assertStringContainsString('data-page="teacher-settings"', $settings);
-        self::assertStringContainsString('href="/scan2borrow/teacher/settings"', $settings);
-        self::assertStringContainsString('href="/scan2borrow/teacher/dashboard"', $settings);
+        self::assertStringContainsString('data-navbar-role="teacher"', $settings);
         self::assertStringContainsString('frontend/assets/js/pages/student-settings.js', $settings);
+
+        $navbar = $this->read('frontend/assets/js/core/app-navbar.js');
+        self::assertStringContainsString('/scan2borrow/teacher/settings', $navbar);
+        self::assertStringContainsString('/scan2borrow/teacher/dashboard', $navbar);
     }
 
     private function read(string $relativePath): string

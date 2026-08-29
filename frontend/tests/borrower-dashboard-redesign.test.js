@@ -16,6 +16,8 @@ test('student and teacher dashboards expose their redesign scopes and shared sty
   assert.match(teacher, /class="[^"]*borrower-dashboard[^"]*borrower-dashboard--teacher/);
   assert.equal(student.includes(href), true);
   assert.equal(teacher.includes(href), true);
+  assert.ok(student.indexOf('/scan2borrow/frontend/assets/css/style.css') < student.indexOf(href));
+  assert.ok(teacher.indexOf('/scan2borrow/frontend/assets/css/style.css') < teacher.indexOf(href));
 });
 
 test('borrower dashboard content and interaction IDs remain intact', () => {

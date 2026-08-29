@@ -84,3 +84,14 @@ test('student history exposes a styled borrowing ledger boundary', () => {
   assert.match(styles, /student-history-ledger/);
   assert.match(styles, /student-history-row--overdue/);
 });
+
+test('student search keeps filter presentation in scoped classes', () => {
+  const template = read('features/student/pages/search/search.html');
+  const styles = read('assets/css/student-library-surfaces.css');
+  assert.match(template, /student-search-filter-field/);
+  assert.match(template, /student-search-clear/);
+  assert.match(template, /student-library-state__icon/);
+  assert.match(styles, /student-search-filter-field/);
+  assert.match(styles, /student-search-clear/);
+  assert.match(styles, /student-library-state__icon/);
+});

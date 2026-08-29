@@ -37,6 +37,17 @@ final class StaffReportsContractTest extends TestCase
         self::assertStringContainsString('staff-report-document', $source);
     }
 
+    public function testFeatureOwnedReportAndNotificationServicesPreserveContracts(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'services';
+        $report = file_get_contents($root . DIRECTORY_SEPARATOR . 'report.service.js');
+        $notification = file_get_contents($root . DIRECTORY_SEPARATOR . 'notification.service.js');
+        self::assertIsString($report);
+        self::assertIsString($notification);
+        foreach (['/api/staff/reports', '/api/staff/reports/export', 'print=1', 'type', 'from', 'to'] as $marker) self::assertStringContainsString($marker, $report);
+        foreach (['/api/staff/notifications', '/api/staff/notifications/viewed', '/api/staff/notify', 'notification_id', 'notification_type'] as $marker) self::assertStringContainsString($marker, $notification);
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

@@ -1,6 +1,6 @@
 # Scan2Borrow
 
-Scan2Borrow is a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 8.2 modular-monolith backend and the existing MySQL schema.
+Scan2Borrow is a library management and borrowing system for Binalbagan Catholic College. It uses a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 8.2 modular-monolith backend and the existing MySQL schema.
 
 ## Run locally
 

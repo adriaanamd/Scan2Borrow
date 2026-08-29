@@ -38,7 +38,7 @@ export class StudentSearchPage {
         this.render(response.data || {});
       })
       .catch((error) => {
-        this.results.innerHTML = `<div class="alert alert-danger">${this.escapeHtml(error.message)}</div>`;
+        this.results.innerHTML = `<div class="student-library-state student-library-state--error"><strong>We couldn't load the catalog</strong><p class="text-muted small mb-0">${this.escapeHtml(error.message)}</p></div>`;
       });
   }
 
@@ -74,7 +74,7 @@ export class StudentSearchPage {
     this.results.replaceChildren();
     if (!books.length) {
       this.results.innerHTML =
-        '<div class="text-center py-5"><div style="font-size:48px;margin-bottom:12px;">&#128233;</div><strong>No books found</strong><p class="text-muted small">Try adjusting your search or filters.</p></div>';
+        '<div class="student-library-state"><div class="student-library-state__icon" aria-hidden="true">&#128233;</div><strong>No books found</strong><p class="text-muted small mb-0">Try adjusting your search or filters.</p></div>';
       return;
     }
     const grid = document.createElement("div");
@@ -105,7 +105,7 @@ export class StudentSearchPage {
       const value = this.params.get(name);
       if (!value) return;
       const tag = document.createElement("span");
-      tag.className = `badge ${name === "search" ? "bg-primary" : name === "category_name" ? "bg-info" : name === "status" ? "bg-secondary" : "bg-warning text-dark"}`;
+      tag.className = `badge student-search-filter-chip ${name === "search" ? "bg-primary" : name === "category_name" ? "bg-info" : name === "status" ? "bg-secondary" : "bg-warning text-dark"}`;
       tag.textContent = labels[name] + value;
       host.appendChild(tag);
     });
@@ -113,7 +113,7 @@ export class StudentSearchPage {
 
   bookCard(book) {
     const column = document.createElement("div");
-    column.className = "col-xl-4 col-lg-6 col-md-6";
+    column.className = "col-xl-4 col-lg-6 col-md-6 student-search-result";
     const cover = Scan2BorrowMedia.resolve(
       book.cover_file || book.cover_image || "",
     );
@@ -133,6 +133,9 @@ export class StudentSearchPage {
         ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${title}" data-author="${author}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`
         : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
     column.innerHTML = `<div class="book-card-shell"><div class="book-card"><div class="book-face book-face-front"><div class="book-cover${cover ? "" : " book-cover-fallback"}">${coverMarkup}<div class="book-cover-content"><span class="badge bg-light text-dark mb-3">${this.escapeHtml(book.category_name || "Library")}</span><h4 class="fw-bold text-white mb-2">${title}</h4><p class="text-white-50 small mb-0">${author}</p></div></div></div><div class="book-face book-face-back"><div class="book-back-content"><div class="d-flex justify-content-between align-items-start mb-3"><div><h5 class="fw-bold mb-1">${title}</h5><p class="text-muted small mb-0">${author}</p></div>${this.badge(status)}</div><p class="text-muted small mb-3">${this.escapeHtml(book.description || "No description available")}</p><div class="small text-muted mb-3"><div><strong>Publisher:</strong> ${this.escapeHtml(book.publisher || "N/A")}</div><div><strong>Location:</strong> Floor ${this.escapeHtml(book.floor_no)} · Shelf ${this.escapeHtml(book.shelf_no)} · Row ${this.escapeHtml(book.row_no)}</div></div>${action}</div></div></div></div>`;
+    const cardShell = column.querySelector(".book-card-shell");
+    cardShell?.classList.add("student-search-card");
+    cardShell?.querySelector(".book-card")?.setAttribute("tabindex", "0");
     const details = column.querySelector(".book-back-content .small.text-muted.mb-3");
     details?.insertAdjacentHTML("afterbegin", `<div><strong>Copies:</strong> ${totalQuantity} total · ${availableQuantity} available</div>`);
     const image = column.querySelector("img");

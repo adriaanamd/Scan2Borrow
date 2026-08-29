@@ -17,6 +17,8 @@
       rel="stylesheet"
     />
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/assets/css/student-library-surfaces.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/assets/css/student-history.css" rel="stylesheet" />
     <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
     <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
     <script
@@ -36,13 +38,27 @@
             ><span class="user-name" id="current-user-name"></span>
           </div>
         </header>
-        <div class="content" data-page="student-history">
-          <div class="page-head">
-            <div><p>Your complete borrowing record.</p></div>
+        <div class="content student-library-page" data-page="student-history">
+          <div class="student-library-masthead student-history-masthead">
+            <div>
+              <div class="student-library-eyebrow">Borrowing record</div>
+              <h2 class="mb-1">My History</h2>
+              <p class="text-muted mb-0">Your complete borrowing record.</p>
+            </div>
+            <div class="student-history-masthead__mark" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
           </div>
-          <div class="table-card">
-            <div class="table-responsive">
-              <table class="table table-hover">
+          <div class="student-library-panel student-history-ledger">
+            <div class="student-history-ledger__header">
+              <div>
+                <div class="student-library-eyebrow">Activity archive</div>
+                <h3 class="mb-0">Borrowing activity</h3>
+              </div>
+              <span class="student-history-ledger__rule" aria-hidden="true"></span>
+            </div>
+            <div class="table-responsive student-history-ledger__table">
+              <table class="table table-hover student-history-table">
                 <thead>
                   <tr>
                     <th>Code</th>
@@ -57,7 +73,7 @@
                 </thead>
                 <tbody id="history-body">
                   <tr>
-                    <td colspan="7" class="text-center text-muted">
+                    <td colspan="8" class="student-library-state text-center text-muted">
                       No borrowing history yet.
                     </td>
                   </tr>

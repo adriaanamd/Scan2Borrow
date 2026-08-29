@@ -23,6 +23,10 @@
       href="/scan2borrow/frontend/assets/css/student-search.css"
       rel="stylesheet"
     />
+    <link
+      href="/scan2borrow/frontend/assets/css/student-library-surfaces.css"
+      rel="stylesheet"
+    />
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       defer
@@ -40,16 +44,18 @@
             ><span class="user-name" id="current-user-name"></span>
           </div>
         </header>
-        <div class="content" data-page="student-search">
-          <div class="page-head">
+        <div class="content student-library-page" data-page="student-search">
+          <div class="student-library-masthead student-search-masthead">
             <div>
-              <h3 class="mb-1">Book Catalog</h3>
+              <div class="student-library-eyebrow">Student library</div>
+              <h2 class="mb-1">Book Catalog</h2>
               <p class="text-muted mb-0">
                 Search and discover available books.
               </p>
             </div>
+            <div class="student-search-masthead__mark" aria-hidden="true">S2B</div>
           </div>
-          <div class="soft-card mb-4">
+          <div class="student-library-panel student-search-filters mb-4">
             <form
               method="GET"
               id="searchForm"
@@ -58,8 +64,7 @@
               <div class="mb-3">
                 <div class="input-group input-group-lg">
                   <span
-                    class="input-group-text"
-                    style="background: none; border-right: none"
+                    class="input-group-text student-search-query-icon"
                     ><strong>&#128269;</strong></span
                   ><input
                     type="text"
@@ -74,14 +79,9 @@
                 </div>
               </div>
               <div
-                style="
-                  display: flex;
-                  flex-wrap: wrap;
-                  gap: 12px;
-                  align-items: flex-end;
-                "
+                class="student-search-filters__grid"
               >
-                <div style="flex: 1; min-width: 150px">
+                <div class="student-search-filter-field">
                   <label class="form-label small fw-semibold">Category</label
                   ><select
                     name="category_name"
@@ -90,7 +90,7 @@
                     <option value="">All Categories</option>
                   </select>
                 </div>
-                <div style="flex: 1; min-width: 150px">
+                <div class="student-search-filter-field">
                   <label class="form-label small fw-semibold"
                     >Availability</label
                   ><select name="status" class="form-select form-select-sm">
@@ -100,13 +100,13 @@
                     <option value="Overdue">Overdue</option>
                   </select>
                 </div>
-                <div style="flex: 1; min-width: 150px">
+                <div class="student-search-filter-field">
                   <label class="form-label small fw-semibold">Floor</label
                   ><select name="floor" class="form-select form-select-sm">
                     <option value="">All Floors</option>
                   </select>
                 </div>
-                <div style="flex: 1; min-width: 150px">
+                <div class="student-search-filter-field">
                   <label class="form-label small fw-semibold">Sort By</label
                   ><select name="sort" class="form-select form-select-sm">
                     <option value="title">Title A-Z</option>
@@ -118,26 +118,19 @@
                 </div>
                 <a
                   href="/scan2borrow/student/search"
-                  class="btn btn-outline-secondary btn-sm"
-                  style="align-self: flex-end"
+                  class="btn btn-outline-secondary btn-sm student-search-clear"
                   >&#10005; Clear Filters</a
                 >
               </div>
               <div
                 id="active-filters"
-                style="
-                  margin-top: 12px;
-                  display: flex;
-                  flex-wrap: wrap;
-                  gap: 8px;
-                "
+                class="student-search-filters__active"
               ></div>
             </form>
           </div>
-          <div class="soft-card">
+          <div class="student-library-panel student-search-results">
             <div
-              class="d-flex justify-content-between align-items-center mb-3"
-              style="border-bottom: 1px solid #e9ecef; padding-bottom: 12px"
+              class="student-library-panel__header student-search-results__header"
             >
               <div>
                 <strong id="book-count">0</strong>
@@ -148,9 +141,9 @@
               </div>
               <div class="text-muted small" id="availability-label"></div>
             </div>
-            <div id="book-results">
-              <div class="text-center py-5">
-                <div style="font-size: 48px; margin-bottom: 12px">
+            <div id="book-results" class="student-search-results__state">
+              <div class="student-library-state">
+                <div class="student-library-state__icon" aria-hidden="true">
                   &#128233;
                 </div>
                 <strong>No books found</strong>

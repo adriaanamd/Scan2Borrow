@@ -2,10 +2,20 @@ class AppNavbar {
   constructor(root) {
     this.root = root;
     this.roleHint = root.dataset.navbarRole || "session";
+    this.renderedRole = "";
   }
 
   async start() {
+    const initialRole =
+      this.roleHint === "session" ? this.cachedRole() : this.roleHint;
+    if (initialRole) {
+      this.render(initialRole);
+      this.setActiveLink();
+      return;
+    }
+
     const role = await this.resolveRole();
+    this.cacheRole(role);
     this.render(role);
     this.setActiveLink();
   }
@@ -14,7 +24,7 @@ class AppNavbar {
     if (this.roleHint === "guest") return "guest";
 
     try {
-      const response = await fetch("/scan2borrow/api/auth/session", {
+      const response = await window.fetch("/scan2borrow/api/auth/session", {
         headers: { Accept: "application/json" },
       });
       const payload = await response.json();
@@ -30,6 +40,7 @@ class AppNavbar {
   }
 
   render(role) {
+    this.renderedRole = role;
     switch (role) {
       case "student":
         this.renderBorrower("student");
@@ -48,6 +59,23 @@ class AppNavbar {
         break;
       default:
         this.root.replaceChildren();
+    }
+  }
+
+  cachedRole() {
+    try {
+      return window.sessionStorage?.getItem("scan2borrow.nav.role") || "";
+    } catch {
+      return "";
+    }
+  }
+
+  cacheRole(role) {
+    if (!role || role === "guest") return;
+    try {
+      window.sessionStorage?.setItem("scan2borrow.nav.role", role);
+    } catch {
+      // Storage may be unavailable in private browsing or restricted frames.
     }
   }
 

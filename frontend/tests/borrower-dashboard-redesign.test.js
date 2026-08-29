@@ -136,3 +136,13 @@ test('student active loans keep quantity and receipt columns inside the reading 
   }
   assert.match(source, /id="current-loans"/);
 });
+
+test('teacher active loans keep quantity and receipt columns inside the faculty surface', () => {
+  const source = read('features/teacher/pages/dashboard/dashboard.html');
+  assert.match(source, /teacher-dashboard__loans/);
+  assert.match(source, /teacher-dashboard__table/);
+  for (const heading of ['Book', 'Quantity', 'Borrowed', 'Due', 'Status', 'Receipt']) {
+    assert.match(source, new RegExp(`<th>${heading}<\\/th>`));
+  }
+  assert.match(source, /id="current-loans"/);
+});

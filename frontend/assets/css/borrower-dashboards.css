@@ -412,6 +412,38 @@
   font-size: 1.25rem;
 }
 
+.borrower-dashboard--teacher .teacher-dashboard__loans {
+  background: #fff;
+  border: 1px solid #d4e0e8;
+  border-left: 4px solid var(--borrower-accent);
+  border-radius: var(--borrower-radius);
+  box-shadow: 0 12px 24px rgba(16, 47, 82, .07);
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__loans .section-title {
+  color: #102f52;
+  font-weight: 780;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__table {
+  border: 1px solid #d4e0e8;
+  border-radius: 3px;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__table .table thead th {
+  background: var(--borrower-surface);
+  border-bottom: 2px solid var(--borrower-accent);
+  color: var(--borrower-accent);
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__table .table tbody td {
+  border-color: #d4e0e8;
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__table .table tbody tr:hover {
+  --bs-table-hover-bg: var(--borrower-surface);
+}
+
 .borrower-dashboard--student .student-dashboard__table {
   border: 1px solid rgba(96, 108, 56, .2);
   border-radius: 14px;

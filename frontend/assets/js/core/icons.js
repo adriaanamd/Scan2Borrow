@@ -149,6 +149,8 @@
 
     observeDynamicContent() {
       const observer = new MutationObserver(() => {
+        this.replaceNavigationIcons();
+        this.replaceBrandMarks();
         this.replaceStatIcons();
         this.replaceButtons();
         this.replaceBadges();

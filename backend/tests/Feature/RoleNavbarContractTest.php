@@ -35,6 +35,15 @@ final class RoleNavbarContractTest extends TestCase
         self::assertStringContainsString('/scan2borrow/admin/api-docs', $source);
     }
 
+    public function testIconSystemReprocessesDynamicallyRenderedNavbarContent(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'icons.js';
+        $source = (string) file_get_contents($path);
+
+        self::assertSame(2, substr_count($source, 'this.replaceNavigationIcons();'));
+        self::assertSame(2, substr_count($source, 'this.replaceBrandMarks();'));
+    }
+
     /**
      * @return list<string>
      */

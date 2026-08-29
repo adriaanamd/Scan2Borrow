@@ -221,3 +221,17 @@ test('borrower dashboard redesign preserves content and controller parity', () =
   assert.match(student, /Number\(loan\.quantity \|\| 1\)/);
   assert.match(teacher, /Number\(loan\.quantity \|\| 1\)/);
 });
+
+test('borrower dashboards keep shared icon integration and avoid admin-only navigation', () => {
+  for (const relative of [
+    'features/student/pages/dashboard/dashboard.html',
+    'features/teacher/pages/dashboard/dashboard.html',
+  ]) {
+    const source = read(relative);
+    assert.match(source, /assets\/js\/core\/icons\.js/);
+    assert.match(source, /assets\/js\/core\/app-navbar\.js/);
+    assert.doesNotMatch(source, /admin-overview/);
+    assert.ok(source.indexOf('borrower-dashboards.css') > source.indexOf('assets/css/style.css'));
+  }
+  assert.doesNotMatch(read('assets/css/borrower-dashboards.css'), /[\u{1F300}-\u{1FAFF}]/u);
+});

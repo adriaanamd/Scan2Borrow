@@ -32,6 +32,10 @@ export class GuestOtpPage {
     this.listen(this.resend, 'submit', (event) => this.resendOtp(event));
   }
 
+  start() {
+    return this;
+  }
+
   async submit(event) {
     event.preventDefault();
     try {

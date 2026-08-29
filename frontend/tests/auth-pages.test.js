@@ -7,6 +7,9 @@ import { OtpPage } from '../features/auth/pages/otp/otp.page.js';
 import { GuestRegistrationPage } from '../features/auth/pages/guest-registration/guest-registration.page.js';
 import { GuestOtpPage } from '../features/auth/pages/guest-otp/guest-otp.page.js';
 import { ProfileOtpPage } from '../features/auth/pages/profile-otp/profile-otp.page.js';
+import { boot as bootGuestRegistration } from '../features/auth/pages/guest-registration/entry.js';
+import { boot as bootGuestOtp } from '../features/auth/pages/guest-otp/entry.js';
+import { boot as bootProfileOtp } from '../features/auth/pages/profile-otp/entry.js';
 
 test('AuthService preserves borrower and staff login endpoints', async () => {
   const calls = [];
@@ -218,4 +221,10 @@ test('Guest and profile OTP pages keep distinct form boundaries and redirects', 
   assert.equal(profileRedirect, '/scan2borrow/guest/profile');
   guest.destroy();
   profile.destroy();
+});
+
+test('guest auth pages expose browser-loadable entry modules', () => {
+  assert.equal(typeof bootGuestRegistration, 'function');
+  assert.equal(typeof bootGuestOtp, 'function');
+  assert.equal(typeof bootProfileOtp, 'function');
 });

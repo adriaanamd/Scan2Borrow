@@ -103,4 +103,24 @@ final class GuestMarkupParityTest extends TestCase
         self::assertIsString($script);
         self::assertStringContainsString('Return Verification', $script);
     }
+
+    public function testCanonicalGuestRegistrationAndOtpTemplatesUseFeatureEntries(): void
+    {
+        $pages = [
+            ['auth/pages/guest-registration/guest-registration.html', 'guest-registration', 'auth/pages/guest-registration/entry.js', ['id="guest-reg-form"', 'id="photo_data"', 'id="btn-start"', 'Send SMS OTP']],
+            ['auth/pages/guest-otp/guest-otp.html', 'guest-otp', 'auth/pages/guest-otp/entry.js', ['Guest SMS Verification', 'id="guest-otp-form"', 'Resend OTP']],
+            ['auth/pages/profile-otp/profile-otp.html', 'profile-otp', 'auth/pages/profile-otp/entry.js', ['Verify New Mobile Number', 'id="profile-otp-form"', 'Verify &amp; Save']],
+        ];
+        foreach ($pages as [$relativePath, $pageName, $entry, $markers]) {
+            $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+            self::assertFileExists($path);
+            $html = file_get_contents($path);
+            self::assertIsString($html);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString('frontend/features/' . $entry, $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html);
+            }
+        }
+    }
 }

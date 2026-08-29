@@ -34,8 +34,8 @@ test('borrower dashboard content and interaction IDs remain intact', () => {
 
 test('approved student and teacher design tokens are present and role-scoped', () => {
   const css = read('assets/css/borrower-dashboards.css');
-  for (const token of ['#E8DCC7', '#D4B895', '#8B9D83', '#606C38', '#B08B6E', '#C66B3D', '#C08E3A', '#F7F7F8', '#002FA7']) {
-    assert.match(css, new RegExp(token.replace('#', '\\#')));
+  for (const token of ['var(--app-bg)', 'var(--card)', 'var(--accent)', 'var(--navy)', '#F7F7F8', '#002FA7']) {
+    assert.match(css, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
   assert.match(css, /\.borrower-dashboard--student/);
   assert.match(css, /\.borrower-dashboard--teacher/);
@@ -59,6 +59,16 @@ test('student dashboard declares its Organic surface and display typography', ()
   assert.match(css, /\.borrower-dashboard--student[\s\S]*background:\s*var\(--borrower-surface\)/);
   assert.match(css, /Fraunces/);
   assert.match(css, /border-radius:\s*22px/);
+});
+
+test('student dashboard uses the shared Scan2Borrow system palette', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  const studentTokens = css.slice(css.indexOf('.borrower-dashboard--student'));
+  assert.match(studentTokens, /--borrower-surface:\s*var\(--app-bg\)/);
+  assert.match(studentTokens, /--borrower-panel:\s*var\(--card\)/);
+  assert.match(studentTokens, /--borrower-accent:\s*var\(--accent\)/);
+  assert.match(studentTokens, /--borrower-deep:\s*var\(--navy\)/);
+  assert.doesNotMatch(studentTokens, /#(?:E8DCC7|D4B895|8B9D83|606C38|B08B6E|C66B3D|C08E3A)/i);
 });
 
 test('teacher dashboard declares its Swiss surface and data typography', () => {

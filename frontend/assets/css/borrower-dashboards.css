@@ -3,13 +3,13 @@
 }
 
 .borrower-dashboard--student {
-  --borrower-surface: #E8DCC7;
-  --borrower-panel: #D4B895;
-  --borrower-accent: #8B9D83;
-  --borrower-deep: #606C38;
-  --borrower-clay: #B08B6E;
-  --borrower-terracotta: #C66B3D;
-  --borrower-ochre: #C08E3A;
+  --borrower-surface: var(--app-bg);
+  --borrower-panel: var(--card);
+  --borrower-accent: var(--accent);
+  --borrower-deep: var(--navy);
+  --borrower-clay: var(--border-strong);
+  --borrower-terracotta: var(--danger);
+  --borrower-ochre: var(--accent);
   --borrower-radius: 22px;
 }
 
@@ -59,15 +59,15 @@
   background: var(--borrower-deep);
   border: 0;
   border-radius: 28px;
-  box-shadow: 0 18px 40px rgba(96, 108, 56, .18);
-  color: #E8DCC7;
+  box-shadow: 0 18px 40px rgba(16, 47, 82, .18);
+  color: var(--card);
   overflow: hidden;
   padding: clamp(1.5rem, 4vw, 2.75rem);
   position: relative;
 }
 
 .borrower-dashboard--student .student-dashboard__hero::after {
-  border: 1px solid rgba(232, 220, 199, .22);
+  border: 1px solid rgba(255, 255, 255, .22);
   border-radius: 50%;
   content: "";
   height: 20rem;
@@ -88,46 +88,46 @@
 
 .borrower-dashboard--student .student-dashboard__hero h2,
 .borrower-dashboard--student .student-dashboard__hero strong {
-  color: #E8DCC7;
+  color: var(--card);
 }
 
 .borrower-dashboard--student .student-dashboard__hero .text-muted,
 .borrower-dashboard--student .student-dashboard__hero #borrower-meta {
-  color: rgba(232, 220, 199, .72) !important;
+  color: rgba(255, 255, 255, .72) !important;
 }
 
 .borrower-dashboard--student .student-dashboard__hero .avatar-placeholder {
-  background: var(--borrower-terracotta);
-  border: 3px solid rgba(232, 220, 199, .45);
+  background: var(--primary);
+  border: 3px solid rgba(255, 255, 255, .45);
   border-radius: 50%;
   height: 76px;
   width: 76px;
 }
 
 .borrower-dashboard--student .student-dashboard__hero .btn-accent {
-  background: var(--borrower-ochre);
-  border-color: var(--borrower-ochre);
-  color: #3F4925;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--navy);
 }
 
 .borrower-dashboard--student .student-dashboard__hero .btn-light {
   background: transparent;
-  border-color: rgba(232, 220, 199, .52);
-  color: #E8DCC7;
+  border-color: rgba(255, 255, 255, .52);
+  color: var(--card);
 }
 
 .borrower-dashboard--student .student-dashboard__hero .btn-light:hover,
 .borrower-dashboard--student .student-dashboard__hero .btn-light:focus {
-  background: rgba(232, 220, 199, .14);
-  border-color: #E8DCC7;
-  color: #E8DCC7;
+  background: rgba(255, 255, 255, .14);
+  border-color: var(--card);
+  color: var(--card);
 }
 
 .borrower-dashboard--student .student-dashboard__library-card {
   background: var(--borrower-surface);
   border: 0;
   border-radius: 18px;
-  box-shadow: 0 14px 30px rgba(33, 41, 20, .24);
+  box-shadow: 0 14px 30px rgba(16, 47, 82, .14);
   color: var(--borrower-deep);
 }
 
@@ -231,25 +231,25 @@
 .borrower-dashboard--student .student-dashboard__stat {
   align-items: flex-end;
   background: rgba(255, 255, 255, .42);
-  border: 1px solid rgba(96, 108, 56, .24);
+  border: 1px solid var(--border);
   border-bottom: 5px solid var(--borrower-accent);
   border-radius: 18px;
-  box-shadow: 0 8px 18px rgba(96, 108, 56, .08);
+  box-shadow: 0 8px 18px rgba(16, 47, 82, .08);
   min-height: 128px;
   padding: 1.15rem;
   transition: transform .3s ease, box-shadow .3s ease;
 }
 
 .borrower-dashboard--student .student-dashboard__stat:hover {
-  box-shadow: 0 14px 24px rgba(96, 108, 56, .14);
+  box-shadow: 0 14px 24px rgba(16, 47, 82, .14);
   transform: translateY(-3px);
 }
 
 .borrower-dashboard--student .student-dashboard__stat .icon {
-  background: rgba(96, 108, 56, .1);
+  background: var(--sky);
   border: 0;
   border-radius: 50%;
-  color: var(--borrower-deep);
+  color: var(--primary);
   height: 38px;
   width: 38px;
 }
@@ -267,11 +267,11 @@
 }
 
 .borrower-dashboard--student .student-dashboard__stat.stat-danger {
-  border-bottom-color: var(--borrower-terracotta);
+  border-bottom-color: var(--danger);
 }
 
 .borrower-dashboard--student .student-dashboard__stat.stat-warning {
-  border-bottom-color: var(--borrower-ochre);
+  border-bottom-color: var(--warning);
 }
 
 .borrower-dashboard--teacher .teacher-dashboard__stat {
@@ -331,7 +331,7 @@
 }
 
 .borrower-dashboard--student .student-dashboard__panel .section-title {
-  border-bottom: 1px solid rgba(96, 108, 56, .22);
+  border-bottom: 1px solid var(--border);
   color: var(--borrower-deep);
   padding-bottom: .75rem;
 }
@@ -342,15 +342,15 @@
 }
 
 .borrower-dashboard--student .student-dashboard__shelf .rec {
-  border-bottom-color: rgba(96, 108, 56, .2);
+  border-bottom-color: var(--border);
   padding: .75rem .25rem;
 }
 
 .borrower-dashboard--student .student-dashboard__shelf .rec-cover {
-  background: var(--borrower-terracotta);
+  background: var(--primary);
   border-radius: 8px 3px 3px 8px;
-  color: #E8DCC7;
-  box-shadow: 4px 3px 0 rgba(96, 108, 56, .16);
+  color: var(--card);
+  box-shadow: 4px 3px 0 rgba(16, 47, 82, .16);
 }
 
 .borrower-dashboard--student .student-dashboard__achievement-grid {
@@ -412,10 +412,10 @@
 }
 
 .borrower-dashboard--student .student-dashboard__loans {
-  background: rgba(255, 255, 255, .5);
-  border: 1px solid rgba(96, 108, 56, .24);
+  background: rgba(255, 255, 255, .75);
+  border: 1px solid var(--border);
   border-radius: 22px;
-  box-shadow: 0 10px 24px rgba(96, 108, 56, .08);
+  box-shadow: 0 10px 24px rgba(16, 47, 82, .08);
 }
 
 .borrower-dashboard--student .student-dashboard__loans .section-title {
@@ -426,10 +426,10 @@
 
 .borrower-dashboard--student .student-dashboard__modal {
   overflow: hidden;
-  border: 1px solid rgba(96, 108, 56, .22);
+  border: 1px solid var(--border);
   border-radius: 22px;
-  background: #f8f0e4;
-  box-shadow: 0 24px 60px rgba(96, 108, 56, .2);
+  background: var(--card);
+  box-shadow: 0 24px 60px rgba(16, 47, 82, .2);
 }
 
 .borrower-dashboard--student .student-dashboard__modal-header {
@@ -448,17 +448,17 @@
 
 .borrower-dashboard--student .student-dashboard__modal .form-control,
 .borrower-dashboard--student .student-dashboard__modal .form-select {
-  border-color: rgba(96, 108, 56, .28);
+  border-color: var(--border-strong);
   border-radius: 12px;
-  background: rgba(255, 255, 255, .74);
+  background: var(--card);
 }
 
 .borrower-dashboard--student .student-dashboard__cart {
   min-height: 3.5rem;
   padding: .75rem;
-  border: 1px dashed rgba(96, 108, 56, .35);
+  border: 1px dashed var(--border-strong);
   border-radius: 14px;
-  background: rgba(255, 255, 255, .45);
+  background: var(--app-bg);
 }
 
 .borrower-dashboard--teacher .teacher-dashboard__loans {
@@ -527,18 +527,18 @@
 }
 
 .borrower-dashboard--student .student-dashboard__table {
-  border: 1px solid rgba(96, 108, 56, .2);
+  border: 1px solid var(--border);
   border-radius: 14px;
 }
 
 .borrower-dashboard--student .student-dashboard__table .table thead th {
   background: var(--borrower-deep);
   border-bottom: 0;
-  color: #E8DCC7;
+  color: var(--card);
 }
 
 .borrower-dashboard--student .student-dashboard__table .table tbody td {
-  border-color: rgba(96, 108, 56, .18);
+  border-color: var(--border);
 }
 
 .borrower-dashboard--student .student-dashboard__table .table tbody tr:hover {

@@ -188,10 +188,15 @@
     }
 
     guardForm(event) {
-      const form = event.target?.closest?.("form[data-confirm-action]");
-      if (!form || form.dataset.confirmBypass === "true") return;
-      event.preventDefault();
+      const form = event.target?.closest?.("form") || event.target;
       const submitter = event.submitter || null;
+      const actionData = submitter?.dataset?.confirmAction
+        ? submitter.dataset
+        : form?.dataset?.confirmAction
+          ? form.dataset
+          : null;
+      if (!form || !actionData || form.dataset.confirmBypass === "true") return;
+      event.preventDefault();
       const proceed = () => {
         form.dataset.confirmBypass = "true";
         if (typeof form.requestSubmit === "function") form.requestSubmit(submitter);
@@ -199,10 +204,10 @@
         delete form.dataset.confirmBypass;
       };
       const confirmAction = () => this.confirm({
-        title: form.dataset.confirmTitle || "Confirm action",
-        message: form.dataset.confirmMessage || "Are you sure you want to continue?",
-        confirmLabel: form.dataset.confirmLabel || "Confirm",
-        confirmClass: form.dataset.confirmClass || "btn-danger",
+        title: actionData.confirmTitle || "Confirm action",
+        message: actionData.confirmMessage || "Are you sure you want to continue?",
+        confirmLabel: actionData.confirmLabel || "Confirm",
+        confirmClass: actionData.confirmClass || "btn-danger",
         trigger: submitter || form,
         onConfirm: proceed,
       });

@@ -83,20 +83,34 @@ CREATE TABLE IF NOT EXISTS `borrowing_items` (
 INSERT INTO `book_titles`
     (`isbn`, `title`, `author`, `publisher`, `description`, `cover_file`, `category_name`, `quantity`)
 SELECT
-    NULLIF(TRIM(`isbn`), ''), `title`, `author`, `publisher`, `description`, `cover_file`, `category_name`, COUNT(*)
+    NULLIF(TRIM(source_book.`isbn`), ''), MIN(source_book.`title`), MIN(source_book.`author`),
+    MIN(source_book.`publisher`), MIN(source_book.`description`), MIN(source_book.`cover_file`),
+    MIN(source_book.`category_name`), COUNT(*)
 FROM `books` AS source_book
-WHERE NOT EXISTS (
+WHERE NULLIF(TRIM(source_book.`isbn`), '') IS NOT NULL
+  AND NOT EXISTS (
     SELECT 1 FROM `book_titles` AS existing_title
-    WHERE (NULLIF(TRIM(existing_title.`isbn`), '') IS NOT NULL
-           AND NULLIF(TRIM(existing_title.`isbn`), '') = NULLIF(TRIM(source_book.`isbn`), ''))
-       OR (NULLIF(TRIM(source_book.`isbn`), '') IS NULL
-           AND NULLIF(TRIM(existing_title.`isbn`), '') IS NULL
-           AND existing_title.`title` = source_book.`title`
-           AND COALESCE(existing_title.`author`, '') = COALESCE(source_book.`author`, '')
-           AND COALESCE(existing_title.`publisher`, '') = COALESCE(source_book.`publisher`, ''))
-)
+    WHERE NULLIF(TRIM(existing_title.`isbn`), '') COLLATE utf8mb4_unicode_ci
+        = NULLIF(TRIM(source_book.`isbn`), '') COLLATE utf8mb4_unicode_ci
+ )
 GROUP BY
-    NULLIF(TRIM(`isbn`), ''), `title`, `author`, `publisher`, `description`, `cover_file`, `category_name`;
+    NULLIF(TRIM(source_book.`isbn`), '');
+
+INSERT INTO `book_titles`
+    (`isbn`, `title`, `author`, `publisher`, `description`, `cover_file`, `category_name`, `quantity`)
+SELECT
+    NULL, source_book.`title`, source_book.`author`, source_book.`publisher`, MIN(source_book.`description`),
+    MIN(source_book.`cover_file`), MIN(source_book.`category_name`), COUNT(*)
+FROM `books` AS source_book
+WHERE NULLIF(TRIM(source_book.`isbn`), '') IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `book_titles` AS existing_title
+    WHERE NULLIF(TRIM(existing_title.`isbn`), '') IS NULL
+      AND existing_title.`title` COLLATE utf8mb4_unicode_ci = source_book.`title` COLLATE utf8mb4_unicode_ci
+      AND COALESCE(existing_title.`author`, '') COLLATE utf8mb4_unicode_ci = COALESCE(source_book.`author`, '') COLLATE utf8mb4_unicode_ci
+      AND COALESCE(existing_title.`publisher`, '') COLLATE utf8mb4_unicode_ci = COALESCE(source_book.`publisher`, '') COLLATE utf8mb4_unicode_ci
+  )
+GROUP BY source_book.`title`, source_book.`author`, source_book.`publisher`;
 
 INSERT INTO `book_copies`
     (`title_id`, `barcode`, `accession_no`, `floor_no`, `section_name`, `shelf_no`, `row_no`, `due_date`, `return_date`, `status`, `deleted_at`)
@@ -106,15 +120,16 @@ SELECT
     source_book.`return_date`, source_book.`status`, source_book.`deleted_at`
 FROM `books` AS source_book
 JOIN `book_titles` AS title_record
-  ON ((NULLIF(TRIM(title_record.`isbn`), '') IS NOT NULL
-       AND NULLIF(TRIM(title_record.`isbn`), '') = NULLIF(TRIM(source_book.`isbn`), ''))
+  ON ((NULLIF(TRIM(source_book.`isbn`), '') IS NOT NULL
+       AND NULLIF(TRIM(title_record.`isbn`), '') COLLATE utf8mb4_unicode_ci = NULLIF(TRIM(source_book.`isbn`), '') COLLATE utf8mb4_unicode_ci)
    OR (NULLIF(TRIM(source_book.`isbn`), '') IS NULL
        AND NULLIF(TRIM(title_record.`isbn`), '') IS NULL
-       AND title_record.`title` = source_book.`title`
-       AND COALESCE(title_record.`author`, '') = COALESCE(source_book.`author`, '')
-       AND COALESCE(title_record.`publisher`, '') = COALESCE(source_book.`publisher`, '')))
+       AND title_record.`title` COLLATE utf8mb4_unicode_ci = source_book.`title` COLLATE utf8mb4_unicode_ci
+       AND COALESCE(title_record.`author`, '') COLLATE utf8mb4_unicode_ci = COALESCE(source_book.`author`, '') COLLATE utf8mb4_unicode_ci
+       AND COALESCE(title_record.`publisher`, '') COLLATE utf8mb4_unicode_ci = COALESCE(source_book.`publisher`, '') COLLATE utf8mb4_unicode_ci))
 WHERE NOT EXISTS (
-    SELECT 1 FROM `book_copies` AS existing_copy WHERE existing_copy.`barcode` = source_book.`barcode`
+     SELECT 1 FROM `book_copies` AS existing_copy
+     WHERE existing_copy.`barcode` COLLATE utf8mb4_unicode_ci = source_book.`barcode` COLLATE utf8mb4_unicode_ci
 );
 
 UPDATE `book_titles` AS title_record
@@ -133,7 +148,8 @@ SELECT legacy.`transaction_code`, legacy.`user_id`, MAX(legacy.`processed_by`),
 FROM `borrowing` AS legacy
 WHERE NOT EXISTS (
     SELECT 1 FROM `borrowing_transactions` AS existing_transaction
-    WHERE existing_transaction.`transaction_code` = legacy.`transaction_code`
+    WHERE existing_transaction.`transaction_code` COLLATE utf8mb4_unicode_ci
+        = legacy.`transaction_code` COLLATE utf8mb4_unicode_ci
 )
 GROUP BY legacy.`transaction_code`, legacy.`user_id`;
 
@@ -141,9 +157,11 @@ INSERT INTO `borrowing_items` (`transaction_id`, `copy_id`, `return_date`, `stat
 SELECT transaction_record.`id`, copy_record.`id`, legacy.`return_date`, legacy.`status`, legacy.`fine_amount`
 FROM `borrowing` AS legacy
 JOIN `borrowing_transactions` AS transaction_record
-  ON transaction_record.`transaction_code` = legacy.`transaction_code`
+  ON transaction_record.`transaction_code` COLLATE utf8mb4_unicode_ci
+      = legacy.`transaction_code` COLLATE utf8mb4_unicode_ci
 JOIN `books` AS legacy_book ON legacy_book.`id` = legacy.`book_id`
-JOIN `book_copies` AS copy_record ON copy_record.`barcode` = legacy_book.`barcode`
+JOIN `book_copies` AS copy_record
+  ON copy_record.`barcode` COLLATE utf8mb4_unicode_ci = legacy_book.`barcode` COLLATE utf8mb4_unicode_ci
 WHERE NOT EXISTS (
     SELECT 1 FROM `borrowing_items` AS existing_item
     WHERE existing_item.`transaction_id` = transaction_record.`id`

@@ -45,15 +45,17 @@
           </div>
         </header>
         <div class="content student-library-page" data-page="student-search">
-          <div class="page-head">
+          <div class="student-library-masthead student-search-masthead">
             <div>
-              <h3 class="mb-1">Book Catalog</h3>
+              <div class="student-library-eyebrow">Student library</div>
+              <h2 class="mb-1">Book Catalog</h2>
               <p class="text-muted mb-0">
                 Search and discover available books.
               </p>
             </div>
+            <div class="student-search-masthead__mark" aria-hidden="true">S2B</div>
           </div>
-          <div class="soft-card mb-4">
+          <div class="student-library-panel student-search-filters mb-4">
             <form
               method="GET"
               id="searchForm"
@@ -78,6 +80,7 @@
                 </div>
               </div>
               <div
+                class="student-search-filters__grid"
                 style="
                   display: flex;
                   flex-wrap: wrap;
@@ -129,6 +132,7 @@
               </div>
               <div
                 id="active-filters"
+                class="student-search-filters__active"
                 style="
                   margin-top: 12px;
                   display: flex;
@@ -138,9 +142,9 @@
               ></div>
             </form>
           </div>
-          <div class="soft-card">
+          <div class="student-library-panel student-search-results">
             <div
-              class="d-flex justify-content-between align-items-center mb-3"
+              class="student-library-panel__header student-search-results__header"
               style="border-bottom: 1px solid #e9ecef; padding-bottom: 12px"
             >
               <div>
@@ -152,8 +156,8 @@
               </div>
               <div class="text-muted small" id="availability-label"></div>
             </div>
-            <div id="book-results">
-              <div class="text-center py-5">
+            <div id="book-results" class="student-search-results__state">
+              <div class="student-library-state">
                 <div style="font-size: 48px; margin-bottom: 12px">
                   &#128233;
                 </div>

@@ -61,6 +61,20 @@
   z-index: 1;
 }
 
+.student-search-masthead__mark {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 18px;
+  color: var(--accent);
+  display: flex;
+  font-size: 1.15rem;
+  font-weight: 800;
+  height: 76px;
+  justify-content: center;
+  letter-spacing: .08em;
+  width: 76px;
+}
+
 .student-library-masthead h2,
 .student-library-masthead h3,
 .student-library-masthead strong {
@@ -118,6 +132,63 @@
 
 .student-library-page .btn {
   border-radius: 10px;
+}
+
+.student-search-filters {
+  padding-bottom: 22px;
+}
+
+.student-search-filters .input-group-lg > .input-group-text,
+.student-search-filters .input-group-lg > .form-control,
+.student-search-filters .input-group-lg > .btn {
+  min-height: 52px;
+}
+
+.student-search-filters .input-group-text {
+  border-radius: 12px 0 0 12px;
+}
+
+.student-search-filters .input-group-lg > .form-control {
+  border-left: 0;
+}
+
+.student-search-filters .input-group-lg > .btn {
+  border-radius: 0 12px 12px 0;
+  padding-inline: 24px;
+}
+
+.student-search-filters__grid {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.student-search-filters__grid > div {
+  flex: 1;
+  min-width: 150px;
+}
+
+.student-search-filters__active {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px !important;
+}
+
+.student-search-results__header {
+  border-bottom-color: var(--border-strong);
+}
+
+.student-search-results__header strong#book-count {
+  color: var(--primary);
+  font-family: Fraunces, Georgia, serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.student-search-results__state {
+  min-height: 180px;
 }
 
 .student-library-page .student-library-state {

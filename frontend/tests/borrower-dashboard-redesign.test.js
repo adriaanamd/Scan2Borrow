@@ -176,3 +176,13 @@ test('borrower dashboard hero and modal presentation stays in scoped CSS', () =>
     assert.doesNotMatch(source, /class="modal-header[^\"]*"[\s\S]{0,160}?style=/);
   }
 });
+
+test('borrower dashboards define keyboard focus, reduced motion, and status states', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
+  assert.match(css, /borrower-dashboard__status/);
+  assert.match(css, /pointer-events:\s*none/);
+  assert.match(read('features/student/pages/dashboard/student-dashboard.page.js'), /borrower-dashboard__status/);
+  assert.match(read('features/teacher/pages/dashboard/teacher-dashboard.page.js'), /borrower-dashboard__status/);
+});

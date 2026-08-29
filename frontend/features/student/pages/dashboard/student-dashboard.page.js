@@ -224,7 +224,7 @@ export class StudentDashboardPage {
         Pending: "warning text-dark",
         Returned: "success",
       }[status] || "secondary";
-    return `<span class="badge bg-${type}">${this.escapeHtml(status)}</span>`;
+    return `<span class="badge bg-${type} borrower-dashboard__status">${this.escapeHtml(status)}</span>`;
   }
 
   renderBarcode(barcode) {

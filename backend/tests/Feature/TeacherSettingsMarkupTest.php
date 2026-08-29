@@ -31,6 +31,22 @@ final class TeacherSettingsMarkupTest extends TestCase
         self::assertStringContainsString('/scan2borrow/teacher/dashboard', $navbar);
     }
 
+    public function testCanonicalTeacherPagesUseFeatureOwnedModules(): void
+    {
+        $pages = [
+            ['frontend/features/teacher/pages/dashboard/dashboard.html', 'teacher-dashboard', 'frontend/features/teacher/pages/dashboard/teacher-dashboard.page.js', ['Teacher Card', 'name="due_date"', 'data-scan-target="book_barcode"']],
+            ['frontend/features/teacher/pages/settings/settings.html', 'teacher-settings', 'frontend/features/teacher/pages/settings/teacher-settings.page.js', ['id="student-settings-form"', 'data-navbar-role="teacher"']],
+        ];
+        foreach ($pages as [$relativePath, $pageName, $module, $markers]) {
+            $html = $this->read($relativePath);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString($module, $html);
+            foreach ($markers as $marker) {
+                self::assertStringContainsString($marker, $html);
+            }
+        }
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

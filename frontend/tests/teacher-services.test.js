@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeTeacherDashboard, normalizeTeacherUser } from '../features/teacher/models/index.js';
 import { TeacherDashboardService, TeacherSettingsService } from '../features/teacher/services/index.js';
+import { TeacherDashboardPage } from '../features/teacher/pages/dashboard/teacher-dashboard.page.js';
+import { TeacherSettingsPage } from '../features/teacher/pages/settings/teacher-settings.page.js';
 
 test('teacher models preserve teacher role, profile fields, and dashboard defaults', () => {
   assert.deepEqual(normalizeTeacherUser({ name: 'Lee', department: 'Library', position: 'Faculty' }), {
@@ -31,4 +33,11 @@ test('teacher services preserve due-date and contact-number payload branches', a
     { method: 'POST', path: '/scan2borrow/api/teacher/dashboard', body: { action: 'return_unified', return_input: 'TXN-9' } },
     { method: 'GET', path: '/scan2borrow/api/teacher/dashboard', params: {} },
   ]);
+});
+
+test('teacher pages expose dashboard and settings feature boundaries', () => {
+  assert.equal(TeacherDashboardPage.name, 'TeacherDashboardPage');
+  assert.equal(typeof TeacherDashboardPage.prototype.render, 'function');
+  assert.equal(TeacherSettingsPage.name, 'TeacherSettingsPage');
+  assert.equal(typeof TeacherSettingsPage.prototype.render, 'function');
 });

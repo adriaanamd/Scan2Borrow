@@ -80,3 +80,15 @@ test('student profile block exposes the Organic hero composition hooks', () => {
   assert.match(source, /data-bs-target="#borrowModal"/);
   assert.match(source, /data-bs-target="#returnModal"/);
 });
+
+test('teacher profile block exposes the Swiss hero composition hooks', () => {
+  const source = read('features/teacher/pages/dashboard/dashboard.html');
+  for (const selector of ['teacher-dashboard__hero', 'teacher-dashboard__identity', 'teacher-dashboard__library-card']) {
+    assert.match(source, new RegExp(selector));
+  }
+  assert.match(source, /id="teacher-name"/);
+  assert.match(source, /id="teacher-meta"/);
+  assert.match(source, /id="teacher-barcode"/);
+  assert.match(source, /data-bs-target="#borrowModal"/);
+  assert.match(source, /data-bs-target="#returnModal"/);
+});

@@ -82,4 +82,14 @@ final class StaffDashboardFrontendContractTest extends TestCase
         }
     }
 
+    public function testOverviewChartComponentPreservesNativeSvgBoundaries(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'overview-chart' . DIRECTORY_SEPARATOR . 'overview-chart.component.js';
+        $source = file_get_contents($path);
+        self::assertIsString($source);
+        foreach (['borrowing_activity', 'category_borrowing_activity', 'loan_status', 'top_borrowers', 'category_breakdown', 'top_genres', 'recent_activity', 'viewBox', 'conic-gradient'] as $marker) {
+            self::assertStringContainsString($marker, $source);
+        }
+    }
+
 }

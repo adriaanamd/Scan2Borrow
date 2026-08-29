@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeStaffDashboard } from '../features/staff/models/index.js';
 import { StaffApprovalService, StaffDashboardService } from '../features/staff/services/index.js';
+import { OverviewChartComponent } from '../features/staff/components/overview-chart/overview-chart.component.js';
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -31,4 +32,12 @@ test('staff services preserve dashboard polling and approval action fields', asy
     { method: 'GET', path: '/scan2borrow/api/staff/notifications', params: { action: 'pending_approvals' } },
     { method: 'POST', path: '/scan2borrow/api/staff/borrowing-action', body: { action: 'approve', borrowing_id: 8 } },
   ]);
+});
+
+test('overview chart component exposes all staff dashboard visualization boundaries', () => {
+  for (const method of ['renderActivity', 'renderCategoryTrend', 'renderStatus', 'renderCategories', 'renderGenres', 'renderTopBorrowers', 'renderRecentActivity']) {
+    assert.equal(typeof OverviewChartComponent.prototype[method], 'function', method);
+  }
+  assert.equal(OverviewChartComponent.CHART_WIDTH, 720);
+  assert.equal(OverviewChartComponent.CHART_HEIGHT, 240);
 });

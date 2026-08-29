@@ -64,6 +64,19 @@ final class StaffReportsContractTest extends TestCase
         }
     }
 
+    public function testCanonicalNotificationAndGuestRequestPagesUseFeatureEntries(): void
+    {
+        foreach ([
+            ['notify/notify.html', 'staff-notify', 'notify/entry.js', ['notify-email', 'notify-contact', 'send-email']],
+            ['guest-requests/guest-requests.html', 'staff-guest-requests', 'guest-requests/entry.js', ['reviewModal', 'review-notes', 'data-review-request']],
+        ] as [$relativePath, $pageName, $entry, $markers]) {
+            $html = $this->read('frontend/features/staff/pages/' . $relativePath);
+            self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);
+            self::assertStringContainsString('frontend/features/staff/pages/' . $entry, $html);
+            foreach ($markers as $marker) self::assertStringContainsString($marker, $html);
+        }
+    }
+
     private function read(string $relativePath): string
     {
         $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

@@ -4,6 +4,9 @@ import { StaffReportService, StaffNotificationService } from '../features/staff/
 import { StaffOverdueService } from '../features/staff/services/overdue.service.js';
 import { ReportsPage } from '../features/staff/pages/reports/reports.page.js';
 import { OverduePage } from '../features/staff/pages/overdue/overdue.page.js';
+import { StaffGuestRequestService } from '../features/staff/services/guest-request.service.js';
+import { StaffNotifyPage } from '../features/staff/pages/notify/notify.page.js';
+import { GuestRequestsPage } from '../features/staff/pages/guest-requests/guest-requests.page.js';
 
 test('staff utility services preserve report filters, export/print flags, and notification actions', async () => {
   const calls = [];
@@ -33,4 +36,16 @@ test('reports and overdue pages expose their operational boundaries', async () =
   assert.equal(typeof ReportsPage.prototype.render, 'function');
   assert.equal(OverduePage.name, 'OverduePage');
   assert.equal(typeof OverduePage.prototype.render, 'function');
+});
+
+test('staff notification and guest review boundaries preserve action payloads', async () => {
+  let call;
+  const service = new StaffGuestRequestService({ api: { get: async (path, params) => { call = { method: 'GET', path, params }; return { ok: true, data: { requests: [] } }; }, post: async (path, body) => { call = { method: 'POST', path, body }; return { ok: true }; } } });
+  await service.load();
+  await service.review(7, 'approve', 'Ready for release.');
+  assert.deepEqual(call, { method: 'POST', path: '/scan2borrow/api/staff/guest-action', body: { id: 7, action: 'approve', notes: 'Ready for release.' } });
+  assert.equal(StaffNotifyPage.name, 'StaffNotifyPage');
+  assert.equal(typeof StaffNotifyPage.prototype.load, 'function');
+  assert.equal(GuestRequestsPage.name, 'GuestRequestsPage');
+  assert.equal(typeof GuestRequestsPage.prototype.render, 'function');
 });

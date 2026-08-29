@@ -149,6 +149,10 @@
 	padding: 3rem 1.25rem;
 }
 
+.teacher-history-page .teacher-history-state--empty {
+	color: #63798B;
+}
+
 .teacher-history-page .teacher-history-state--error {
 	border-color: #B42318;
 	color: #B42318;

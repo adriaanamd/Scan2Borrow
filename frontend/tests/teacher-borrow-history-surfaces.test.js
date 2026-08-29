@@ -44,6 +44,13 @@ test('teacher Borrow controller exposes cart presentation hooks', () => {
   assert.match(source, /teacher-borrow-cart-count/);
 });
 
+test('teacher Borrow cart keeps rows and controls readable', () => {
+  const styles = read('assets/css/borrower-dashboards.css');
+  assert.match(styles, /teacher-borrow-cart-row/);
+  assert.match(styles, /teacher-borrow-cart-actions/);
+  assert.match(styles, /teacher-borrow-cart-count/);
+});
+
 test('shared history retains its teacher-compatible route and role boundary', () => {
   const template = read('features/student/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');

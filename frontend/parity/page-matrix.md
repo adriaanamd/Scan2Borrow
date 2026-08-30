@@ -27,6 +27,8 @@ This matrix records the route-to-feature ownership model for the vanilla Angular
 | /student/history | student, teacher | features/student/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical |
 | /receipt | student, teacher | features/student/pages/receipt/receipt.html | features/student/pages/receipt/receipt.page.js | canonical |
 | /teacher/dashboard | teacher | features/teacher/pages/dashboard/dashboard.html | features/teacher/pages/dashboard/teacher-dashboard.page.js | canonical |
+| /teacher/borrow | teacher | features/student/pages/search/search.html | features/student/pages/search/student-search.page.js | canonical alias |
+| /teacher/history | teacher | features/student/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical alias |
 | /guest/dashboard | guest | features/guest/pages/dashboard/dashboard.html | features/guest/pages/dashboard/guest-dashboard.page.js | canonical |
 | /guest/profile | guest | features/guest/pages/profile/profile.html | features/guest/pages/profile/guest-profile.page.js | canonical |
 | /guest/profile-verify-otp | guest | features/auth/pages/profile-otp/profile-otp.html | features/auth/pages/profile-otp/entry.js | canonical |

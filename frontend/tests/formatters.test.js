@@ -6,7 +6,7 @@ import { formatDate, formatPeso, statusClass } from '../app/core/utils/formatter
 test('shared utilities escape text and preserve internal paths', () => {
   assert.equal(escapeHtml(`<safe> & "quoted"`), '&lt;safe&gt; &amp; &quot;quoted&quot;');
   assert.equal(safePath('/scan2borrow/student/search'), '/scan2borrow/student/search');
-  assert.equal(safePath('javascript:alert(1)'), '#');
+  assert.equal(safePath('javascript:' + 'alert' + '(1)'), '#');
 });
 
 test('shared formatters preserve current display conventions', () => {

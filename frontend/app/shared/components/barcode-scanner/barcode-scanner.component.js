@@ -1,16 +1,18 @@
+import { ToastService } from '../../../core/services/toast.service.js';
+
 export class BarcodeScannerComponent {
   static libraryUrl = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
 
   constructor(root, {
     document = globalThis.document,
     window = globalThis.window,
-    alertImpl = globalThis.alert,
+    toastService = new ToastService({ document }),
     scannerFactory = (viewId) => new window.Html5Qrcode(viewId),
   } = {}) {
     this.root = root;
     this.document = document;
     this.window = window;
-    this.alertImpl = alertImpl;
+    this.toastService = toastService;
     this.scannerFactory = scannerFactory;
     this.libraryLoading = null;
     this.scanner = null;
@@ -36,7 +38,7 @@ export class BarcodeScannerComponent {
       await this.loadLibrary();
       this.startScanner(targetInput, button.hasAttribute('data-scan-submit'), button);
     } catch (error) {
-      this.alertImpl?.(error.message);
+      this.showError(error.message);
     }
   }
 
@@ -85,10 +87,14 @@ export class BarcodeScannerComponent {
       () => {},
     ).catch((error) => {
       this.finishScan();
-      this.alertImpl?.('Unable to access camera: ' + error);
+      this.showError('Unable to access camera: ' + error);
     });
 
     view.onclick = () => scanner.stop().then(() => this.finishScan());
+  }
+
+  showError(message) {
+    this.toastService?.show(message, 'danger');
   }
 
   finishScan() {

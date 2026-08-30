@@ -41,7 +41,7 @@ final class CleanRouteMatrixTest extends TestCase
             '/staff/books', '/staff/students', '/staff/borrower', '/staff/notify',
             '/staff/overdue', '/staff/reports', '/staff/guest-requests',
             '/student/dashboard', '/student/search', '/student/history', '/receipt',
-            '/teacher/dashboard', '/guest/dashboard', '/guest/profile',
+            '/teacher/dashboard', '/teacher/borrow', '/teacher/history', '/guest/dashboard', '/guest/profile',
             '/guest/profile-verify-otp', '/guest/browse', '/guest/borrowed',
             '/guest/history', '/guest/borrow-request', '/guest/return-book',
             '/guest/pass', '/guest/receipt', '/admin/staff', '/admin/api-docs',
@@ -62,7 +62,7 @@ final class CleanRouteMatrixTest extends TestCase
         foreach (['/student/search', '/student/history'] as $path) {
             self::assertSame(['student', 'teacher'], $table->forPath($path)->allowedRoles(), $path);
         }
-        foreach (['/teacher/dashboard'] as $path) {
+        foreach (['/teacher/dashboard', '/teacher/borrow', '/teacher/history'] as $path) {
             self::assertSame(['teacher'], $table->forPath($path)->allowedRoles(), $path);
         }
         self::assertSame(['teacher'], $table->forPath('/teacher/settings')->allowedRoles());

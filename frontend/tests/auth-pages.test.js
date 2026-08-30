@@ -147,8 +147,35 @@ test('RegistrationPage selects and validates the OTP delivery channel', async ()
   emailInputListener();
   await submit({ preventDefault() {} });
   assert.deepEqual(submittedBody, { otp_channel: 'phone' });
-  assert.equal(redirected, '/verify-otp');
+  assert.equal(redirected, '/verify-otp?channel=phone');
   page.destroy();
+});
+
+test('OtpPage identifies the selected OTP delivery channel', () => {
+  const makePage = (search) => {
+    const copy = { textContent: '' };
+    const input = { addEventListener() {}, value: '' };
+    const form = { querySelector: () => input, addEventListener() {} };
+    const resendForm = { addEventListener() {} };
+    const document = {
+      getElementById(id) {
+        if (id === 'otpForm') return form;
+        if (id === 'resend-form') return resendForm;
+        if (id === 'otp-channel-copy') return copy;
+        return null;
+      },
+    };
+    new OtpPage({}, {
+      auth: { verifyOtp: async () => ({ ok: true }) },
+      document,
+      window: { location: { search }, setInterval: () => 1, clearInterval() {} },
+    });
+    return copy.textContent;
+  };
+
+  assert.equal(makePage('?channel=email'), 'email address');
+  assert.equal(makePage('?channel=phone'), 'cellphone number');
+  assert.equal(makePage(''), 'selected contact method');
 });
 
 test('OtpPage verifies, resends, sanitizes input, and counts down', async () => {

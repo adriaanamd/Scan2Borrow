@@ -13,10 +13,13 @@ export class OtpPage {
     this.form = document.getElementById('otpForm');
     this.resendForm = document.getElementById('resend-form');
     this.input = this.form?.querySelector('input[name="otp"]');
+    const channel = new URLSearchParams(this.window.location?.search || '').get('channel');
+    this.channel = ['email', 'phone'].includes(channel) ? channel : '';
     this.expiresIn = 300;
     this.intervalId = null;
     this.listeners = [];
     this.bindEvents();
+    this.updateChannelCopy();
     this.startCountdown();
   }
 
@@ -47,6 +50,16 @@ export class OtpPage {
       const seconds = String(this.expiresIn % 60).padStart(2, '0');
       if (node) node.textContent = `${minutes}:${seconds}`;
     }, 1000);
+  }
+
+  updateChannelCopy() {
+    const node = this.document.getElementById('otp-channel-copy');
+    if (!node) return;
+    const copy = {
+      email: 'email address',
+      phone: 'cellphone number',
+    };
+    node.textContent = copy[this.channel] || 'selected contact method';
   }
 
   async submit(event) {

@@ -207,7 +207,10 @@ export class RegistrationPage {
     try {
       const response = await this.auth.register(this.formDataFactory(this.form));
       if (!response.ok) throw new Error(response.errors?.[0] || 'Registration failed.');
-      this.window.location.href = response.data.redirect || '/scan2borrow/verify-otp';
+      const redirect = response.data?.redirect || '/scan2borrow/verify-otp';
+      const channel = ['email', 'phone'].includes(response.data?.channel) ? response.data.channel : '';
+      const suffix = channel === '' ? '' : `${redirect.includes('?') ? '&' : '?'}channel=${encodeURIComponent(channel)}`;
+      this.window.location.href = redirect + suffix;
     } catch (error) {
       this.message('form-error', error.message);
     }

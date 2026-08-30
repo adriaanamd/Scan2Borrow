@@ -14,7 +14,6 @@ class FakeElement {
     this.children = [];
     this.attributes = {};
     this.listeners = new Map();
-    this.dataset = {};
     this.className = '';
     this.classList = {
       add: (...names) => names.forEach((name) => {
@@ -32,7 +31,6 @@ class FakeElement {
   }
 
   appendChild(child) { this.children.push(child); child.parentNode = this; return child; }
-  focus() { if (this.ownerDocument) this.ownerDocument.activeElement = this; }
   setAttribute(name, value) { this.attributes[name] = String(value); if (name === 'id') this.id = String(value); }
   getAttribute(name) { return this.attributes[name] ?? null; }
   addEventListener(type, listener) {
@@ -69,11 +67,9 @@ class FakeDocument extends FakeElement {
   constructor() {
     super('document');
     this.body = new FakeElement('body');
-    this.body.ownerDocument = this;
-    this.activeElement = null;
   }
 
-  createElement(tagName) { const element = new FakeElement(tagName); element.ownerDocument = this; return element; }
+  createElement(tagName) { return new FakeElement(tagName); }
 }
 
 function loadService({ bootstrap = {}, nativeResult = true } = {}) {
@@ -104,7 +100,6 @@ function createConfirmationFixture(options = {}) {
   const fixture = loadService({ ...options, bootstrap });
   const getModalElement = () => fixture.document.body.querySelector('#scan2borrow-confirmation-modal');
   const modal = {
-    get element() { return getModalElement(); },
     get title() { return getModalElement()?.querySelector('[data-confirm-title]'); },
     get message() { return getModalElement()?.querySelector('[data-confirm-message-target]'); },
     get confirm() { return getModalElement()?.querySelector('[data-confirm-confirm]'); },
@@ -146,45 +141,18 @@ test('confirm renders context and executes once', async () => {
   assert.equal(calls, 1);
 });
 
-test('Bootstrap absence still renders an in-page confirmation without native dialogs', async () => {
-  const { service, window, modal } = createConfirmationFixture({
+test('Bootstrap absence falls back to native confirmation', async () => {
+  const { service, window } = createConfirmationFixture({
     bootstrap: null,
     nativeResult: false,
   });
   let called = false;
-  const result = service.confirm({
+  assert.equal(await service.confirm({
     message: 'Leave the session?',
     onConfirm: () => { called = true; },
-  });
-  assert.equal(modal.message.textContent, 'Leave the session?');
-  modal.cancel();
-  assert.equal(await result, false);
-  assert.deepEqual(window.confirmCalls, []);
+  }), false);
+  assert.deepEqual(window.confirmCalls, ['Leave the session?']);
   assert.equal(called, false);
-});
-
-test('Bootstrap-independent confirmation accepts and runs the continuation', async () => {
-  const { service, modal, window } = createConfirmationFixture({ bootstrap: null });
-  let called = false;
-  const result = service.confirm({ onConfirm: () => { called = true; } });
-  modal.confirm.click();
-  assert.equal(await result, true);
-  assert.equal(called, true);
-  assert.deepEqual(window.confirmCalls, []);
-});
-
-test('Bootstrap-independent confirmation closes on Escape', async () => {
-  const { service, modal, window } = createConfirmationFixture({ bootstrap: null });
-  const result = service.confirm({ message: 'Leave the session?' });
-  let prevented = false;
-  modal.element.dispatchEvent({
-    type: 'keydown',
-    key: 'Escape',
-    preventDefault() { prevented = true; },
-  });
-  assert.equal(await result, false);
-  assert.equal(prevented, true);
-  assert.deepEqual(window.confirmCalls, []);
 });
 
 function htmlFiles(rootDirectory) {

@@ -20,6 +20,14 @@
 
     confirm(options = {}) {
       const config = { ...defaults, ...options };
+      if (!this.window?.bootstrap?.Modal?.getOrCreateInstance) {
+        const accepted = typeof this.window?.confirm === "function"
+          ? this.window.confirm(config.message)
+          : false;
+        if (!accepted) return Promise.resolve(false);
+        return Promise.resolve(config.onConfirm?.()).then(() => true);
+      }
+
       if (this.pending) return this.pending.promise;
       this.ensureModal();
 
@@ -112,28 +120,7 @@
       this.cancelButton = cancel;
       this.closeButton = close;
       this.confirmButton = confirm;
-      const getBootstrapModal = this.window?.bootstrap?.Modal?.getOrCreateInstance;
-      if (typeof getBootstrapModal === "function") {
-        this.modal = getBootstrapModal.call(this.window.bootstrap.Modal, modal);
-      } else {
-        modal.dataset.confirmMode = "fallback";
-        modal.setAttribute("aria-hidden", "true");
-        this.modal = {
-          show: () => {
-            modal.classList.add("show");
-            modal.setAttribute("aria-hidden", "false");
-            this.confirmButton.focus?.();
-          },
-          hide: () => {
-            modal.classList.remove("show");
-            modal.setAttribute("aria-hidden", "true");
-          },
-        };
-        modal.addEventListener("click", (event) => {
-          if (event.target === modal) this.cancel();
-        });
-        modal.addEventListener("keydown", (event) => this.handleFallbackKeydown(event));
-      }
+      this.modal = this.window.bootstrap.Modal.getOrCreateInstance(modal);
 
       cancel.addEventListener("click", () => this.cancel());
       close.addEventListener("click", () => this.cancel());
@@ -141,26 +128,6 @@
       modal.addEventListener("hidden.bs.modal", () => {
         if (this.pending && !this.pending.settling) this.cancel();
       });
-    }
-
-    handleFallbackKeydown(event) {
-      if (!this.pending) return;
-      if (event.key === "Escape") {
-        event.preventDefault();
-        this.cancel();
-        return;
-      }
-      if (event.key !== "Tab") return;
-
-      const focusable = [this.closeButton, this.cancelButton, this.confirmButton]
-        .filter((element) => element && !element.disabled);
-      if (!focusable.length) return;
-      const currentIndex = focusable.indexOf(this.document.activeElement);
-      const nextIndex = currentIndex < 0
-        ? 0
-        : (currentIndex + (event.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
-      event.preventDefault();
-      focusable[nextIndex].focus?.();
     }
 
     async accept() {

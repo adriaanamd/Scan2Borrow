@@ -19,7 +19,6 @@
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
     <link href="/scan2borrow/frontend/assets/css/student-library-surfaces.css" rel="stylesheet" />
     <link href="/scan2borrow/frontend/assets/css/student-history.css" rel="stylesheet" />
-    <link href="/scan2borrow/frontend/assets/css/teacher-history.css" rel="stylesheet" />
     <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
     <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
     <script
@@ -27,7 +26,7 @@
       defer
     ></script>
   </head>
-  <body data-app-page="student-history">
+  <body class="student-history-page" data-app-page="student-history">
     <div class="app">
       <aside class="sidebar" data-app-navbar data-navbar-role="student">
       </aside>
@@ -74,7 +73,7 @@
                 </thead>
                 <tbody id="history-body">
                   <tr>
-                    <td colspan="8" class="student-library-state teacher-history-state teacher-history-state--empty text-center text-muted">
+                    <td colspan="8" class="student-library-state student-history-state student-history-state--empty text-center text-muted">
                       No borrowing history yet.
                     </td>
                   </tr>

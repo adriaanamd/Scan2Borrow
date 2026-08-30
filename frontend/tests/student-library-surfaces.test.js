@@ -70,7 +70,7 @@ test('student search and history share typography and palette contracts', () => 
 });
 
 test('student search controller exposes styled empty, error, and card boundaries', () => {
-  const source = read('features/student/pages/search/student-search.page.js');
+  const source = read('app/shared/pages/borrower-search.page.js');
   assert.match(source, /student-library-state/);
   assert.match(source, /student-search-filter-chip/);
   assert.match(source, /student-search-result/);
@@ -86,13 +86,13 @@ test('student search cards use the library surface motion and quantity hierarchy
 
 test('student history exposes a styled borrowing ledger boundary', () => {
   const template = read('features/student/pages/history/history.html');
-  const source = read('features/student/pages/history/student-history.page.js');
+  const source = read('app/shared/pages/borrower-history.page.js');
   const styles = read('assets/css/student-history.css');
   assert.match(template, /student-history-masthead/);
   assert.match(template, /student-history-ledger/);
   assert.match(template, /student-history-table/);
-  assert.match(source, /student-history-row/);
-  assert.match(source, /student-history-status/);
+  assert.match(source, /\$\{this\.classPrefix\}-row/);
+  assert.match(source, /\$\{this\.classPrefix\}-status/);
   assert.match(styles, /student-history-ledger/);
   assert.match(styles, /student-history-row--overdue/);
 });
@@ -108,29 +108,36 @@ test('student search keeps filter presentation in scoped classes', () => {
   assert.match(styles, /student-library-state__icon/);
 });
 
-test('borrow catalog exposes role-aware presentation and endpoint hooks', () => {
+test('student catalog is student-only in presentation and endpoint hooks', () => {
   const template = read('features/student/pages/search/search.html');
   const source = read('features/student/pages/search/student-search.page.js');
+  const shared = read('app/shared/pages/borrower-search.page.js');
 
-  assert.match(template, /teacher-search\.css/);
+  assert.match(template, /student-search\.css/);
+  assert.doesNotMatch(template, /teacher-search\.css/);
   assert.match(template, /data-role-copy="catalog-eyebrow"/);
-  assert.match(source, /roleFromPath\(/);
-  assert.match(source, /teacher-search-page/);
-  assert.match(source, /student-search-page/);
-  assert.match(source, /\/scan2borrow\/api\/teacher\/books/);
-  assert.match(source, /\/scan2borrow\/api\/teacher\/borrow\/lookup/);
-  assert.match(source, /\/scan2borrow\/api\/teacher\/borrow/);
-  assert.match(source, /\/scan2borrow\/teacher\/dashboard/);
+  assert.doesNotMatch(source, /roleFromPath\(/);
+  assert.doesNotMatch(source, /teacher-search-page|\/api\/teacher\//);
+  assert.match(template, /student-search-page/);
+  assert.match(source, /\/scan2borrow\/api\/student\/books/);
+  assert.match(source, /\/scan2borrow\/api\/student\/borrow\/lookup/);
+  assert.match(source, /\/scan2borrow\/api\/student\/borrow/);
+  assert.match(source, /\/scan2borrow\/student\/dashboard/);
+  assert.match(template, /student-search-page/);
 });
 
-test('borrowing history exposes role-aware endpoint and copy hooks', () => {
+test('student history is student-only in presentation and endpoint hooks', () => {
   const template = read('features/student/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');
+  const shared = read('app/shared/pages/borrower-history.page.js');
 
   assert.match(template, /data-role-copy="history-title"/);
   assert.match(template, /data-role-copy="history-description"/);
-  assert.match(source, /roleFromPath\(/);
-  assert.match(source, /\/scan2borrow\/api\/teacher\/history/);
-  assert.match(source, /teacher-history-page/);
-  assert.match(source, /student-history-page/);
+  assert.match(template, /student-history\.css/);
+  assert.doesNotMatch(template, /teacher-history\.css/);
+  assert.doesNotMatch(source, /roleFromPath\(/);
+  assert.doesNotMatch(source, /\/scan2borrow\/api\/teacher\/|teacher-history-page/);
+  assert.match(template, /student-history-page/);
+  assert.match(source, /\/scan2borrow\/api\/student\/history/);
+  assert.match(shared, /classPrefix/);
 });

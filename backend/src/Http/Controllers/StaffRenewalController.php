@@ -20,7 +20,8 @@ final readonly class StaffRenewalController
     public function index(ServerRequest $request): JsonResponse
     {
         if (!$this->isStaff()) return $this->unauthorized();
-        return new JsonResponse(200, ['ok' => true, 'data' => ['renewals' => array_map(static fn (\App\Domain\Renewal\RenewalRecord $record): array => $record->toArray(), $this->repository->listPending())]]);
+        $records = $this->repository->listPending();
+        return new JsonResponse(200, ['ok' => true, 'data' => ['renewals' => array_map(static fn (\App\Domain\Renewal\RenewalRecord $record): array => $record->toArray(), $records), 'summary' => ['pending' => count($records)]]]);
     }
     public function action(ServerRequest $request): JsonResponse
     {

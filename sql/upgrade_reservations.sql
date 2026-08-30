@@ -3,6 +3,11 @@
 
 USE `scan2borrow_2.0`;
 
+-- Circulation notifications are shared by holds and renewals. The existing
+-- approval migration creates this enum with only legacy staff alert types.
+ALTER TABLE `notifications`
+    MODIFY `type` ENUM('borrow_request','overdue_alert','return_alert','hold_available','renewal_approved','renewal_rejected') NOT NULL;
+
 CREATE TABLE IF NOT EXISTS `reservations` (
     `id`                  INT AUTO_INCREMENT PRIMARY KEY,
     `user_id`             INT NOT NULL,

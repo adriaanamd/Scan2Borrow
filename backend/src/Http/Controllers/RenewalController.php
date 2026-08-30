@@ -21,7 +21,12 @@ final readonly class RenewalController
     {
         $identity = $this->borrower();
         if ($identity === null) return $this->unauthorized();
-        return new JsonResponse(200, ['ok' => true, 'data' => ['renewals' => array_map(static fn (\App\Domain\Renewal\RenewalRecord $record): array => $record->toArray(), $this->renewals->list($identity->userId()))]]);
+        $records = $this->renewals->list($identity->userId());
+        $summary = ['total' => count($records), 'pending' => 0, 'approved' => 0, 'rejected' => 0];
+        foreach ($records as $record) {
+            if (isset($summary[$record->status()->value])) $summary[$record->status()->value]++;
+        }
+        return new JsonResponse(200, ['ok' => true, 'data' => ['renewals' => array_map(static fn (\App\Domain\Renewal\RenewalRecord $record): array => $record->toArray(), $records), 'summary' => $summary]]);
     }
 
     public function create(ServerRequest $request): JsonResponse

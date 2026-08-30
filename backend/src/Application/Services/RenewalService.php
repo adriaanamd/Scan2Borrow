@@ -39,4 +39,18 @@ final readonly class RenewalService
     {
         return $this->repository->listForUser($userId);
     }
+
+    /** @return array{total: int, pending: int, approved: int, rejected: int} */
+    public function summary(int $userId): array
+    {
+        $records = $this->list($userId);
+        $summary = ['total' => count($records), 'pending' => 0, 'approved' => 0, 'rejected' => 0];
+        foreach ($records as $record) {
+            if (isset($summary[$record->status()->value])) {
+                $summary[$record->status()->value]++;
+            }
+        }
+
+        return $summary;
+    }
 }

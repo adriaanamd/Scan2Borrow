@@ -17,10 +17,10 @@ use App\Application\Services\GuestRegistrationCompletionService;
 use App\Application\Services\GuestRegistrationService;
 use App\Application\Services\LocalPhotoStorage;
 use App\Application\Services\NullSmsSender;
-use App\Application\Services\NativeEmailSender;
 use App\Application\Services\OtpService;
 use App\Application\Services\RegistrationCompletionService;
 use App\Application\Services\RegistrationService;
+use App\Application\Services\SmtpEmailSender;
 use App\Application\Services\ReturnService;
 use App\Application\Services\SystemClock;
 use App\Application\Services\SessionService;
@@ -80,7 +80,7 @@ final class ApplicationFactory
         $pdo = (new PdoConnectionFactory())->create(DatabaseConfig::fromEnvironment());
         $sessions = new SessionService(new NativeSessionStore());
         $csrf = new CsrfService(new NativeSessionStore());
-        $otp = new OtpService(new PdoOtpRepository($pdo), new SystemClock(), new NullSmsSender());
+        $otp = new OtpService(new PdoOtpRepository($pdo), new SystemClock(), new NullSmsSender(), new SmtpEmailSender());
         $registrationAccounts = new PdoRegistrationAccountRepository($pdo);
         $registration = new RegistrationController(
             new RegistrationService(new \App\Application\Validators\RegistrationValidator(), $registrationAccounts, $otp),
@@ -153,7 +153,7 @@ final class ApplicationFactory
             new LocalPhotoStorage(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads', '/scan2borrow/uploads'),
             new BorrowerNotificationService(
                 new \App\Infrastructure\Persistence\PdoStaffRepository($pdo),
-                new NativeEmailSender(),
+                new SmtpEmailSender(),
             ),
         );
         $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());

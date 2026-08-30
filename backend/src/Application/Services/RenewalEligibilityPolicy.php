@@ -7,7 +7,7 @@ namespace App\Application\Services;
 use App\Infrastructure\Persistence\RenewalEligibilityRepositoryInterface;
 use App\Infrastructure\Persistence\RenewalRepositoryInterface;
 
-final readonly class RenewalEligibilityPolicy
+final readonly class RenewalEligibilityPolicy implements RenewalEligibilityInterface
 {
     public function __construct(
         private RenewalEligibilityRepositoryInterface $source,

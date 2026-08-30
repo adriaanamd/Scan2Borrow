@@ -45,9 +45,10 @@ final readonly class RegistrationController
                 $this->string($body, 'position'),
                 $this->string($body, 'course'),
                 $this->string($body, 'year_level'),
-                $this->string($body, 'email'),
-                $this->string($body, 'contact_no'),
-                $this->string($body, 'photo_data'),
+                otpChannel: $this->string($body, 'otp_channel'),
+                email: $this->string($body, 'email'),
+                contactNo: $this->string($body, 'contact_no'),
+                photoData: $this->string($body, 'photo_data'),
             ));
         } catch (OtpDeliveryException $exception) {
             return new JsonResponse(503, ['ok' => false, 'errors' => [$exception->getMessage()]]);
@@ -60,7 +61,11 @@ final readonly class RegistrationController
 
         return new JsonResponse(200, [
             'ok' => true,
-            'data' => ['redirect' => $request->applicationPath('/verify-otp'), 'barcode' => $result->barcode()],
+            'data' => [
+                'redirect' => $request->applicationPath('/verify-otp'),
+                'barcode' => $result->barcode(),
+                'channel' => $this->string($body, 'otp_channel'),
+            ],
         ]);
     }
 

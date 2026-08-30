@@ -119,6 +119,47 @@ final class OtpServiceTest extends TestCase
         self::assertStringContainsString('cid:scan2borrow-school-seal', $email->html);
     }
 
+    public function testExplicitPhoneChannelWinsWhenEmailIsAlsoPresent(): void
+    {
+        $sms = new FakeSmsSender();
+        $email = new FakeEmailSender();
+        $service = new OtpService(
+            new FakeOtpRepository(),
+            new FixedClock(new DateTimeImmutable('2026-08-28 10:00:00')),
+            $sms,
+            $email,
+        );
+
+        $service->start('2024004', [
+            'otp_channel' => 'phone',
+            'email' => 'lia@example.test',
+        ], '09170000004');
+
+        self::assertSame('09170000004', $sms->phoneNumber);
+        self::assertSame('', $email->to);
+    }
+
+    public function testExplicitEmailChannelWinsWhenPhoneIsAlsoPresent(): void
+    {
+        $sms = new FakeSmsSender();
+        $email = new FakeEmailSender();
+        $service = new OtpService(
+            new FakeOtpRepository(),
+            new FixedClock(new DateTimeImmutable('2026-08-28 10:00:00')),
+            $sms,
+            $email,
+        );
+
+        $service->start('2024004', [
+            'otp_channel' => 'email',
+            'contact_no' => '09170000004',
+            'email' => 'lia@example.test',
+        ], '09170000004');
+
+        self::assertSame('lia@example.test', $email->to);
+        self::assertSame('', $sms->phoneNumber);
+    }
+
     public function testResendSendsUpdatedOtpToPayloadEmail(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:01:00'));

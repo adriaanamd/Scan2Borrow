@@ -23,12 +23,13 @@ final class RegistrationServiceTest extends TestCase
         );
 
         $result = $service->begin(new RegistrationRequest(
-            '2024004', 'Lia', '', 'Santos', 'student', course: 'BSIT', yearLevel: '1', contactNo: '09170000004',
+            '2024004', 'Lia', '', 'Santos', 'student', otpChannel: 'phone', course: 'BSIT', yearLevel: '1', contactNo: '09170000004',
         ));
 
         self::assertTrue($result->successful());
         self::assertSame('2024004', $result->barcode());
         self::assertSame('2024004', $otp->barcode);
+        self::assertSame('phone', $otp->payload['otp_channel']);
     }
 
     public function testDuplicateRegistrationKeepsCurrentMessage(): void
@@ -38,7 +39,7 @@ final class RegistrationServiceTest extends TestCase
         $service = new RegistrationService(new RegistrationValidator(), $repository, new FakeRegistrationOtp());
 
         $result = $service->begin(new RegistrationRequest(
-            '2024001', 'Juan', '', 'Cruz', 'student', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
+            '2024001', 'Juan', '', 'Cruz', 'student', otpChannel: 'phone', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
         ));
 
         self::assertFalse($result->successful());
@@ -60,12 +61,16 @@ final class FakeRegistrationOtp implements RegistrationOtpInterface
 {
     public string $barcode = '';
 
+    /** @var array<string, string> */
+    public array $payload = [];
+
     /**
      * @param array<string, string> $payload
      */
     public function start(string $barcode, array $payload, string $phoneNumber): string
     {
         $this->barcode = $barcode;
+        $this->payload = $payload;
 
         return '123456';
     }

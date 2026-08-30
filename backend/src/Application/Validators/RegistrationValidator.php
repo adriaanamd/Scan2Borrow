@@ -18,6 +18,18 @@ final class RegistrationValidator
             return 'Please select a valid role.';
         }
 
+        if (!in_array($request->otpChannel, ['email', 'phone'], true)) {
+            return 'Please choose how to receive your verification code.';
+        }
+
+        if ($request->otpChannel === 'email' && $request->email === '') {
+            return 'Please enter an email address to receive your verification code.';
+        }
+
+        if ($request->otpChannel === 'phone' && $request->contactNo === '') {
+            return 'Please enter a cellphone number to receive your verification code.';
+        }
+
         if ($request->role === 'student' && ($request->course === '' || $request->yearLevel === '')) {
             return 'Please select course and year level for students.';
         }

@@ -29,7 +29,7 @@ final class RegistrationValidatorTest extends TestCase
 
     public function testRequiresStudentCourseAndYear(): void
     {
-        $request = new RegistrationRequest('2024', 'Juan', '', 'Cruz', 'student');
+        $request = new RegistrationRequest('2024', 'Juan', '', 'Cruz', 'student', otpChannel: 'phone', contactNo: '09170000001');
 
         self::assertSame(
             'Please select course and year level for students.',
@@ -39,7 +39,7 @@ final class RegistrationValidatorTest extends TestCase
 
     public function testRequiresTeacherDepartmentAndPosition(): void
     {
-        $request = new RegistrationRequest('T2024', 'Ana', '', 'Reyes', 'teacher');
+        $request = new RegistrationRequest('T2024', 'Ana', '', 'Reyes', 'teacher', otpChannel: 'phone', contactNo: '09170000002');
 
         self::assertSame(
             'Please enter department and position for teachers.',
@@ -56,6 +56,7 @@ final class RegistrationValidatorTest extends TestCase
             '',
             'Cruz',
             'student',
+            otpChannel: 'email',
             course: 'BSIT',
             yearLevel: '3',
             email: 'not-an-email',
@@ -69,15 +70,42 @@ final class RegistrationValidatorTest extends TestCase
         );
     }
 
+    public function testRequiresAnOtpChannelAndItsSelectedDestination(): void
+    {
+        $validator = new RegistrationValidator();
+
+        self::assertSame(
+            'Please choose how to receive your verification code.',
+            $validator->firstError(new RegistrationRequest(
+                '2024', 'Juan', '', 'Cruz', 'student',
+                otpChannel: '', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
+            )),
+        );
+        self::assertSame(
+            'Please enter an email address to receive your verification code.',
+            $validator->firstError(new RegistrationRequest(
+                '2024', 'Juan', '', 'Cruz', 'student',
+                otpChannel: 'email', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
+            )),
+        );
+        self::assertSame(
+            'Please enter a cellphone number to receive your verification code.',
+            $validator->firstError(new RegistrationRequest(
+                '2024', 'Juan', '', 'Cruz', 'student',
+                otpChannel: 'phone', course: 'BSIT', yearLevel: '3', email: 'juan@example.test',
+            )),
+        );
+    }
+
     public function testAcceptsCompleteStudentAndTeacherPayloads(): void
     {
         $validator = new RegistrationValidator();
 
         self::assertNull($validator->firstError(new RegistrationRequest(
-            '2024', 'Juan', '', 'Cruz', 'student', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
+            '2024', 'Juan', '', 'Cruz', 'student', otpChannel: 'phone', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
         )));
         self::assertNull($validator->firstError(new RegistrationRequest(
-            'T2024', 'Ana', '', 'Reyes', 'teacher', department: 'Science', position: 'College Teacher',
+            'T2024', 'Ana', '', 'Reyes', 'teacher', otpChannel: 'phone', department: 'Science', position: 'College Teacher',
             contactNo: '09170000002',
         )));
     }

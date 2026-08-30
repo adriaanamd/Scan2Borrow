@@ -103,8 +103,9 @@ final class OtpService implements RegistrationOtpInterface
      */
     private function deliver(array $payload, string $phoneNumber, string $code, bool $resend): void
     {
+        $channel = trim($payload['otp_channel'] ?? '');
         $email = trim($payload['email'] ?? '');
-        if ($email !== '') {
+        if ($channel === 'email' || ($channel === '' && $email !== '')) {
             if (!$this->email->isConfigured() || !$this->email->send(
                 $email,
                 $this->recipientName($payload),
@@ -117,7 +118,13 @@ final class OtpService implements RegistrationOtpInterface
             return;
         }
 
-        $this->sms->send($phoneNumber, $this->message($code, $resend));
+        if ($channel === 'phone' || $channel === '') {
+            $this->sms->send($phoneNumber, $this->message($code, $resend));
+
+            return;
+        }
+
+        throw new OtpDeliveryException('Unable to send the verification code using the selected method.');
     }
 
     /**

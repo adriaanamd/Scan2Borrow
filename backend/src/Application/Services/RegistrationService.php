@@ -50,6 +50,7 @@ final class RegistrationService
             'year_level' => $request->yearLevel,
             'email' => $request->email,
             'contact_no' => $request->contactNo,
+            'otp_channel' => $request->otpChannel,
             'role' => $request->role,
             'photo_data' => $request->photoData,
         ];

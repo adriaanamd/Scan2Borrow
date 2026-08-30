@@ -120,3 +120,28 @@ test('navbar ignores a stale student cache on staff routes', async () => {
   assert.match(rendered, /API Docs/);
   assert.doesNotMatch(rendered, /Search Books/);
 });
+
+test('navbar gives teachers role-specific Borrow and History destinations', () => {
+  let rendered = '';
+  const root = {
+    dataset: { navbarRole: 'teacher' },
+    querySelectorAll: () => [],
+    replaceChildren() {},
+  };
+  Object.defineProperty(root, 'innerHTML', {
+    set(value) { rendered = value; },
+  });
+  const window = {
+    location: { pathname: '/scan2borrow/teacher/dashboard' },
+    sessionStorage: { getItem: () => 'teacher', setItem() {} },
+    fetch: async () => ({ json: async () => ({ ok: true, data: { role: 'teacher' } }) }),
+  };
+  const AppNavbar = loadNavbar(window);
+
+  new AppNavbar(root).render('teacher');
+
+  assert.match(rendered, /href="\/scan2borrow\/teacher\/borrow"/);
+  assert.match(rendered, /href="\/scan2borrow\/teacher\/history"/);
+  assert.doesNotMatch(rendered, /href="\/scan2borrow\/student\/search"/);
+  assert.doesNotMatch(rendered, /href="\/scan2borrow\/student\/history"/);
+});

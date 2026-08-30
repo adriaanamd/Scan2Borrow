@@ -1,0 +1,10 @@
+.staff-reservations { --reservation-ink: #141414; --reservation-paper: #f7f7f8; --reservation-red: #e4002b; background: var(--reservation-paper); border: 1px solid #d8d8dc; color: var(--reservation-ink); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.staff-reservations__rule { align-items: baseline; border-bottom: 1px solid var(--reservation-ink); display: flex; gap: 16px; justify-content: space-between; padding: 4px 0 16px; }
+.staff-reservations__rule h3 { font-size: 1.2rem; margin: 0; }
+.staff-reservations__eyebrow { color: var(--reservation-red); font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.staff-reservations__window { color: #555; font-size: .78rem; }
+.staff-reservations .table { margin-bottom: 0; }
+.staff-reservations .table th { border-bottom: 1px solid var(--reservation-ink); color: #555; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+.staff-reservations .table td { border-color: #c9c9cc; }
+.staff-reservations__status { border: 1px solid var(--reservation-ink); display: inline-block; font-size: .7rem; font-weight: 700; padding: 4px 7px; text-transform: uppercase; }
+.staff-reservations__status--offered { border-color: var(--reservation-red); color: var(--reservation-red); }

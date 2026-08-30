@@ -90,6 +90,7 @@ export class AppNavbarComponent {
         <a href="/scan2borrow/staff/dashboard" data-nav-path="/scan2borrow/staff/dashboard"><span class="nav-icon">&#128202;</span>Dashboard</a>
         <a href="/scan2borrow/staff/books" data-nav-path="/scan2borrow/staff/books"><span class="nav-icon">&#128218;</span>Book Inventory</a>
         <a href="/scan2borrow/staff/students" data-nav-path="/scan2borrow/staff/students"><span class="nav-icon">&#128100;</span>Borrowers</a>
+        <a href="/scan2borrow/staff/reservations" data-nav-path="/scan2borrow/staff/reservations"><span class="nav-icon">&#128218;</span>Reservations</a>
         <a href="/scan2borrow/staff/overdue" data-nav-path="/scan2borrow/staff/overdue"><span class="nav-icon">&#9888;</span>Overdue</a>
         <a href="/scan2borrow/staff/reports" data-nav-path="/scan2borrow/staff/reports"><span class="nav-icon">&#128203;</span>Reports</a>
         <a href="/scan2borrow/staff/guest-requests" data-nav-path="/scan2borrow/staff/guest-requests"><span class="nav-icon">&#128203;</span>Guest Requests</a>

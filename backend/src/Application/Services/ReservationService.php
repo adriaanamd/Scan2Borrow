@@ -37,6 +37,12 @@ final readonly class ReservationService
         return $this->repository->listForUser($userId);
     }
 
+    /** @return list<\App\Domain\Reservation\HoldRecord> */
+    public function staffList(string $status): array
+    {
+        return $this->repository->listStaff($status);
+    }
+
     public function cancel(HoldActionRequest $request): ReservationResult
     {
         if (!$this->repository->cancel($request->holdId, $request->userId)) {

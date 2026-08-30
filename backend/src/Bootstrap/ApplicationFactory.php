@@ -22,6 +22,8 @@ use App\Application\Services\RegistrationCompletionService;
 use App\Application\Services\RegistrationService;
 use App\Application\Services\SmtpEmailSender;
 use App\Application\Services\ReturnService;
+use App\Application\Services\ReservationAvailabilityService;
+use App\Application\Services\ReservationService;
 use App\Application\Services\SystemClock;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\AuthorizationPolicy;
@@ -38,6 +40,7 @@ use App\Http\Controllers\GuestDetailsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\StaffReservationController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ApiDocumentationController;
 use App\Http\Middleware\AuthorizationMiddleware;
@@ -50,6 +53,7 @@ use App\Http\Routing\BorrowerRouteTable;
 use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
 use App\Http\Routing\ReservationRouteTable;
+use App\Http\Routing\StaffReservationRouteTable;
 use App\Http\Routing\Router;
 use App\Http\Routing\StaffRouteTable;
 use App\Http\Documentation\ApiEndpointCatalog;
@@ -114,18 +118,25 @@ final class ApplicationFactory
             $csrf,
         );
         $borrowings = new PdoBorrowingRepository($pdo);
+        $holds = new \App\Infrastructure\Persistence\PdoHoldRepository($pdo);
+        $reservationAvailability = new ReservationAvailabilityService(
+            $holds,
+            new \App\Infrastructure\Persistence\PdoCirculationNotificationRepository($pdo),
+        );
+        $reservationService = new ReservationService($holds);
         $borrowerController = new BorrowerController(
             $sessions,
             $csrf,
             new BorrowingService($borrowings, new BorrowingPolicy(3, 7, 30, true), new SystemClock()),
-            new ReturnService($borrowings, new SystemClock(), 20.0),
+            new ReturnService($borrowings, new SystemClock(), 20.0, $reservationAvailability),
             new PdoBorrowerPortalRepository($pdo),
         );
         $reservationController = new ReservationController(
             $sessions,
             $csrf,
-            new \App\Application\Services\ReservationService(new \App\Infrastructure\Persistence\PdoHoldRepository($pdo)),
+            $reservationService,
         );
+        $staffReservationController = new StaffReservationController($sessions, $csrf, $reservationService);
         $guestIdentity = new PdoGuestIdentityProvider($sessions, $pdo);
         $guestBorrowing = new GuestBorrowingController(
             $guestIdentity,
@@ -170,6 +181,7 @@ final class ApplicationFactory
             (new BarcodePrintRouteTable())->routes($barcodePrintController),
             (new BorrowerRouteTable())->routes($borrowerController),
             (new ReservationRouteTable())->routes($reservationController),
+            (new StaffReservationRouteTable())->routes($staffReservationController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
             (new StaffRouteTable())->routes($staffController, $apiDocumentationController),
         ));

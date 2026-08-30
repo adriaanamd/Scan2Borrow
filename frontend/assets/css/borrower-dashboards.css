@@ -802,4 +802,15 @@
   .borrower-dashboard__stats {
     gap: .75rem;
   }
+
+  .borrower-dashboard__stats { grid-template-columns: minmax(0, 1fr); }
+
+  .borrower-dashboard--student .student-dashboard__hero .d-flex.gap-2,
+  .borrower-dashboard--teacher .teacher-dashboard__hero .d-flex.gap-2 {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .borrower-dashboard--student .student-dashboard__hero .d-flex.gap-2 .btn,
+  .borrower-dashboard--teacher .teacher-dashboard__hero .d-flex.gap-2 .btn { width: 100%; }
 }

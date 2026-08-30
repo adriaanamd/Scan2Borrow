@@ -1,42 +1,18 @@
 export class StudentHistoryPage {
   constructor() {
     this.body = document.getElementById("history-body");
-    const initialRole = this.roleFromPath() || this.cachedRole();
+    const initialRole = this.roleFromPage() || this.roleFromPath() || "student";
     this.applyRole(initialRole || "student");
-    if (initialRole) {
-      this.load();
-    } else {
-      this.resolveRole().then((role) => {
-        this.applyRole(role);
-        this.load();
-      });
-    }
+    this.load();
+  }
+  roleFromPage() {
+    const page = document.body?.dataset.appPage || "";
+    if (page === "teacher-history") return "teacher";
+    if (page === "student-history") return "student";
+    return "";
   }
   roleFromPath() {
     return window.location.pathname.includes("/teacher/") ? "teacher" : "";
-  }
-  cachedRole() {
-    try {
-      const role = window.sessionStorage?.getItem("scan2borrow.nav.role") || "";
-      return role === "teacher" || role === "student" ? role : "";
-    } catch {
-      return "";
-    }
-  }
-  async resolveRole() {
-    const knownRole = this.roleFromPath() || this.cachedRole();
-    if (knownRole) return knownRole;
-    try {
-      const response = await window.fetch("/scan2borrow/api/auth/session", {
-        headers: { Accept: "application/json" },
-      });
-      const payload = await response.json();
-      return payload.ok === true && payload.data?.role === "teacher"
-        ? "teacher"
-        : "student";
-    } catch {
-      return "student";
-    }
   }
   applyRole(role) {
     const teacher = role === "teacher";

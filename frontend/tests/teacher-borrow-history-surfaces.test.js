@@ -55,11 +55,11 @@ test('teacher Borrow and history styling stays out of shared navigation', () => 
   const borrowStyles = read('assets/css/borrower-dashboards.css');
   const historyStyles = read('assets/css/teacher-history.css');
   const dashboard = read('features/teacher/pages/dashboard/dashboard.html');
-  const history = read('features/student/pages/history/history.html');
+  const history = read('features/teacher/pages/history/history.html');
   assert.doesNotMatch(borrowStyles, /\.sidebar|\[data-app-navbar\]/);
   assert.doesNotMatch(historyStyles, /\.sidebar|\[data-app-navbar\]/);
   assert.match(dashboard, /\/scan2borrow\/api\/teacher\/dashboard|teacher-dashboard\.page\.js/);
-  assert.match(history, /data-navbar-role="session"/);
+  assert.match(history, /data-navbar-role="teacher"/);
 });
 
 test('teacher Borrow and history preserve their existing data contracts', () => {
@@ -72,10 +72,12 @@ test('teacher Borrow and history preserve their existing data contracts', () => 
   assert.match(history, /id|history-body/);
 });
 
-test('teacher catalog tab has a role-owned route and shared feature entry', () => {
-  const template = read('features/student/pages/search/search.html');
+test('teacher catalog tab has a teacher-owned template and role boundary', () => {
+  const template = read('features/teacher/pages/borrow/borrow.html');
   const source = read('features/student/pages/search/student-search.page.js');
 
+  assert.match(template, /data-app-page="teacher-search"/);
+  assert.match(template, /data-navbar-role="teacher"/);
   assert.match(template, /student-search\.page\.js/);
   assert.match(template, /teacher-search\.css/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/books/);
@@ -83,31 +85,32 @@ test('teacher catalog tab has a role-owned route and shared feature entry', () =
   assert.match(source, /teacher-search-page/);
 });
 
-test('teacher history tab has a role-owned route and endpoint', () => {
-  const template = read('features/student/pages/history/history.html');
+test('teacher history tab has a teacher-owned template and endpoint', () => {
+  const template = read('features/teacher/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');
 
+  assert.match(template, /data-app-page="teacher-history"/);
+  assert.match(template, /data-navbar-role="teacher"/);
   assert.match(template, /teacher-history\.css/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/history/);
   assert.match(source, /roleFromPath\(/);
   assert.match(source, /teacher-history-page/);
 });
 
-test('shared history retains its teacher-compatible route and role boundary', () => {
+test('student history keeps a student-only role boundary', () => {
   const template = read('features/student/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');
-  assert.match(template, /data-navbar-role="session"/);
+  assert.match(template, /data-navbar-role="student"/);
   assert.match(template, /id="history-body"/);
   assert.match(template, /<th>Code<\/th>[\s\S]*<th>Fine<\/th>/);
   assert.match(template, /student-history\.page\.js/);
-  assert.match(source, /\/scan2borrow\/api\/auth\/session/);
-  assert.match(source, /teacher-history-page/);
   assert.match(source, /student-history-page/);
   assert.match(source, /\/scan2borrow\/api\/student\/history/);
+  assert.doesNotMatch(source, /cachedRole\(\)/);
 });
 
 test('teacher history exposes a scoped Swiss ledger contract', () => {
-  const template = read('features/student/pages/history/history.html');
+  const template = read('features/teacher/pages/history/history.html');
   const styles = read('assets/css/teacher-history.css');
   assert.match(template, /teacher-history\.css/);
   assert.match(styles, /\.teacher-history-page/);

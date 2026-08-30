@@ -19,7 +19,7 @@ test('student library pages share the established visual surface boundary', () =
     assert.match(source, /data-app-page="student-(?:search|history)"/);
     assert.match(source, /student-library-surfaces\.css/);
     assert.match(source, /student-library-page/);
-    assert.match(source, /<aside class="sidebar" data-app-navbar data-navbar-role="session">/);
+    assert.match(source, /<aside class="sidebar" data-app-navbar data-navbar-role="student">/);
     assert.match(source, /app-navbar\.js/);
   }
 });
@@ -65,7 +65,7 @@ test('student search and history share typography and palette contracts', () => 
     assert.match(source, /student-library-surfaces\.css/);
     assert.match(source, /fonts\.googleapis\.com/);
     assert.match(source, /style\.css/);
-    assert.match(source, /data-navbar-role="session"/);
+    assert.match(source, /data-navbar-role="student"/);
   }
 });
 

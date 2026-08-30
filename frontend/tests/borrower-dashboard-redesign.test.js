@@ -225,6 +225,15 @@ test('borrower summary cards stack into one column at mobile widths', () => {
   assert.doesNotMatch(tabletRules, /grid-template-columns:\s*repeat\(2/);
 });
 
+test('borrower work panels stack into one column at drawer widths', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  const drawerStart = css.indexOf('@media (max-width: 980px)');
+  const drawerRules = css.slice(drawerStart, css.indexOf('@media (max-width: 768px)', drawerStart));
+
+  assert.match(drawerRules, /\.borrower-dashboard--student\s+\.student-dashboard__work-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(drawerRules, /\.borrower-dashboard--teacher\s+\.teacher-dashboard__analytics-grid\s*,[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+});
+
 test('borrower dashboard redesign preserves content and controller parity', () => {
   const sharedIds = [
     'active-count', 'overdue-count', 'fine-total', 'on-time-rate',

@@ -762,7 +762,8 @@
 }
 
 @media (max-width: 980px) {
-  .borrower-dashboard__work-grid {
+  .borrower-dashboard__work-grid,
+  .borrower-dashboard--student .student-dashboard__work-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

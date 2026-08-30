@@ -1,4 +1,7 @@
 import { BulkBorrowCart } from "../../../../app/core/models/bulk-borrow-cart.js";
+import { ApiClient } from "../../../../app/core/api/api-client.js";
+import { ReservationService } from "../../../../app/core/services/reservation.service.js";
+import { ReservationQueueComponent } from "../../../../app/shared/components/reservation-queue/reservation-queue.component.js";
 
 export class TeacherDashboardPage {
   constructor() {
@@ -7,7 +10,14 @@ export class TeacherDashboardPage {
     this.returnForm = document.getElementById("returnForm");
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.cart = new BulkBorrowCart();
+    this.reservationQueue = new ReservationQueueComponent(document.getElementById("reservationQueue"), {
+      service: new ReservationService({
+        api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+        role: "teacher",
+      }),
+    });
     this.bindEvents();
+    this.reservationQueue.load();
     this.load();
   }
   escapeHtml(value) {

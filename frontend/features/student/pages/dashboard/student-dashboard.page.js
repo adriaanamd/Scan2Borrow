@@ -1,4 +1,7 @@
 import { BulkBorrowCart } from "../../../../app/core/models/bulk-borrow-cart.js";
+import { ApiClient } from "../../../../app/core/api/api-client.js";
+import { ReservationService } from "../../../../app/core/services/reservation.service.js";
+import { ReservationQueueComponent } from "../../../../app/shared/components/reservation-queue/reservation-queue.component.js";
 
 export class StudentDashboardPage {
   constructor() {
@@ -8,7 +11,14 @@ export class StudentDashboardPage {
     this.borrowForm = this.$("borrowForm");
     this.returnForm = this.$("returnForm");
     this.cart = new BulkBorrowCart();
+    this.reservationQueue = new ReservationQueueComponent(this.$("reservationQueue"), {
+      service: new ReservationService({
+        api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+        role: "student",
+      }),
+    });
     this.bindEvents();
+    this.reservationQueue.load();
     this.load();
   }
 

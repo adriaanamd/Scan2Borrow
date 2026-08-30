@@ -113,6 +113,16 @@ final class PageRouteTable
                 $featurePath('teacher/pages/dashboard/dashboard.html'),
                 ['teacher'],
             ),
+            '/teacher/borrow' => new PageRoute(
+                '/teacher/borrow',
+                $featurePath('student/pages/search/search.html'),
+                ['teacher'],
+            ),
+            '/teacher/history' => new PageRoute(
+                '/teacher/history',
+                $featurePath('student/pages/history/history.html'),
+                ['teacher'],
+            ),
             '/guest/dashboard' => new PageRoute(
                 '/guest/dashboard',
                 $featurePath('guest/pages/dashboard/dashboard.html'),

@@ -9,7 +9,7 @@ use App\Infrastructure\Persistence\CirculationNotificationRepositoryInterface;
 use App\Infrastructure\Persistence\HoldRepositoryInterface;
 use DateTimeImmutable;
 
-final readonly class ReservationAvailabilityService
+final readonly class ReservationAvailabilityService implements ReservationAvailabilityInterface
 {
     public function __construct(
         private HoldRepositoryInterface $holds,

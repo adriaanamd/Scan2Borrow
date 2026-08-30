@@ -1,5 +1,9 @@
 parameters:
     level: 9
+    bootstrapFiles:
+        - ../PHPMailer/src/Exception.php
+        - ../PHPMailer/src/PHPMailer.php
+        - ../PHPMailer/src/SMTP.php
     paths:
         - src
         - tests

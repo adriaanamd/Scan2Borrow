@@ -35,14 +35,19 @@ If email is supplied but the mailer is not configured or delivery fails, the OTP
 
 ### Email content
 
-Registration OTP email will include:
+Registration OTP email will use a school-facing, Gmail-safe visual shell:
 
-- Scan2Borrow sender branding;
-- the six-digit OTP;
-- the five-minute expiration period; and
-- a reminder not to share the code.
+- a centered white card on a light neutral background;
+- the Binalbagan Catholic College seal from `public/logo.png`, embedded inline through PHPMailer so local recipients do not depend on a public URL;
+- `Scan2Borrow Library Services` as the product label;
+- a formal greeting and concise verification instructions;
+- a prominent blue OTP card with readable spacing;
+- the five-minute expiration period and a reminder not to share the code; and
+- a footer identifying the Library Management Office.
 
-The message will be sent as both HTML and plain text for compatibility. Existing staff notification content will continue to use its current subject and HTML body through the same adapter.
+The email will use inline, table-safe CSS for Gmail and other common clients and will be sent with a plain-text alternative. Staff borrower notifications will reuse the same header and footer shell while retaining their current borrower-record table and subject.
+
+The registration message will include the six-digit OTP, five-minute expiration period, and reminder not to share the code. Existing staff notification content will continue to use its current subject and borrower-record table through the same adapter.
 
 ### Configuration and safety
 

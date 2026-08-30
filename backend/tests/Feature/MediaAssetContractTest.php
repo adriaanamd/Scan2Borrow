@@ -41,7 +41,7 @@ final class MediaAssetContractTest extends TestCase
     public static function imageConsumerProvider(): array
     {
         return [
-            ['features/student/pages/search/student-search.page.js', 'student-search'],
+            ['app/shared/pages/borrower-search.page.js', 'student-search'],
             ['features/staff/pages/inventory/inventory.page.js', 'staff-books'],
             ['features/staff/pages/dashboard/staff-dashboard.page.js', 'staff-dashboard'],
             ['features/staff/pages/borrower-detail/borrower-detail.page.js', 'staff-borrower'],

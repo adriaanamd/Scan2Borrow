@@ -39,7 +39,7 @@ final class BorrowerPagesParityTest extends TestCase
             'id="borrow-error"',
             'Borrow Now',
         ]);
-        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'search' . DIRECTORY_SEPARATOR . 'student-search.page.js');
+        $script = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'shared' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'borrower-search.page.js');
         self::assertIsString($script);
         foreach (['book-card-shell', 'book-face-front', 'book-face-back', 'body.append("action", "borrow")', 'body.append("csrf"'] as $marker) {
             self::assertStringContainsString($marker, $script);
@@ -117,5 +117,23 @@ final class BorrowerPagesParityTest extends TestCase
                 self::assertStringContainsString($marker, $html, "Missing canonical marker: {$marker}");
             }
         }
+    }
+
+    public function testStudentAndTeacherCirculationPagesUseRoleOwnedModules(): void
+    {
+        $root = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features';
+        $studentSearch = (string) file_get_contents($root . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'search' . DIRECTORY_SEPARATOR . 'search.html');
+        $studentHistory = (string) file_get_contents($root . DIRECTORY_SEPARATOR . 'student' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'history' . DIRECTORY_SEPARATOR . 'history.html');
+        $teacherBorrow = (string) file_get_contents($root . DIRECTORY_SEPARATOR . 'teacher' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'borrow' . DIRECTORY_SEPARATOR . 'borrow.html');
+        $teacherHistory = (string) file_get_contents($root . DIRECTORY_SEPARATOR . 'teacher' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'history' . DIRECTORY_SEPARATOR . 'history.html');
+
+        self::assertStringContainsString('student-search.page.js', $studentSearch);
+        self::assertStringNotContainsString('teacher-search.css', $studentSearch);
+        self::assertStringContainsString('student-history.page.js', $studentHistory);
+        self::assertStringNotContainsString('teacher-history.css', $studentHistory);
+        self::assertStringContainsString('teacher-borrow.page.js', $teacherBorrow);
+        self::assertStringNotContainsString('student-search.page.js', $teacherBorrow);
+        self::assertStringContainsString('teacher-history.page.js', $teacherHistory);
+        self::assertStringNotContainsString('student-history.page.js', $teacherHistory);
     }
 }

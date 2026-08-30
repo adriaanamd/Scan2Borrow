@@ -27,8 +27,8 @@ This matrix records the route-to-feature ownership model for the vanilla Angular
 | /student/history | student | features/student/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical |
 | /receipt | student, teacher | features/student/pages/receipt/receipt.html | features/student/pages/receipt/receipt.page.js | canonical |
 | /teacher/dashboard | teacher | features/teacher/pages/dashboard/dashboard.html | features/teacher/pages/dashboard/teacher-dashboard.page.js | canonical |
-| /teacher/borrow | teacher | features/teacher/pages/borrow/borrow.html | features/student/pages/search/student-search.page.js | canonical |
-| /teacher/history | teacher | features/teacher/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical |
+| /teacher/borrow | teacher | features/teacher/pages/borrow/borrow.html | features/teacher/pages/borrow/teacher-borrow.page.js | canonical |
+| /teacher/history | teacher | features/teacher/pages/history/history.html | features/teacher/pages/history/teacher-history.page.js | canonical |
 | /guest/dashboard | guest | features/guest/pages/dashboard/dashboard.html | features/guest/pages/dashboard/guest-dashboard.page.js | canonical |
 | /guest/profile | guest | features/guest/pages/profile/profile.html | features/guest/pages/profile/guest-profile.page.js | canonical |
 | /guest/profile-verify-otp | guest | features/auth/pages/profile-otp/profile-otp.html | features/auth/pages/profile-otp/entry.js | canonical |

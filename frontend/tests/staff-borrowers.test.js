@@ -84,3 +84,13 @@ test('staff borrower rows use safe placeholders and encoded action ids', () => {
   assert.match(body.innerHTML, /notify\?id=7%2F8/);
   assert.doesNotMatch(body.innerHTML, /<Grace>/);
 });
+
+test('staff borrower empty state spans the complete table width', () => {
+  const body = { innerHTML: '' };
+  const page = new BorrowersPage({ querySelector: () => body });
+
+  page.render([]);
+
+  assert.match(body.innerHTML, /colspan="10"/);
+  assert.match(body.innerHTML, /No borrowers found\./);
+});

@@ -2,6 +2,8 @@ import { BulkBorrowCart } from "../../../../app/core/models/bulk-borrow-cart.js"
 import { ApiClient } from "../../../../app/core/api/api-client.js";
 import { ReservationService } from "../../../../app/core/services/reservation.service.js";
 import { ReservationQueueComponent } from "../../../../app/shared/components/reservation-queue/reservation-queue.component.js";
+import { RenewalService } from "../../../../app/core/services/renewal.service.js";
+import { RenewalPanelComponent } from "../../../../app/shared/components/renewal-panel/renewal-panel.component.js";
 
 export class TeacherDashboardPage {
   constructor() {
@@ -12,6 +14,12 @@ export class TeacherDashboardPage {
     this.cart = new BulkBorrowCart();
     this.reservationQueue = new ReservationQueueComponent(document.getElementById("reservationQueue"), {
       service: new ReservationService({
+        api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+        role: "teacher",
+      }),
+    });
+    this.renewalPanel = new RenewalPanelComponent(document.getElementById("renewalPanel"), {
+      service: new RenewalService({
         api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
         role: "teacher",
       }),
@@ -66,6 +74,7 @@ export class TeacherDashboardPage {
     document.getElementById("on-time-rate").textContent =
       `${Number(stats.on_time_rate ?? 100)}%`;
     this.renderLoans(data.current_loans || []);
+    this.renewalPanel.load(data.current_loans || []);
     this.renderBarcode(user.barcode || "");
   }
 

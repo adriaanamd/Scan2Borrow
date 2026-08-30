@@ -60,14 +60,14 @@ final readonly class BorrowerNotificationService
             $rows = '<tr><td colspan="4">No active borrowed books.</td></tr>';
         }
 
-        return '<div style="font-family:Arial,sans-serif;color:#1f2937;max-width:600px;margin:auto">'
-            . '<h2 style="background:#1E3A5F;color:#fff;padding:20px">&#128218; Scan2Borrow Library</h2>'
-            . '<div style="padding:20px"><h3>Your Borrowed Book Record</h3>'
-            . '<p>Dear <b>' . $this->escape($name) . '</b>,</p>'
-            . '<p>This is an official notification from the Scan2Borrow Library regarding your borrowed books.</p>'
-            . '<table style="border-collapse:collapse;width:100%"><tr><th>Book Title</th><th>Borrow Date</th><th>Due Date</th><th>Status</th></tr>' . $rows . '</table>'
-            . '<p>Kindly return all borrowed books on or before their due dates to avoid additional fines.</p>'
-            . '<p>Regards,<br><b>Library Management Office</b></p></div></div>';
+        $body = '<p style="font-size:15px;line-height:1.65;margin:0 0 14px;">Dear <strong>' . $this->escape($name) . '</strong>,</p>'
+            . '<p style="font-size:15px;line-height:1.65;margin:0 0 22px;">This is an official notification from the Scan2Borrow Library Services regarding your borrowed books.</p>'
+            . '<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;font-size:13px;">'
+            . '<tr style="background:#e8f4fa;color:#102f52;"><th align="left" style="border-bottom:2px solid #075985;padding:10px 8px;">Book Title</th><th align="left" style="border-bottom:2px solid #075985;padding:10px 8px;">Borrow Date</th><th align="left" style="border-bottom:2px solid #075985;padding:10px 8px;">Due Date</th><th align="left" style="border-bottom:2px solid #075985;padding:10px 8px;">Status</th></tr>'
+            . $rows . '</table></div>'
+            . '<p style="font-size:14px;line-height:1.6;margin:22px 0 0;">Kindly return all borrowed books on or before their due dates to avoid additional fines.</p>';
+
+        return SchoolEmailTemplate::render('Library account notice', 'Your borrowed book record', $body);
     }
 
     private function escape(mixed $value): string

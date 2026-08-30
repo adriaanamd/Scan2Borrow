@@ -88,6 +88,23 @@ test('teacher catalog tab has a teacher-owned template and role boundary', () =>
   assert.match(source, /TeacherBorrowPage/);
 });
 
+test('teacher catalog owns its book cards and modal interaction surface', () => {
+  const template = read('features/teacher/pages/borrow/borrow.html');
+  const source = read('features/teacher/pages/borrow/teacher-borrow.page.js');
+  const styles = read('assets/css/teacher-search.css');
+
+  assert.match(template, /id="borrowModal"[^>]*teacher-borrow-modal/);
+  assert.match(template, /aria-labelledby="teacher-borrow-modal-title"/);
+  assert.match(source, /installTeacherBorrowModal/);
+  assert.match(source, /teacher-search-card__action/);
+  assert.match(read('features/teacher/components/teacher-borrow-modal.js'), /show\.bs\.modal/);
+  assert.match(read('features/teacher/components/teacher-borrow-modal.js'), /data-cart-action/);
+  assert.match(read('features/teacher/components/teacher-borrow-modal.js'), /lastTrigger\?\.focus/);
+  assert.match(read('features/teacher/pages/dashboard/teacher-dashboard.page.js'), /installTeacherBorrowModal/);
+  assert.match(styles, /teacher-search-card \.book-card/);
+  assert.match(styles, /teacher-borrow-modal\.is-open/);
+});
+
 test('teacher history tab has a teacher-owned template and endpoint', () => {
   const template = read('features/teacher/pages/history/history.html');
   const source = read('features/teacher/pages/history/teacher-history.page.js');

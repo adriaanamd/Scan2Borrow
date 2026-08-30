@@ -530,6 +530,36 @@
 	border-top: 4px solid #002FA7;
 }
 
+.borrower-dashboard--teacher .teacher-borrow-modal-layer {
+	align-items: center;
+	background: rgba(16, 47, 82, .58);
+	display: none;
+	inset: 0;
+	justify-content: center;
+	overflow-y: auto;
+	padding: 1rem;
+	position: fixed;
+	z-index: 1055;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal-layer.is-open {
+	display: flex;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal-layer .modal-dialog {
+	margin: auto;
+	max-width: 560px;
+	width: 100%;
+}
+
+.borrower-dashboard--teacher .teacher-borrow-modal-layer .modal-content {
+	width: 100%;
+}
+
+.teacher-borrow-modal-open {
+	overflow: hidden;
+}
+
 .borrower-dashboard--teacher .teacher-borrow-modal__header {
 	align-items: center;
 	letter-spacing: .01em;

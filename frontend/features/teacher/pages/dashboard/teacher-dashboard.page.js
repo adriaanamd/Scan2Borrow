@@ -4,6 +4,7 @@ import { ReservationService } from "../../../../app/core/services/reservation.se
 import { ReservationQueueComponent } from "../../../../app/shared/components/reservation-queue/reservation-queue.component.js";
 import { RenewalService } from "../../../../app/core/services/renewal.service.js";
 import { RenewalPanelComponent } from "../../../../app/shared/components/renewal-panel/renewal-panel.component.js";
+import { installTeacherBorrowModal } from "../../components/teacher-borrow-modal.js";
 
 export class TeacherDashboardPage {
   constructor() {
@@ -24,6 +25,7 @@ export class TeacherDashboardPage {
         role: "teacher",
       }),
     });
+    installTeacherBorrowModal();
     this.bindEvents();
     this.reservationQueue.load();
     this.load();

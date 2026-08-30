@@ -386,13 +386,13 @@
               </table>
             </div>
           </div>
-          <div class="modal fade" id="borrowModal" tabindex="-1">
+          <div class="modal fade teacher-borrow-modal-layer" id="borrowModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="teacher-dashboard-borrow-modal-title">
             <div class="modal-dialog">
               <div class="modal-content teacher-dashboard__modal teacher-borrow-modal">
                 <form method="POST" id="borrowForm">
                   <input type="hidden" name="book_barcode" data-scan-target="book_barcode" />
                   <div class="modal-header text-white teacher-dashboard__modal-header teacher-borrow-modal__header">
-                    <h5 class="modal-title">&#128229; Borrow Books</h5>
+                    <h5 class="modal-title" id="teacher-dashboard-borrow-modal-title">&#128229; Borrow Books</h5>
                     <button
                       type="button"
                       class="btn-close btn-close-white"

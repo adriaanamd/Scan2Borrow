@@ -72,6 +72,17 @@ test('teacher Borrow and history preserve their existing data contracts', () => 
   assert.match(history, /id|history-body/);
 });
 
+test('teacher catalog tab has a role-owned route and shared feature entry', () => {
+  const template = read('features/student/pages/search/search.html');
+  const source = read('features/student/pages/search/student-search.page.js');
+
+  assert.match(template, /student-search\.page\.js/);
+  assert.match(template, /teacher-search\.css/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/books/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/borrow/);
+  assert.match(source, /teacher-search-page/);
+});
+
 test('shared history retains its teacher-compatible route and role boundary', () => {
   const template = read('features/student/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');

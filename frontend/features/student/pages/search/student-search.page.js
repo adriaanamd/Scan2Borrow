@@ -3,13 +3,92 @@ import { BulkBorrowCart } from "../../../../app/core/models/bulk-borrow-cart.js"
 export class StudentSearchPage {
   constructor() {
     this.api = "/scan2borrow/api/student/books";
+    this.lookupApi = "/scan2borrow/api/student/borrow/lookup";
+    this.borrowApi = "/scan2borrow/api/student/borrow";
+    this.dashboardPath = "/scan2borrow/student/dashboard";
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.form = document.getElementById("searchForm");
     this.results = document.getElementById("book-results");
     this.params = new URLSearchParams(window.location.search);
     this.cart = new BulkBorrowCart();
+    const initialRole = this.roleFromPath() || this.cachedRole();
+    this.applyRole(initialRole || "student");
     this.bindEvents();
-    this.load();
+    if (initialRole) {
+      this.load();
+    } else {
+      this.resolveRole().then((role) => {
+        this.applyRole(role);
+        this.load();
+      });
+    }
+  }
+
+  roleFromPath() {
+    return window.location.pathname.includes("/teacher/") ? "teacher" : "";
+  }
+
+  cachedRole() {
+    try {
+      const role = window.sessionStorage?.getItem("scan2borrow.nav.role") || "";
+      return role === "teacher" || role === "student" ? role : "";
+    } catch {
+      return "";
+    }
+  }
+
+  resolveRole() {
+    const knownRole = this.roleFromPath() || this.cachedRole();
+    if (knownRole) return Promise.resolve(knownRole);
+    return window.fetch("/scan2borrow/api/auth/session", {
+      headers: { Accept: "application/json" },
+    })
+      .then((response) => response.json())
+      .then((payload) => (payload.ok === true && payload.data?.role === "teacher" ? "teacher" : "student"))
+      .catch(() => "student");
+  }
+
+  applyRole(role) {
+    this.role = role === "teacher" ? "teacher" : "student";
+    const teacher = this.role === "teacher";
+    this.api = teacher
+      ? "/scan2borrow/api/teacher/books"
+      : "/scan2borrow/api/student/books";
+    this.lookupApi = teacher
+      ? "/scan2borrow/api/teacher/borrow/lookup"
+      : "/scan2borrow/api/student/borrow/lookup";
+    this.borrowApi = teacher
+      ? "/scan2borrow/api/teacher/borrow"
+      : "/scan2borrow/api/student/borrow";
+    this.dashboardPath = teacher
+      ? "/scan2borrow/teacher/dashboard"
+      : "/scan2borrow/student/dashboard";
+    document.body.classList.toggle("teacher-search-page", teacher);
+    document.body.classList.toggle("student-search-page", !teacher);
+    const copy = teacher
+      ? {
+          topbar: "Borrow Books",
+          eyebrow: "Faculty library",
+          title: "Borrow Books",
+          description: "Browse available books and add copies to your borrow cart.",
+          role: "Teacher",
+        }
+      : {
+          topbar: "Search Books",
+          eyebrow: "Student library",
+          title: "Book Catalog",
+          description: "Search and discover available books.",
+          role: "Student",
+        };
+    document.title = `${copy.topbar} | Scan2Borrow`;
+    document.querySelector('[data-role-copy="catalog-topbar"]')?.replaceChildren(document.createTextNode(copy.topbar));
+    document.querySelector('[data-role-copy="catalog-eyebrow"]')?.replaceChildren(document.createTextNode(copy.eyebrow));
+    document.querySelector('[data-role-copy="catalog-title"]')?.replaceChildren(document.createTextNode(copy.title));
+    document.querySelector('[data-role-copy="catalog-description"]')?.replaceChildren(document.createTextNode(copy.description));
+    document.getElementById("current-user-role")?.replaceChildren(document.createTextNode(copy.role));
+    if (this.form) this.form.action = teacher ? "/scan2borrow/teacher/borrow" : "/scan2borrow/student/search";
+    const clear = document.getElementById("search-clear");
+    if (clear) clear.href = teacher ? "/scan2borrow/teacher/borrow" : "/scan2borrow/student/search";
   }
 
   escapeHtml(value) {
@@ -222,7 +301,7 @@ export class StudentSearchPage {
 
   lookupAndAdd(barcode) {
     if (!barcode) return;
-    fetch(`/scan2borrow/api/student/borrow/lookup?barcode=${encodeURIComponent(barcode)}`, { headers: { "X-Requested-With": "fetch" } })
+    fetch(`${this.lookupApi}?barcode=${encodeURIComponent(barcode)}`, { headers: { "X-Requested-With": "fetch" } })
       .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
       .then(({ ok, payload }) => { if (!ok) throw new Error(payload.message || "Book copy not found."); const copy = payload.data; this.cart.addTitle(copy, 1, copy.status === "Available" ? barcode : ""); this.renderCart(); })
       .catch((error) => { const host = document.getElementById("borrow-error"); host.textContent = error.message; host.hidden = false; });
@@ -232,9 +311,9 @@ export class StudentSearchPage {
     if (this.cart.totalQuantity() === 0) { const host = document.getElementById("borrow-error"); host.textContent = "Add at least one book to your cart."; host.hidden = false; return; }
     const body = new FormData(); body.append("action", "borrow"); body.append("csrf", this.csrf);
     this.cart.items().forEach((item, index) => { body.append(`items[${index}][title_id]`, String(item.title_id)); body.append(`items[${index}][quantity]`, String(item.quantity)); item.barcodes.forEach((barcode) => body.append(`items[${index}][barcodes][]`, barcode)); });
-    fetch("/scan2borrow/api/student/borrow", { method: "POST", headers: { "X-Requested-With": "fetch" }, body })
+    fetch(this.borrowApi, { method: "POST", headers: { "X-Requested-With": "fetch" }, body })
       .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
-      .then(({ ok, payload }) => { if (!ok) throw new Error(payload.errors?.[0] || payload.message || "Borrow request failed."); this.cart.clear(); window.location.href = "/scan2borrow/student/dashboard"; })
+      .then(({ ok, payload }) => { if (!ok) throw new Error(payload.errors?.[0] || payload.message || "Borrow request failed."); this.cart.clear(); window.location.href = this.dashboardPath; })
       .catch((error) => { const host = document.getElementById("borrow-error"); host.textContent = error.message; host.hidden = false; });
   }
 }

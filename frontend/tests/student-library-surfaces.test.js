@@ -107,3 +107,18 @@ test('student search keeps filter presentation in scoped classes', () => {
   assert.match(styles, /student-search-clear/);
   assert.match(styles, /student-library-state__icon/);
 });
+
+test('borrow catalog exposes role-aware presentation and endpoint hooks', () => {
+  const template = read('features/student/pages/search/search.html');
+  const source = read('features/student/pages/search/student-search.page.js');
+
+  assert.match(template, /teacher-search\.css/);
+  assert.match(template, /data-role-copy="catalog-eyebrow"/);
+  assert.match(source, /roleFromPath\(/);
+  assert.match(source, /teacher-search-page/);
+  assert.match(source, /student-search-page/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/books/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/borrow\/lookup/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/borrow/);
+  assert.match(source, /\/scan2borrow\/teacher\/dashboard/);
+});

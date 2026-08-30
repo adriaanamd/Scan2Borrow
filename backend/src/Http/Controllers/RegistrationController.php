@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Application\DTO\RegistrationRequest;
 use App\Application\Services\CsrfService;
+use App\Application\Services\OtpDeliveryException;
 use App\Application\Services\OtpService;
 use App\Application\Services\RegistrationCompletionService;
 use App\Application\Services\RegistrationService;
@@ -33,20 +34,24 @@ final readonly class RegistrationController
         }
 
         $body = $request->body();
-        $result = $this->registrations->begin(new RegistrationRequest(
-            $this->string($body, 'barcode'),
-            $this->string($body, 'firstname'),
-            $this->string($body, 'middlename'),
-            $this->string($body, 'lastname'),
-            $this->string($body, 'role'),
-            $this->string($body, 'department'),
-            $this->string($body, 'position'),
-            $this->string($body, 'course'),
-            $this->string($body, 'year_level'),
-            $this->string($body, 'email'),
-            $this->string($body, 'contact_no'),
-            $this->string($body, 'photo_data'),
-        ));
+        try {
+            $result = $this->registrations->begin(new RegistrationRequest(
+                $this->string($body, 'barcode'),
+                $this->string($body, 'firstname'),
+                $this->string($body, 'middlename'),
+                $this->string($body, 'lastname'),
+                $this->string($body, 'role'),
+                $this->string($body, 'department'),
+                $this->string($body, 'position'),
+                $this->string($body, 'course'),
+                $this->string($body, 'year_level'),
+                $this->string($body, 'email'),
+                $this->string($body, 'contact_no'),
+                $this->string($body, 'photo_data'),
+            ));
+        } catch (OtpDeliveryException $exception) {
+            return new JsonResponse(503, ['ok' => false, 'errors' => [$exception->getMessage()]]);
+        }
         if (!$result->successful()) {
             return new JsonResponse(422, ['ok' => false, 'errors' => [$result->message()]]);
         }
@@ -87,7 +92,11 @@ final readonly class RegistrationController
             return $csrf;
         }
 
-        $code = $this->otp->resend($this->sessions->registrationBarcode());
+        try {
+            $code = $this->otp->resend($this->sessions->registrationBarcode());
+        } catch (OtpDeliveryException $exception) {
+            return new JsonResponse(503, ['ok' => false, 'errors' => [$exception->getMessage()]]);
+        }
         if ($code === null) {
             return new JsonResponse(422, ['ok' => false, 'errors' => ['Unable to resend OTP. Please try again later.']]);
         }

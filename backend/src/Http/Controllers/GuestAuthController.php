@@ -9,6 +9,7 @@ use App\Application\Services\CsrfService;
 use App\Application\Services\GuestRegistrationCompletionService;
 use App\Application\Services\GuestRegistrationService;
 use App\Application\Services\GuestProfileCompletionService;
+use App\Application\Services\OtpDeliveryException;
 use App\Application\Services\OtpService;
 use App\Application\Services\SessionService;
 use App\Http\Requests\ServerRequest;
@@ -35,26 +36,30 @@ final readonly class GuestAuthController
         }
 
         $body = $request->body();
-        $result = $this->registrations->begin(new GuestRegistrationRequest(
-            $this->string($body, 'firstname'),
-            $this->string($body, 'middlename'),
-            $this->string($body, 'lastname'),
-            $this->string($body, 'suffix'),
-            $this->string($body, 'gender'),
-            $this->string($body, 'birthdate'),
-            $this->string($body, 'contact_no'),
-            $this->string($body, 'email'),
-            $this->string($body, 'house_no'),
-            $this->string($body, 'street'),
-            $this->string($body, 'barangay'),
-            $this->string($body, 'municipality'),
-            $this->string($body, 'province'),
-            $this->string($body, 'purpose'),
-            $this->string($body, 'purpose_other'),
-            $this->string($body, 'id_type'),
-            $this->string($body, 'id_barcode'),
-            $this->string($body, 'photo_data'),
-        ));
+        try {
+            $result = $this->registrations->begin(new GuestRegistrationRequest(
+                $this->string($body, 'firstname'),
+                $this->string($body, 'middlename'),
+                $this->string($body, 'lastname'),
+                $this->string($body, 'suffix'),
+                $this->string($body, 'gender'),
+                $this->string($body, 'birthdate'),
+                $this->string($body, 'contact_no'),
+                $this->string($body, 'email'),
+                $this->string($body, 'house_no'),
+                $this->string($body, 'street'),
+                $this->string($body, 'barangay'),
+                $this->string($body, 'municipality'),
+                $this->string($body, 'province'),
+                $this->string($body, 'purpose'),
+                $this->string($body, 'purpose_other'),
+                $this->string($body, 'id_type'),
+                $this->string($body, 'id_barcode'),
+                $this->string($body, 'photo_data'),
+            ));
+        } catch (OtpDeliveryException $exception) {
+            return new JsonResponse(503, ['ok' => false, 'errors' => [$exception->getMessage()]]);
+        }
         if (!$result->successful()) {
             return new JsonResponse(422, ['ok' => false, 'errors' => [$result->message()]]);
         }
@@ -97,7 +102,11 @@ final readonly class GuestAuthController
             return $csrf;
         }
 
-        $code = $this->otp->resend($this->sessions->guestOtpToken());
+        try {
+            $code = $this->otp->resend($this->sessions->guestOtpToken());
+        } catch (OtpDeliveryException $exception) {
+            return new JsonResponse(503, ['ok' => false, 'errors' => [$exception->getMessage()]]);
+        }
         if ($code === null) {
             return new JsonResponse(422, ['ok' => false, 'errors' => ['Unable to resend OTP. Please try again later.']]);
         }

@@ -69,13 +69,21 @@ export class AppNavbarComponent {
     const dashboardPath = role === 'teacher'
       ? '/scan2borrow/teacher/dashboard'
       : '/scan2borrow/student/dashboard';
+    const catalogPath = role === 'teacher'
+      ? '/scan2borrow/teacher/borrow'
+      : '/scan2borrow/student/search';
+    const historyPath = role === 'teacher'
+      ? '/scan2borrow/teacher/history'
+      : '/scan2borrow/student/history';
+    const catalogLabel = role === 'teacher' ? 'Borrow Books' : 'Search Books';
+    const historyLabel = role === 'teacher' ? 'Borrowing History' : 'My History';
 
     this.root.innerHTML = `${this.renderBrand()}
       <nav class="sidebar-nav">
         <a href="${settingsPath}" data-nav-path="${settingsPath}"><span class="nav-icon">&#9881;</span>Settings</a>
         <a href="${dashboardPath}" data-nav-path="${dashboardPath}"><span class="nav-icon">&#127968;</span>My Dashboard</a>
-        <a href="/scan2borrow/student/search" data-nav-path="/scan2borrow/student/search"><span class="nav-icon">&#128269;</span>Search Books</a>
-        <a href="/scan2borrow/student/history" data-nav-path="/scan2borrow/student/history"><span class="nav-icon">&#128220;</span>My History</a>
+        <a href="${catalogPath}" data-nav-path="${catalogPath}"><span class="nav-icon">&#128269;</span>${catalogLabel}</a>
+        <a href="${historyPath}" data-nav-path="${historyPath}"><span class="nav-icon">&#128220;</span>${historyLabel}</a>
         ${this.logoutLink()}
       </nav>`;
   }

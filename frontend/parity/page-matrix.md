@@ -23,12 +23,12 @@ This matrix records the route-to-feature ownership model for the vanilla Angular
 | /staff/reports | admin, librarian | features/staff/pages/reports/reports.html | features/staff/pages/reports/entry.js | canonical |
 | /staff/guest-requests | admin, librarian | features/staff/pages/guest-requests/guest-requests.html | features/staff/pages/guest-requests/entry.js | canonical |
 | /student/dashboard | student | features/student/pages/dashboard/dashboard.html | features/student/pages/dashboard/student-dashboard.page.js | canonical |
-| /student/search | student, teacher | features/student/pages/search/search.html | features/student/pages/search/student-search.page.js | canonical |
-| /student/history | student, teacher | features/student/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical |
+| /student/search | student | features/student/pages/search/search.html | features/student/pages/search/student-search.page.js | canonical |
+| /student/history | student | features/student/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical |
 | /receipt | student, teacher | features/student/pages/receipt/receipt.html | features/student/pages/receipt/receipt.page.js | canonical |
 | /teacher/dashboard | teacher | features/teacher/pages/dashboard/dashboard.html | features/teacher/pages/dashboard/teacher-dashboard.page.js | canonical |
-| /teacher/borrow | teacher | features/student/pages/search/search.html | features/student/pages/search/student-search.page.js | canonical alias |
-| /teacher/history | teacher | features/student/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical alias |
+| /teacher/borrow | teacher | features/teacher/pages/borrow/borrow.html | features/student/pages/search/student-search.page.js | canonical |
+| /teacher/history | teacher | features/teacher/pages/history/history.html | features/student/pages/history/student-history.page.js | canonical |
 | /guest/dashboard | guest | features/guest/pages/dashboard/dashboard.html | features/guest/pages/dashboard/guest-dashboard.page.js | canonical |
 | /guest/profile | guest | features/guest/pages/profile/profile.html | features/guest/pages/profile/guest-profile.page.js | canonical |
 | /guest/profile-verify-otp | guest | features/auth/pages/profile-otp/profile-otp.html | features/auth/pages/profile-otp/entry.js | canonical |

@@ -106,12 +106,12 @@ final class PageRouteTable
             '/student/search' => new PageRoute(
                 '/student/search',
                 $featurePath('student/pages/search/search.html'),
-                ['student', 'teacher'],
+                ['student'],
             ),
             '/student/history' => new PageRoute(
                 '/student/history',
                 $featurePath('student/pages/history/history.html'),
-                ['student', 'teacher'],
+                ['student'],
             ),
             '/receipt' => new PageRoute(
                 '/receipt',
@@ -125,12 +125,12 @@ final class PageRouteTable
             ),
             '/teacher/borrow' => new PageRoute(
                 '/teacher/borrow',
-                $featurePath('student/pages/search/search.html'),
+                $featurePath('teacher/pages/borrow/borrow.html'),
                 ['teacher'],
             ),
             '/teacher/history' => new PageRoute(
                 '/teacher/history',
-                $featurePath('student/pages/history/history.html'),
+                $featurePath('teacher/pages/history/history.html'),
                 ['teacher'],
             ),
             '/guest/dashboard' => new PageRoute(

@@ -64,37 +64,42 @@ test('teacher Borrow and history styling stays out of shared navigation', () => 
 
 test('teacher Borrow and history preserve their existing data contracts', () => {
   const borrow = read('features/teacher/pages/dashboard/teacher-dashboard.page.js');
-  const history = read('features/student/pages/history/student-history.page.js');
+  const history = read('features/teacher/pages/history/teacher-history.page.js');
   assert.match(borrow, /BulkBorrowCart/);
   assert.match(borrow, /\/scan2borrow\/api\/teacher\/borrow\/lookup/);
   assert.match(borrow, /items\[\$\{index\}\]\[quantity\]/);
-  assert.match(history, /\/scan2borrow\/api\/student\/history/);
-  assert.match(history, /id|history-body/);
+  assert.match(history, /\/scan2borrow\/api\/teacher\/history/);
+  assert.match(read('features/teacher/pages/history/history.html'), /id="history-body"/);
 });
 
 test('teacher catalog tab has a teacher-owned template and role boundary', () => {
   const template = read('features/teacher/pages/borrow/borrow.html');
-  const source = read('features/student/pages/search/student-search.page.js');
+  const source = read('features/teacher/pages/borrow/teacher-borrow.page.js');
 
   assert.match(template, /data-app-page="teacher-search"/);
   assert.match(template, /data-navbar-role="teacher"/);
-  assert.match(template, /student-search\.page\.js/);
+  assert.match(template, /teacher-borrow\.page\.js/);
+  assert.doesNotMatch(template, /features\/student\/pages\/search\/student-search\.page\.js/);
   assert.match(template, /teacher-search\.css/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/books/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/borrow/);
-  assert.match(source, /teacher-search-page/);
+  assert.match(template, /teacher-search-page/);
+  assert.match(source, /TeacherBorrowPage/);
 });
 
 test('teacher history tab has a teacher-owned template and endpoint', () => {
   const template = read('features/teacher/pages/history/history.html');
-  const source = read('features/student/pages/history/student-history.page.js');
+  const source = read('features/teacher/pages/history/teacher-history.page.js');
 
   assert.match(template, /data-app-page="teacher-history"/);
   assert.match(template, /data-navbar-role="teacher"/);
+  assert.match(template, /teacher-history\.page\.js/);
+  assert.doesNotMatch(template, /features\/student\/pages\/history\/student-history\.page\.js/);
   assert.match(template, /teacher-history\.css/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/history/);
-  assert.match(source, /roleFromPath\(/);
-  assert.match(source, /teacher-history-page/);
+  assert.doesNotMatch(source, /roleFromPath\(/);
+  assert.match(template, /teacher-history-page/);
+  assert.match(source, /classPrefix: "teacher-history"/);
 });
 
 test('student history keeps a student-only role boundary', () => {
@@ -104,7 +109,7 @@ test('student history keeps a student-only role boundary', () => {
   assert.match(template, /id="history-body"/);
   assert.match(template, /<th>Code<\/th>[\s\S]*<th>Fine<\/th>/);
   assert.match(template, /student-history\.page\.js/);
-  assert.match(source, /student-history-page/);
+  assert.match(template, /student-history-page/);
   assert.match(source, /\/scan2borrow\/api\/student\/history/);
   assert.doesNotMatch(source, /cachedRole\(\)/);
 });
@@ -120,20 +125,24 @@ test('teacher history exposes a scoped Swiss ledger contract', () => {
   assert.match(styles, /prefers-reduced-motion/);
 });
 
-test('shared history controller exposes teacher row hierarchy hooks', () => {
-  const source = read('features/student/pages/history/student-history.page.js');
-  assert.match(source, /teacher-history-row/);
-  assert.match(source, /teacher-history-status/);
-  assert.match(source, /teacher-history-fine/);
-  assert.match(source, /row-overdue/);
+test('teacher history controller exposes teacher row hierarchy hooks', () => {
+  const source = read('features/teacher/pages/history/teacher-history.page.js');
+  const shared = read('app/shared/pages/borrower-history.page.js');
+  assert.match(source, /classPrefix: "teacher-history"/);
+  assert.match(shared, /\$\{this\.classPrefix\}-row/);
+  assert.match(shared, /\$\{this\.classPrefix\}-status/);
+  assert.match(shared, /\$\{this\.classPrefix\}-fine/);
+  assert.match(shared, /row-overdue/);
 });
 
 test('teacher history states remain explicit and readable', () => {
-  const source = read('features/student/pages/history/student-history.page.js');
+  const source = read('features/teacher/pages/history/teacher-history.page.js');
+  const shared = read('app/shared/pages/borrower-history.page.js');
   const styles = read('assets/css/teacher-history.css');
-  assert.match(source, /teacher-history-state/);
-  assert.match(source, /teacher-history-state--empty/);
-  assert.match(source, /teacher-history-state--error/);
+  assert.match(source, /classPrefix: "teacher-history"/);
+  assert.match(shared, /\$\{this\.classPrefix\}-state/);
+  assert.match(shared, /\$\{this\.classPrefix\}-state--empty/);
+  assert.match(shared, /\$\{this\.classPrefix\}-state--error/);
   assert.match(styles, /teacher-history-state/);
   assert.match(styles, /teacher-history-state--empty/);
   assert.match(styles, /teacher-history-state--error/);

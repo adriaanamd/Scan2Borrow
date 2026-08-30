@@ -78,4 +78,23 @@ final class PdoHoldRepositoryReservationTest extends TestCase
         self::assertSame(HoldStatus::EXPIRED, $repository->listForUser(7)[0]->status());
         self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = 11")->fetchColumn());
     }
+
+    public function testStaffQueueIncludesBorrowerName(): void
+    {
+        $this->pdo->exec("INSERT INTO reservations (user_id, title_id, queue_sequence, status, created_at) VALUES (7, 4, 10, 'offered', CURRENT_TIMESTAMP)");
+
+        $record = (new PdoHoldRepository($this->pdo))->listStaff('offered')[0];
+
+        self::assertSame('Ada Lovelace', $record->borrowerName());
+        self::assertSame('Ada Lovelace', $record->toArray()['user_name']);
+    }
+
+    public function testCancellingAnOfferedHoldReleasesItsReservedCopy(): void
+    {
+        $this->pdo->exec("INSERT INTO reservations (user_id, title_id, queue_sequence, status, offered_copy_id, created_at) VALUES (7, 4, 10, 'offered', 11, CURRENT_TIMESTAMP)");
+        $this->pdo->exec("UPDATE book_copies SET status = 'Reserved' WHERE id = 11");
+
+        self::assertTrue((new PdoHoldRepository($this->pdo))->cancel(1, 7));
+        self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = 11")->fetchColumn());
+    }
 }

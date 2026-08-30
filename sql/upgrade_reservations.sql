@@ -1,5 +1,5 @@
 -- Scan2Borrow: title-level reservation queue and 24-hour hold offers.
--- Run after upgrade_bulk_borrowing.sql.
+-- Run after upgrade_bulk_borrowing.sql and upgrade_approval_system.sql.
 
 USE `scan2borrow_2.0`;
 

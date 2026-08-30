@@ -15,6 +15,7 @@ final readonly class HoldRecord
         private int $titleId,
         private string $title,
         private string $author,
+        private string $borrowerName,
         private HoldStatus $status,
         private ?int $queuePosition,
         private ?DateTimeImmutable $holdExpiresAt,
@@ -38,6 +39,7 @@ final readonly class HoldRecord
             $titleId,
             is_string($row['title'] ?? null) ? $row['title'] : '',
             is_string($row['author'] ?? null) ? $row['author'] : '',
+            self::hydrateBorrowerName($row),
             $status,
             self::nullableInt($row['queue_position'] ?? null),
             self::nullableDate($row['hold_expires_at'] ?? null),
@@ -69,6 +71,11 @@ final readonly class HoldRecord
         return $this->author;
     }
 
+    public function borrowerName(): string
+    {
+        return $this->borrowerName;
+    }
+
     public function status(): HoldStatus
     {
         return $this->status;
@@ -93,6 +100,7 @@ final readonly class HoldRecord
             'title_id' => $this->titleId,
             'title' => $this->title,
             'author' => $this->author,
+            'user_name' => $this->borrowerName,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'queue_position' => $this->queuePosition,
@@ -130,5 +138,14 @@ final readonly class HoldRecord
         } catch (\Exception) {
             return null;
         }
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function hydrateBorrowerName(array $row): string
+    {
+        if (is_string($row['user_name'] ?? null)) return trim($row['user_name']);
+        $first = is_string($row['user_firstname'] ?? null) ? trim($row['user_firstname']) : '';
+        $last = is_string($row['user_lastname'] ?? null) ? trim($row['user_lastname']) : '';
+        return trim($first . ' ' . $last);
     }
 }

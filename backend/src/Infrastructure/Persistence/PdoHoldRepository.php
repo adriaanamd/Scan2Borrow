@@ -73,13 +73,37 @@ final class PdoHoldRepository implements HoldRepositoryInterface
 
     public function cancel(int $holdId, int $userId): bool
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE reservations SET status = 'cancelled', cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-             WHERE id = :id AND user_id = :user_id AND status IN ('queued', 'offered', 'claimed')",
-        );
-        $statement->execute(['id' => $holdId, 'user_id' => $userId]);
-
-        return $statement->rowCount() === 1;
+        $this->pdo->beginTransaction();
+        try {
+            $lookup = $this->pdo->prepare(
+                "SELECT offered_copy_id FROM reservations WHERE id = :id AND user_id = :user_id AND status IN ('queued', 'offered', 'claimed')",
+            );
+            $lookup->execute(['id' => $holdId, 'user_id' => $userId]);
+            $copyId = $lookup->fetchColumn();
+            if ($copyId === false) {
+                $this->pdo->rollBack();
+                return false;
+            }
+            $statement = $this->pdo->prepare(
+                "UPDATE reservations SET status = 'cancelled', cancelled_at = CURRENT_TIMESTAMP, offered_copy_id = NULL,
+                 offered_at = NULL, hold_expires_at = NULL, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = :id AND user_id = :user_id AND status IN ('queued', 'offered', 'claimed')",
+            );
+            $statement->execute(['id' => $holdId, 'user_id' => $userId]);
+            if ($statement->rowCount() !== 1) {
+                $this->pdo->rollBack();
+                return false;
+            }
+            if ($copyId !== null && $copyId !== '') {
+                $release = $this->pdo->prepare("UPDATE book_copies SET status = 'Available', due_date = NULL WHERE id = :copy_id AND status = 'Reserved'");
+                $release->execute(['copy_id' => (int) $copyId]);
+            }
+            $this->pdo->commit();
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $exception;
+        }
     }
 
     public function claim(int $holdId, int $userId): ?HoldRecord
@@ -242,7 +266,8 @@ final class PdoHoldRepository implements HoldRepositoryInterface
 
     private function selectSql(string $where): string
     {
-        return "SELECT r.id, r.user_id, r.title_id, t.title, t.author, r.status, r.hold_expires_at,
+        return "SELECT r.id, r.user_id, r.title_id, t.title, t.author, u.firstname AS user_firstname,
+                       u.lastname AS user_lastname, r.status, r.hold_expires_at,
                        CASE WHEN r.status IN ('queued', 'offered', 'claimed') THEN
                            (SELECT COUNT(*) + 1 FROM reservations earlier
                             WHERE earlier.title_id = r.title_id

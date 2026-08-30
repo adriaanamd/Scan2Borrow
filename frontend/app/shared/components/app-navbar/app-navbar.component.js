@@ -1,14 +1,24 @@
 export class AppNavbarComponent {
-  constructor(root, { session = null, window = globalThis.window } = {}) {
+  constructor(root, { session = null, window = globalThis.window, document = root.ownerDocument || globalThis.document } = {}) {
     this.root = root;
     this.session = session;
     this.window = window;
+    this.document = document;
     this.roleHint = root.dataset.navbarRole || 'session';
+    this.toggle = null;
+    this.backdrop = null;
+    this.previousBodyOverflow = '';
+    this.responsiveBound = false;
+    this.handleKeydown = this.handleKeydown.bind(this);
+    this.handleToggleClick = this.toggleDrawer.bind(this);
+    this.handleBackdropClick = this.closeDrawer.bind(this);
+    this.handleNavigationClick = this.handleNavigationClick.bind(this);
   }
 
   async start() {
     const role = await this.resolveRole();
     this.render(role);
+    this.setupResponsiveControls();
     this.setActiveLink();
   }
 
@@ -115,5 +125,81 @@ export class AppNavbarComponent {
     });
   }
 
-  destroy() {}
+  setupResponsiveControls() {
+    if (this.responsiveBound || !this.document?.createElement) return;
+
+    this.root.id = this.root.id || 'app-sidebar';
+    const app = this.root.closest?.('.app');
+    const topbar = app?.querySelector?.('.topbar') || this.document.querySelector?.('.topbar');
+    if (!topbar) return;
+
+    this.toggle = topbar.querySelector?.('.sidebar-toggle') || this.document.createElement('button');
+    this.toggle.type = 'button';
+    this.toggle.className = 'sidebar-toggle';
+    this.toggle.classList.add?.('sidebar-toggle');
+    this.toggle.setAttribute('aria-controls', this.root.id);
+    this.toggle.setAttribute('aria-expanded', 'false');
+    this.toggle.setAttribute('aria-label', 'Open navigation');
+    this.toggle.innerHTML = '<span class="sidebar-toggle__bars" aria-hidden="true"></span>';
+    if (!this.toggle.parentNode) topbar.insertBefore(this.toggle, topbar.firstChild || null);
+
+    this.backdrop = app?.querySelector?.('.sidebar-backdrop') || this.document.createElement('button');
+    this.backdrop.type = 'button';
+    this.backdrop.className = 'sidebar-backdrop';
+    this.backdrop.classList.add?.('sidebar-backdrop');
+    this.backdrop.hidden = true;
+    this.backdrop.setAttribute('aria-label', 'Close navigation');
+    if (!this.backdrop.parentNode) (app || this.document.body).appendChild(this.backdrop);
+
+    this.toggle.addEventListener('click', this.handleToggleClick);
+    this.backdrop.addEventListener('click', this.handleBackdropClick);
+    this.root.addEventListener?.('click', this.handleNavigationClick);
+    this.document.addEventListener('keydown', this.handleKeydown);
+    this.responsiveBound = true;
+  }
+
+  openDrawer() {
+    if (!this.toggle || !this.backdrop) return;
+    this.previousBodyOverflow = this.document.body?.style.overflow || '';
+    this.root.classList.add('is-open');
+    this.backdrop.hidden = false;
+    this.toggle.setAttribute('aria-expanded', 'true');
+    this.toggle.setAttribute('aria-label', 'Close navigation');
+    this.document.body?.classList.add('nav-drawer-open');
+    if (this.document.body) this.document.body.style.overflow = 'hidden';
+  }
+
+  closeDrawer() {
+    if (!this.toggle || !this.backdrop) return;
+    this.root.classList.remove('is-open');
+    this.backdrop.hidden = true;
+    this.toggle.setAttribute('aria-expanded', 'false');
+    this.toggle.setAttribute('aria-label', 'Open navigation');
+    this.document.body?.classList.remove('nav-drawer-open');
+    if (this.document.body) this.document.body.style.overflow = this.previousBodyOverflow;
+  }
+
+  toggleDrawer() {
+    if (this.root.classList.contains('is-open')) this.closeDrawer();
+    else this.openDrawer();
+  }
+
+  handleKeydown(event) {
+    if (event.key === 'Escape' && this.root.classList.contains('is-open')) this.closeDrawer();
+  }
+
+  handleNavigationClick(event) {
+    if (event.target.closest?.('[data-nav-path]')) this.closeDrawer();
+  }
+
+  destroy() {
+    this.toggle?.removeEventListener('click', this.handleToggleClick);
+    this.backdrop?.removeEventListener('click', this.handleBackdropClick);
+    this.root.removeEventListener?.('click', this.handleNavigationClick);
+    this.document?.removeEventListener?.('keydown', this.handleKeydown);
+    this.closeDrawer();
+    this.toggle = null;
+    this.backdrop = null;
+    this.responsiveBound = false;
+  }
 }

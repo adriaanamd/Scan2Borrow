@@ -91,6 +91,7 @@ class FakeElement {
   dispatchEvent(event) {
     if (!event.target) event.target = this;
     this.listeners.get(event.type)?.forEach((listener) => listener(event));
+    this.parentNode?.dispatchEvent?.(event);
   }
 
   click() {
@@ -102,6 +103,7 @@ class FakeElement {
   }
 
   closest(selector) {
+    if (selector === '[data-nav-path]' && this.dataset.navPath) return this;
     if (selector === '.app' && this.classList.contains('app')) return this;
     return this.parentNode?.closest?.(selector) || null;
   }
@@ -151,6 +153,7 @@ function createNavbarFixture(pathname) {
   const navLink = new FakeElement(document, 'a');
   navLink.dataset.navPath = '/scan2borrow/student/dashboard';
   root.navLink = navLink;
+  root.appendChild(navLink);
   app.appendChild(root);
   app.appendChild(topbar);
   document.body.appendChild(app);

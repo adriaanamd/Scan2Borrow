@@ -83,6 +83,7 @@ test('teacher catalog tab has a teacher-owned template and role boundary', () =>
   assert.match(template, /teacher-search\.css/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/books/);
   assert.match(source, /\/scan2borrow\/api\/teacher\/borrow/);
+  assert.match(source, /classPrefix: "teacher"/);
   assert.match(template, /teacher-search-page/);
   assert.match(source, /TeacherBorrowPage/);
 });

@@ -8,6 +8,7 @@ export class StudentSearchPage extends BorrowerSearchPage {
       borrowApi: "/scan2borrow/api/student/borrow",
       dashboardPath: "/scan2borrow/student/dashboard",
       formAction: "/scan2borrow/student/search",
+      classPrefix: "student",
       copy: {
         topbar: "Search Books",
         eyebrow: "Student library",

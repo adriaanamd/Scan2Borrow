@@ -1,8 +1,9 @@
 export class BorrowerHistoryPage {
-  constructor({ historyApi, classPrefix, copy }) {
+  constructor({ historyApi, classPrefix, surfacePrefix, copy }) {
     this.body = document.getElementById("history-body");
     this.historyApi = historyApi;
     this.classPrefix = classPrefix;
+    this.surfacePrefix = surfacePrefix;
     this.copy = copy;
     this.applyCopy();
     this.load();
@@ -28,14 +29,14 @@ export class BorrowerHistoryPage {
         this.render(response.data?.history || []);
       })
       .catch((error) => {
-        this.body.innerHTML = `<tr class="${this.classPrefix}-row ${this.classPrefix}-row--error"><td colspan="8" class="student-library-state ${this.classPrefix}-state ${this.classPrefix}-state--error text-center text-danger">${this.escapeHtml(error.message || "Unable to load history.")}</td></tr>`;
+        this.body.innerHTML = `<tr class="${this.classPrefix}-row ${this.classPrefix}-row--error"><td colspan="8" class="${this.surfacePrefix}-library-state ${this.classPrefix}-state ${this.classPrefix}-state--error text-center text-danger">${this.escapeHtml(error.message || "Unable to load history.")}</td></tr>`;
       });
   }
 
   render(history) {
     this.body.replaceChildren();
     if (!history.length) {
-      this.body.innerHTML = `<tr class="${this.classPrefix}-row ${this.classPrefix}-row--empty"><td colspan="8" class="student-library-state ${this.classPrefix}-state ${this.classPrefix}-state--empty text-center text-muted">No borrowing history yet.</td></tr>`;
+      this.body.innerHTML = `<tr class="${this.classPrefix}-row ${this.classPrefix}-row--empty"><td colspan="8" class="${this.surfacePrefix}-library-state ${this.classPrefix}-state ${this.classPrefix}-state--empty text-center text-muted">No borrowing history yet.</td></tr>`;
       return;
     }
     history.forEach((item) => {

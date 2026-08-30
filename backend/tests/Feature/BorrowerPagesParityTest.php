@@ -132,8 +132,16 @@ final class BorrowerPagesParityTest extends TestCase
         self::assertStringContainsString('student-history.page.js', $studentHistory);
         self::assertStringNotContainsString('teacher-history.css', $studentHistory);
         self::assertStringContainsString('teacher-borrow.page.js', $teacherBorrow);
+        self::assertStringContainsString('teacher-library-surfaces.css', $teacherBorrow);
+        self::assertStringContainsString('teacher-search.css', $teacherBorrow);
+        self::assertStringNotContainsString('student-search.css', $teacherBorrow);
+        self::assertStringNotContainsString('student-library-surfaces.css', $teacherBorrow);
         self::assertStringNotContainsString('student-search.page.js', $teacherBorrow);
         self::assertStringContainsString('teacher-history.page.js', $teacherHistory);
+        self::assertStringContainsString('teacher-library-surfaces.css', $teacherHistory);
+        self::assertStringContainsString('teacher-history.css', $teacherHistory);
+        self::assertStringNotContainsString('student-history.css', $teacherHistory);
+        self::assertStringNotContainsString('student-library-surfaces.css', $teacherHistory);
         self::assertStringNotContainsString('student-history.page.js', $teacherHistory);
     }
 }

@@ -40,9 +40,15 @@ test('teacher catalog and history have independent templates and navigation owne
   assert.match(catalog, /data-app-page="teacher-search"/);
   assert.match(catalog, /data-navbar-role="teacher"/);
   assert.match(catalog, /teacher-borrow\.page\.js/);
+  assert.match(catalog, /teacher-library-surfaces\.css/);
+  assert.match(catalog, /teacher-search\.css/);
+  assert.doesNotMatch(catalog, /student-(?:search|library-surfaces)\.css/);
   assert.doesNotMatch(catalog, /features\/student\/pages\/search\/student-search\.page\.js/);
   assert.match(history, /data-app-page="teacher-history"/);
   assert.match(history, /data-navbar-role="teacher"/);
   assert.match(history, /teacher-history\.page\.js/);
+  assert.match(history, /teacher-library-surfaces\.css/);
+  assert.match(history, /teacher-history\.css/);
+  assert.doesNotMatch(history, /student-(?:history|library-surfaces)\.css/);
   assert.doesNotMatch(history, /features\/student\/pages\/history\/student-history\.page\.js/);
 });

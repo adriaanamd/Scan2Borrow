@@ -1,12 +1,13 @@
 import { BulkBorrowCart } from "../../core/models/bulk-borrow-cart.js";
 
 export class BorrowerSearchPage {
-  constructor({ api, lookupApi, borrowApi, dashboardPath, formAction, copy }) {
+  constructor({ api, lookupApi, borrowApi, dashboardPath, formAction, classPrefix, copy }) {
     this.api = api;
     this.lookupApi = lookupApi;
     this.borrowApi = borrowApi;
     this.dashboardPath = dashboardPath;
     this.formAction = formAction;
+    this.classPrefix = classPrefix;
     this.copy = copy;
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.form = document.getElementById("searchForm");
@@ -55,7 +56,7 @@ export class BorrowerSearchPage {
         this.render(response.data || {});
       })
       .catch((error) => {
-        this.results.innerHTML = `<div class="student-library-state student-library-state--error"><strong>We couldn't load the catalog</strong><p class="text-muted small mb-0">${this.escapeHtml(error.message)}</p></div>`;
+        this.results.innerHTML = `<div class="${this.classPrefix}-library-state ${this.classPrefix}-library-state--error"><strong>We couldn't load the catalog</strong><p class="text-muted small mb-0">${this.escapeHtml(error.message)}</p></div>`;
       });
   }
 
@@ -78,7 +79,7 @@ export class BorrowerSearchPage {
     this.renderActiveFilters();
     this.results.replaceChildren();
     if (!books.length) {
-      this.results.innerHTML = '<div class="student-library-state"><div class="student-library-state__icon" aria-hidden="true">&#128233;</div><strong>No books found</strong><p class="text-muted small mb-0">Try adjusting your search or filters.</p></div>';
+      this.results.innerHTML = `<div class="${this.classPrefix}-library-state"><div class="${this.classPrefix}-library-state__icon" aria-hidden="true">&#128233;</div><strong>No books found</strong><p class="text-muted small mb-0">Try adjusting your search or filters.</p></div>`;
       return;
     }
     const grid = document.createElement("div");
@@ -102,7 +103,7 @@ export class BorrowerSearchPage {
       const value = this.params.get(name);
       if (!value) return;
       const tag = document.createElement("span");
-      tag.className = `badge student-search-filter-chip ${name === "search" ? "bg-primary" : name === "category_name" ? "bg-info" : name === "status" ? "bg-secondary" : "bg-warning text-dark"}`;
+      tag.className = `badge ${this.classPrefix}-search-filter-chip ${name === "search" ? "bg-primary" : name === "category_name" ? "bg-info" : name === "status" ? "bg-secondary" : "bg-warning text-dark"}`;
       tag.textContent = labels[name] + value;
       host.appendChild(tag);
     });
@@ -110,7 +111,7 @@ export class BorrowerSearchPage {
 
   bookCard(book) {
     const column = document.createElement("div");
-    column.className = "col-xl-4 col-lg-6 col-md-6 student-search-result";
+    column.className = `col-xl-4 col-lg-6 col-md-6 ${this.classPrefix}-search-result`;
     const cover = Scan2BorrowMedia.resolve(book.cover_file || book.cover_image || "");
     const title = this.escapeHtml(book.title || "");
     const author = this.escapeHtml(book.author || "Unknown Author");
@@ -127,7 +128,7 @@ export class BorrowerSearchPage {
         : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
     column.innerHTML = `<div class="book-card-shell"><div class="book-card"><div class="book-face book-face-front"><div class="book-cover${cover ? "" : " book-cover-fallback"}">${coverMarkup}<div class="book-cover-content"><span class="badge bg-light text-dark mb-3">${this.escapeHtml(book.category_name || "Library")}</span><h4 class="fw-bold text-white mb-2">${title}</h4><p class="text-white-50 small mb-0">${author}</p></div></div></div><div class="book-face book-face-back"><div class="book-back-content"><div class="d-flex justify-content-between align-items-start mb-3"><div><h5 class="fw-bold mb-1">${title}</h5><p class="text-muted small mb-0">${author}</p></div>${this.badge(status)}</div><p class="text-muted small mb-3">${this.escapeHtml(book.description || "No description available")}</p><div class="small text-muted mb-3"><div><strong>Copies:</strong> ${totalQuantity} total · ${availableQuantity} available</div><div><strong>Publisher:</strong> ${this.escapeHtml(book.publisher || "N/A")}</div><div><strong>Location:</strong> Floor ${this.escapeHtml(book.floor_no)} · Shelf ${this.escapeHtml(book.shelf_no)} · Row ${this.escapeHtml(book.row_no)}</div></div>${action}</div></div></div></div>`;
     const cardShell = column.querySelector(".book-card-shell");
-    cardShell?.classList.add("student-search-card");
+    cardShell?.classList.add(`${this.classPrefix}-search-card`);
     cardShell?.querySelector(".book-card")?.setAttribute("tabindex", "0");
     const image = column.querySelector("img");
     image?.addEventListener("error", () => {

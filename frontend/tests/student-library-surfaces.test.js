@@ -71,9 +71,9 @@ test('student search and history share typography and palette contracts', () => 
 
 test('student search controller exposes styled empty, error, and card boundaries', () => {
   const source = read('app/shared/pages/borrower-search.page.js');
-  assert.match(source, /student-library-state/);
-  assert.match(source, /student-search-filter-chip/);
-  assert.match(source, /student-search-result/);
+  assert.match(source, /\$\{this\.classPrefix\}-library-state/);
+  assert.match(source, /\$\{this\.classPrefix\}-search-filter-chip/);
+  assert.match(source, /\$\{this\.classPrefix\}-search-result/);
 });
 
 test('student search cards use the library surface motion and quantity hierarchy', () => {

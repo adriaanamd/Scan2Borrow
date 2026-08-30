@@ -5,6 +5,7 @@ export class TeacherHistoryPage extends BorrowerHistoryPage {
     super({
       historyApi: "/scan2borrow/api/teacher/history",
       classPrefix: "teacher-history",
+      surfacePrefix: "teacher",
       copy: {
         topbar: "Borrowing History",
         title: "Borrowing History",

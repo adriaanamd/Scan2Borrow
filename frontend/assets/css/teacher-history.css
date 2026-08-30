@@ -1,19 +1,19 @@
-.teacher-history-page .student-library-page {
+.teacher-history-page .teacher-library-page {
 	color: #23384A;
 	font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
-.teacher-history-page .student-library-page h1,
-.teacher-history-page .student-library-page h2,
-.teacher-history-page .student-library-page h3,
-.teacher-history-page .student-library-page h4,
-.teacher-history-page .student-library-page h5,
-.teacher-history-page .student-library-page h6 {
+.teacher-history-page .teacher-library-page h1,
+.teacher-history-page .teacher-library-page h2,
+.teacher-history-page .teacher-library-page h3,
+.teacher-history-page .teacher-library-page h4,
+.teacher-history-page .teacher-library-page h5,
+.teacher-history-page .teacher-library-page h6 {
 	font-family: "Helvetica Neue", Arial, sans-serif;
 	letter-spacing: -.025em;
 }
 
-.teacher-history-page .student-library-masthead {
+.teacher-history-page .teacher-library-masthead {
 	align-items: center;
 	background: #FFFFFF;
 	border: 1px solid #D4E0E8;
@@ -23,55 +23,55 @@
 	color: #23384A;
 }
 
-.teacher-history-page .student-library-masthead::after {
+.teacher-history-page .teacher-library-masthead::after {
 	display: none;
 }
 
-.teacher-history-page .student-library-masthead h2,
-.teacher-history-page .student-library-masthead h3 {
+.teacher-history-page .teacher-library-masthead h2,
+.teacher-history-page .teacher-library-masthead h3 {
 	color: #102F52;
 }
 
-.teacher-history-page .student-library-masthead p,
-.teacher-history-page .student-library-masthead .text-muted {
+.teacher-history-page .teacher-library-masthead p,
+.teacher-history-page .teacher-library-masthead .text-muted {
 	color: #63798B !important;
 }
 
-.teacher-history-page .student-library-eyebrow {
+.teacher-history-page .teacher-library-eyebrow {
 	color: #002FA7 !important;
 }
 
-.teacher-history-page .student-history-masthead__mark {
+.teacher-history-page .teacher-history-masthead__mark {
 	border-color: #AEBFCB;
 }
 
-.teacher-history-page .student-history-masthead__mark span,
-.teacher-history-page .student-history-ledger__rule {
+.teacher-history-page .teacher-history-masthead__mark span,
+.teacher-history-page .teacher-history-ledger__rule {
 	background: #002FA7;
 }
 
-.teacher-history-page .student-library-panel {
+.teacher-history-page .teacher-library-panel {
 	background: #FFFFFF;
 	border-color: #D4E0E8;
 	border-radius: 4px;
 	box-shadow: 0 12px 24px rgba(16, 47, 82, .07);
 }
 
-.teacher-history-page .student-history-ledger__header {
+.teacher-history-page .teacher-history-ledger__header {
 	border-bottom-color: #D4E0E8;
 }
 
-.teacher-history-page .student-history-ledger__header h3 {
+.teacher-history-page .teacher-history-ledger__header h3 {
 	color: #102F52;
 	font-weight: 780;
 }
 
-.teacher-history-page .student-history-table {
+.teacher-history-page .teacher-history-table {
 	font-variant-numeric: tabular-nums;
 	min-width: 900px;
 }
 
-.teacher-history-page .student-history-table thead th {
+.teacher-history-page .teacher-history-table thead th {
 	background: #F7F7F8;
 	border-bottom: 2px solid #002FA7;
 	color: #002FA7;
@@ -79,31 +79,25 @@
 	letter-spacing: .1em;
 }
 
-.teacher-history-page .student-history-table tbody td {
+.teacher-history-page .teacher-history-table tbody td {
 	border-color: #D4E0E8;
 	color: #23384A;
 	font-variant-numeric: tabular-nums;
 }
 
-.teacher-history-page .student-history-table tbody tr:hover {
+.teacher-history-page .teacher-history-table tbody tr:hover {
 	--bs-table-hover-bg: #F7F7F8;
 }
 
-.teacher-history-page .student-history-table code {
+.teacher-history-page .teacher-history-table code {
 	background: #F7F7F8;
 	border: 1px solid #AEBFCB;
 	border-radius: 3px;
 	color: #002FA7;
 }
 
-.teacher-history-page .student-history-table tbody tr.teacher-history-row--overdue,
-.teacher-history-page .student-history-table tbody tr.student-history-row--overdue {
+.teacher-history-page .teacher-history-table tbody tr.teacher-history-row--overdue {
 	border-left-color: #B42318;
-}
-
-.teacher-history-page .student-history-status {
-	font-weight: 700;
-	white-space: nowrap;
 }
 
 .teacher-history-page .teacher-history-status {
@@ -111,30 +105,29 @@
 	white-space: nowrap;
 }
 
-.teacher-history-page .student-history-status-badge {
+.teacher-history-page .teacher-history-status-badge {
 	border-radius: 3px;
 	font-size: .68rem;
 	letter-spacing: .06em;
 	text-transform: uppercase;
 }
 
-.teacher-history-page .student-history-status--returned {
+.teacher-history-page .teacher-history-status--returned {
 	background: #2F855A !important;
 }
 
-.teacher-history-page .student-history-status--borrowed {
+.teacher-history-page .teacher-history-status--borrowed {
 	background: #002FA7 !important;
 }
 
-.teacher-history-page .student-history-status--overdue {
+.teacher-history-page .teacher-history-status--overdue {
 	background: #B42318 !important;
 }
 
-.teacher-history-page .student-history-status--default {
+.teacher-history-page .teacher-history-status--default {
 	background: #63798B !important;
 }
 
-.teacher-history-page .student-history-fine,
 .teacher-history-page .teacher-history-fine {
 	color: #B42318;
 	font-weight: 800;
@@ -159,17 +152,17 @@
 }
 
 @media (max-width: 680px) {
-	.teacher-history-page .student-library-masthead {
+	.teacher-history-page .teacher-library-masthead {
 		align-items: flex-start;
 	}
 
-	.teacher-history-page .student-history-ledger {
+	.teacher-history-page .teacher-history-ledger {
 		padding: 16px 10px;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.teacher-history-page .student-history-table tbody tr {
+	.teacher-history-page .teacher-history-table tbody tr {
 		transition: none;
 	}
 }

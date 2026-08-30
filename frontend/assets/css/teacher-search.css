@@ -1,23 +1,23 @@
-.teacher-search-page .student-library-page {
+.teacher-search-page .teacher-library-page {
   color: #23384A;
   font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
-.teacher-search-page .student-library-page::before {
+.teacher-search-page .teacher-library-page::before {
   display: none;
 }
 
-.teacher-search-page .student-library-page h1,
-.teacher-search-page .student-library-page h2,
-.teacher-search-page .student-library-page h3,
-.teacher-search-page .student-library-page h4,
-.teacher-search-page .student-library-page h5,
-.teacher-search-page .student-library-page h6 {
+.teacher-search-page .teacher-library-page h1,
+.teacher-search-page .teacher-library-page h2,
+.teacher-search-page .teacher-library-page h3,
+.teacher-search-page .teacher-library-page h4,
+.teacher-search-page .teacher-library-page h5,
+.teacher-search-page .teacher-library-page h6 {
   font-family: "Helvetica Neue", Arial, sans-serif;
   letter-spacing: -.025em;
 }
 
-.teacher-search-page .student-library-masthead {
+.teacher-search-page .teacher-library-masthead {
   align-items: center;
   background: #FFFFFF;
   border: 1px solid #D4E0E8;
@@ -27,123 +27,123 @@
   color: #23384A;
 }
 
-.teacher-search-page .student-library-masthead::after {
+.teacher-search-page .teacher-library-masthead::after {
   display: none;
 }
 
-.teacher-search-page .student-library-masthead h2,
-.teacher-search-page .student-library-masthead h3,
-.teacher-search-page .student-library-masthead strong {
+.teacher-search-page .teacher-library-masthead h2,
+.teacher-search-page .teacher-library-masthead h3,
+.teacher-search-page .teacher-library-masthead strong {
   color: #102F52;
 }
 
-.teacher-search-page .student-library-masthead p,
-.teacher-search-page .student-library-masthead .text-muted {
+.teacher-search-page .teacher-library-masthead p,
+.teacher-search-page .teacher-library-masthead .text-muted {
   color: #63798B !important;
 }
 
-.teacher-search-page .student-library-eyebrow {
+.teacher-search-page .teacher-library-eyebrow {
   color: #002FA7 !important;
 }
 
-.teacher-search-page .student-search-masthead__mark {
+.teacher-search-page .teacher-search-masthead__mark {
   border-color: #AEBFCB;
   border-radius: 4px;
   color: #002FA7;
 }
 
-.teacher-search-page .student-library-panel {
+.teacher-search-page .teacher-library-panel {
   background: #FFFFFF;
   border-color: #D4E0E8;
   border-radius: 4px;
   box-shadow: 0 12px 24px rgba(16, 47, 82, .07);
 }
 
-.teacher-search-page .student-library-panel__header {
+.teacher-search-page .teacher-library-panel__header {
   border-bottom-color: #D4E0E8;
 }
 
-.teacher-search-page .student-search-results__header strong#book-count {
+.teacher-search-page .teacher-search-results__header strong#book-count {
   color: #002FA7;
   font-family: "Helvetica Neue", Arial, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
-.teacher-search-page .student-library-page .form-control,
-.teacher-search-page .student-library-page .form-select,
-.teacher-search-page .student-library-page .btn,
-.teacher-search-page .student-search-card .book-face {
+.teacher-search-page .teacher-library-page .form-control,
+.teacher-search-page .teacher-library-page .form-select,
+.teacher-search-page .teacher-library-page .btn,
+.teacher-search-page .teacher-search-card .book-face {
   border-radius: 4px;
 }
 
-.teacher-search-page .student-library-page .form-control:focus,
-.teacher-search-page .student-library-page .form-select:focus {
+.teacher-search-page .teacher-library-page .form-control:focus,
+.teacher-search-page .teacher-library-page .form-select:focus {
   border-color: #002FA7;
   box-shadow: 0 0 0 .2rem rgba(0, 47, 167, .14);
 }
 
-.teacher-search-page .student-search-filters__grid,
-.teacher-search-page .student-search-results__header {
+.teacher-search-page .teacher-search-filters__grid,
+.teacher-search-page .teacher-search-results__header {
   font-variant-numeric: tabular-nums;
 }
 
-.teacher-search-page .student-search-query-icon {
+.teacher-search-page .teacher-search-query-icon {
   color: #002FA7;
 }
 
-.teacher-search-page .student-search-clear {
+.teacher-search-page .teacher-search-clear {
   border-color: #AEBFCB;
   color: #002FA7;
 }
 
-.teacher-search-page .student-search-clear:hover,
-.teacher-search-page .student-search-clear:focus {
+.teacher-search-page .teacher-search-clear:hover,
+.teacher-search-page .teacher-search-clear:focus {
   background: #F7F7F8;
   border-color: #002FA7;
   color: #002FA7;
 }
 
-.teacher-search-page .student-library-page .student-library-state {
+.teacher-search-page .teacher-library-page .teacher-library-state {
   border-color: #AEBFCB;
   border-radius: 4px;
 }
 
-.teacher-search-page .student-search-card .book-face {
+.teacher-search-page .teacher-search-card .book-face {
   border-color: #AEBFCB;
   box-shadow: 0 12px 24px rgba(16, 47, 82, .12);
 }
 
-.teacher-search-page .student-search-card .book-cover {
+.teacher-search-page .teacher-search-card .book-cover {
   background: #102F52;
 }
 
-.teacher-search-page .student-search-card .book-cover::after {
+.teacher-search-page .teacher-search-card .book-cover::after {
   background: #002FA7;
 }
 
-.teacher-search-page .student-search-card .book-cover-content h4,
-.teacher-search-page .student-search-card .book-back-content h5 {
+.teacher-search-page .teacher-search-card .book-cover-content h4,
+.teacher-search-page .teacher-search-card .book-back-content h5 {
   font-family: "Helvetica Neue", Arial, sans-serif;
   letter-spacing: -.025em;
 }
 
-.teacher-search-page .student-search-filter-chip {
+.teacher-search-page .teacher-search-filter-chip {
   border-radius: 3px;
   font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 680px) {
-  .teacher-search-page .student-library-masthead {
+  .teacher-search-page .teacher-library-masthead {
     align-items: flex-start;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .teacher-search-page .student-search-card .book-card {
+  .teacher-search-page .teacher-search-card .book-card {
     transition: none;
   }
 
-  .teacher-search-page .student-search-card .book-card:hover {
+  .teacher-search-page .teacher-search-card .book-card:hover {
     transform: none;
   }
 }

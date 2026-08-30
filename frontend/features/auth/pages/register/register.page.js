@@ -14,12 +14,18 @@ export class RegistrationPage {
     this.formDataFactory = formDataFactory;
     this.form = document.getElementById('reg-form');
     this.role = document.getElementById('role_select');
+    this.emailInput = document.querySelector?.('input[name="email"]');
+    this.phoneInput = document.querySelector?.('input[name="contact_no"]');
+    this.otpChannelInputs = [...(document.querySelectorAll?.('input[name="otp_channel"]') || [])];
     this.currentStep = 'role';
     this.listeners = [];
     this.cameraCleanup = null;
     this.bindRoleSelection();
     this.bindCamera();
     this.listen(this.form, 'submit', (event) => this.submit(event));
+    this.otpChannelInputs.forEach((input) => this.listen(input, 'change', () => this.syncOtpChannel()));
+    this.listen(this.emailInput, 'input', () => this.syncOtpChannel());
+    this.listen(this.phoneInput, 'input', () => this.syncOtpChannel());
 
     const preselectedRole = new URLSearchParams(window.location.search).get('role');
     if (preselectedRole) {
@@ -30,6 +36,7 @@ export class RegistrationPage {
       this.toggleFields();
       this.showStep('role');
     }
+    this.syncOtpChannel();
   }
 
   start() {
@@ -85,6 +92,25 @@ export class RegistrationPage {
     });
     const label = this.document.getElementById('selected-role-label');
     if (label) label.textContent = isStudent ? 'Student' : isTeacher ? 'Teacher' : 'Select a role';
+  }
+
+  syncOtpChannel() {
+    const hasEmail = this.emailInput?.value.trim() !== '';
+    const hasPhone = this.phoneInput?.value.trim() !== '';
+    let selected = this.otpChannelInputs.find((input) => input.checked);
+
+    if (!selected && hasEmail !== hasPhone) {
+      const preferred = hasEmail ? 'email' : 'phone';
+      this.otpChannelInputs.forEach((input) => { input.checked = input.value === preferred; });
+      selected = this.otpChannelInputs.find((input) => input.checked);
+    }
+
+    const channel = selected?.value || '';
+    if (this.emailInput) this.emailInput.required = channel === 'email';
+    if (this.phoneInput) this.phoneInput.required = channel === 'phone';
+    this.otpChannelInputs.forEach((input, index) => {
+      input.required = channel === '' && index === 0;
+    });
   }
 
   showStep(step) {

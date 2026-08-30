@@ -80,6 +80,77 @@ test('RegistrationPage preserves preselected role and details step', () => {
   assert.equal(role.value, 'teacher');
 });
 
+test('RegistrationPage selects and validates the OTP delivery channel', async () => {
+  let submit;
+  let emailInputListener;
+  let phoneInputListener;
+  let submittedBody;
+  const form = {
+    addEventListener(name, callback) { if (name === 'submit') submit = callback; },
+    reportValidity: () => true,
+  };
+  const role = { value: 'student', addEventListener() {} };
+  const email = {
+    value: '',
+    required: false,
+    addEventListener(name, callback) { if (name === 'input') emailInputListener = callback; },
+  };
+  const phone = {
+    value: '09170000004',
+    required: false,
+    addEventListener(name, callback) { if (name === 'input') phoneInputListener = callback; },
+  };
+  const channels = ['email', 'phone'].map((value) => ({ value, checked: false, listeners: [],
+    addEventListener(name, callback) { if (name === 'change') this.listeners.push(callback); },
+    click() {
+      channels.forEach((channel) => { channel.checked = false; });
+      this.checked = true;
+      this.listeners.forEach((listener) => listener());
+    },
+  }));
+  const messages = { hidden: true, textContent: '', setAttribute() {} };
+  const document = {
+    querySelector(selector) {
+      if (selector === 'input[name="email"]') return email;
+      if (selector === 'input[name="contact_no"]') return phone;
+      return null;
+    },
+    querySelectorAll(selector) {
+      if (selector === 'input[name="otp_channel"]') return channels;
+      return [];
+    },
+    getElementById(id) {
+      if (id === 'reg-form') return form;
+      if (id === 'role_select') return role;
+      if (id === 'form-error') return messages;
+      return null;
+    },
+  };
+  let redirected = '';
+  const page = new RegistrationPage({}, {
+    document,
+    window: { location: { search: '', set href(value) { redirected = value; } } },
+    auth: { register: async (body) => { submittedBody = body; return { ok: true, data: { redirect: '/verify-otp', channel: 'phone' } }; } },
+    formDataFactory: () => ({ otp_channel: 'phone' }),
+  });
+
+  assert.equal(channels[1].checked, true);
+  assert.equal(phone.required, true);
+  assert.equal(email.required, false);
+
+  channels[0].click();
+  assert.equal(email.required, true);
+  assert.equal(phone.required, false);
+
+  email.value = 'lia@example.test';
+  phoneInputListener();
+  emailInputListener();
+  await submit({ preventDefault() {} });
+  assert.deepEqual(submittedBody, { otp_channel: 'phone' });
+  assert.equal(redirected, '/verify-otp');
+  page.destroy();
+});
+
 test('OtpPage verifies, resends, sanitizes input, and counts down', async () => {
   let verifyBody;
   let resendBody;

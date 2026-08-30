@@ -50,8 +50,8 @@ test('staff borrower rows keep every value under its matching table header', () 
   }]);
 
   assert.equal((body.innerHTML.match(/<td/g) || []).length, 10);
-  assert.match(body.innerHTML, /<td>T-007<\/td><td>Grace Hopper<\/td><td>Teacher<\/td>/);
-  assert.match(body.innerHTML, /<td>Science<\/td><td>Faculty<\/td><td>Computer Science<\/td><td>3<\/td>/);
+  assert.match(body.innerHTML, /<td>T-007<\/td>\s*<td>Grace Hopper<\/td>\s*<td>Teacher<\/td>/);
+  assert.match(body.innerHTML, /<td>Science<\/td>\s*<td>Faculty<\/td>\s*<td>Computer Science<\/td>\s*<td>3<\/td>/);
   assert.match(body.innerHTML, /<span class="badge bg-primary">2<\/span> <span class="badge bg-danger">1 overdue<\/span>/);
   assert.match(body.innerHTML, /<td>active<\/td>/);
   assert.match(body.innerHTML, /staff\/borrower\?id=7/);

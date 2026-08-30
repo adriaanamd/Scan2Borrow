@@ -95,6 +95,20 @@ final class SchemaContractTest extends TestCase
         }
     }
 
+    public function testReservationMigrationDefinesFairTitleQueueAndExpiryIndexes(): void
+    {
+        $migration = $this->readSql('upgrade_reservations.sql');
+
+        foreach ([
+            'CREATE TABLE IF NOT EXISTS `reservations`', '`queue_sequence`', '`hold_expires_at`',
+            "ENUM('queued','offered','claimed','fulfilled','expired','cancelled')",
+            'UNIQUE KEY `uq_reservation_active_user_title`',
+            'KEY `idx_reservations_title_queue`', 'KEY `idx_reservations_expiry`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $migration, 'Reservation migration missing marker: ' . $marker);
+        }
+    }
+
     public function testBarcodePrintingMigrationAddsIrreversibleCopyMarkerAndBatchSnapshots(): void
     {
         $migration = str_replace(["\r\n", "\r"], "\n", $this->readSql('upgrade_barcode_printing.sql'));

@@ -41,6 +41,8 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\StaffReservationController;
+use App\Http\Controllers\RenewalController;
+use App\Http\Controllers\StaffRenewalController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ApiDocumentationController;
 use App\Http\Middleware\AuthorizationMiddleware;
@@ -54,6 +56,8 @@ use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
 use App\Http\Routing\ReservationRouteTable;
 use App\Http\Routing\StaffReservationRouteTable;
+use App\Http\Routing\RenewalRouteTable;
+use App\Http\Routing\StaffRenewalRouteTable;
 use App\Http\Routing\Router;
 use App\Http\Routing\StaffRouteTable;
 use App\Http\Documentation\ApiEndpointCatalog;
@@ -124,6 +128,20 @@ final class ApplicationFactory
             new \App\Infrastructure\Persistence\PdoCirculationNotificationRepository($pdo),
         );
         $reservationService = new ReservationService($holds);
+        $renewalRepository = new \App\Infrastructure\Persistence\PdoRenewalRepository($pdo);
+        $renewalService = new \App\Application\Services\RenewalService(
+            new \App\Application\Services\RenewalEligibilityPolicy(
+                new \App\Infrastructure\Persistence\PdoRenewalEligibilityRepository($pdo),
+                $renewalRepository,
+                7,
+            ),
+            $renewalRepository,
+        );
+        $renewalApproval = new \App\Application\Services\RenewalApprovalService(
+            $renewalRepository,
+            new \App\Infrastructure\Persistence\PdoCirculationNotificationRepository($pdo),
+            new SystemClock(),
+        );
         $borrowerController = new BorrowerController(
             $sessions,
             $csrf,
@@ -137,6 +155,8 @@ final class ApplicationFactory
             $reservationService,
         );
         $staffReservationController = new StaffReservationController($sessions, $csrf, $reservationService);
+        $renewalController = new RenewalController($sessions, $csrf, $renewalService);
+        $staffRenewalController = new StaffRenewalController($sessions, $csrf, $renewalRepository, $renewalApproval);
         $guestIdentity = new PdoGuestIdentityProvider($sessions, $pdo);
         $guestBorrowing = new GuestBorrowingController(
             $guestIdentity,
@@ -182,6 +202,8 @@ final class ApplicationFactory
             (new BorrowerRouteTable())->routes($borrowerController),
             (new ReservationRouteTable())->routes($reservationController),
             (new StaffReservationRouteTable())->routes($staffReservationController),
+            (new RenewalRouteTable())->routes($renewalController),
+            (new StaffRenewalRouteTable())->routes($staffRenewalController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
             (new StaffRouteTable())->routes($staffController, $apiDocumentationController),
         ));

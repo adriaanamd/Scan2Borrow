@@ -44,6 +44,7 @@ final class OtpDeliveryErrorMappingTest extends TestCase
             'role' => 'student',
             'course' => 'BSIT',
             'year_level' => '1',
+            'otp_channel' => 'email',
             'email' => 'lia@example.test',
             'contact_no' => '09170000004',
         ]));

@@ -13,9 +13,9 @@ Apache sends clean page and API routes through `backend/public/index.php`. Page 
 
 ### Gmail registration email
 
-Registration and guest-registration OTPs are sent through Gmail SMTP when the submitted form includes an email address. Copy the variable names from `config/.env.example` into the local ignored `config/.env` file when setting up a new environment. The Gmail account must have 2-Step Verification enabled, and `MAIL_PASSWORD` must be a Gmail App Password rather than the normal account password.
+Borrower registration lets the user choose whether the OTP is sent by email or cellphone number. The selected contact method is required; Gmail SMTP is used when email is selected. Guest-registration OTP behavior remains unchanged. Copy the variable names from `config/.env.example` into the local ignored `config/.env` file when setting up a new environment. The Gmail account must have 2-Step Verification enabled, and `MAIL_PASSWORD` must be a Gmail App Password rather than the normal account password.
 
-The mailer uses `smtp.gmail.com` on port `587` with STARTTLS. `MAIL_FROM` defaults to the authenticated Gmail account, and `MAIL_FROM_NAME` controls the school-facing sender name. Use an accessible email address during registration, complete the form, then enter the code received on the `/verify-otp` page. The same branded mail transport is used by staff borrower email notifications.
+The mailer uses `smtp.gmail.com` on port `587` with STARTTLS. `MAIL_FROM` defaults to the authenticated Gmail account, and `MAIL_FROM_NAME` controls the school-facing sender name. When testing email delivery, choose Email during registration, use an accessible address, complete the form, then enter the code received on the `/verify-otp` page. The same branded mail transport is used by staff borrower email notifications.
 
 ## Structure
 

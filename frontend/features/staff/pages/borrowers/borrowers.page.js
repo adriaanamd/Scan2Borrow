@@ -19,7 +19,7 @@ export class BorrowersPage {
     if (!body) return;
     body.innerHTML = rows.length ? rows.map((row) => {
       const borrowerId = encodeURIComponent(String(row.id ?? ''));
-      const role = String(row.role || '').replace(/^./, (letter) => letter.toUpperCase());
+      const role = String(row.role || '—').replace(/^./, (letter) => letter.toUpperCase());
       const activeLoans = row.active_loans || 0;
       const overdueLoans = Number(row.overdue_loans) || 0;
       return `<tr>
@@ -31,7 +31,7 @@ export class BorrowersPage {
         <td>${this.escape(row.course)}</td>
         <td>${this.escape(row.year_level)}</td>
         <td><span class="badge bg-primary">${this.escape(activeLoans)}</span>${overdueLoans ? ` <span class="badge bg-danger">${this.escape(overdueLoans)} overdue</span>` : ''}</td>
-        <td>${this.escape(row.status)}</td>
+        <td>${this.escape(row.status || '—')}</td>
         <td class="text-nowrap"><a href="/scan2borrow/staff/borrower?id=${borrowerId}" class="btn btn-primary btn-sm">View</a> <a href="/scan2borrow/staff/notify?id=${borrowerId}" class="btn btn-warning btn-sm">Notify</a></td>
       </tr>`;
     }).join('') : '<tr><td colspan="10" class="text-center text-muted">No borrowers found.</td></tr>';

@@ -57,3 +57,30 @@ test('staff borrower rows keep every value under its matching table header', () 
   assert.match(body.innerHTML, /staff\/borrower\?id=7/);
   assert.match(body.innerHTML, /staff\/notify\?id=7/);
 });
+
+test('staff borrower rows use safe placeholders and encoded action ids', () => {
+  const body = { innerHTML: '' };
+  const page = new BorrowersPage({ querySelector: () => body });
+
+  page.render([{
+    id: '7/8',
+    barcode: 'T&008',
+    name: '<Grace>',
+    role: '',
+    department: '',
+    position: null,
+    course: null,
+    year_level: null,
+    active_loans: 0,
+    overdue_loans: 0,
+    status: '',
+  }]);
+
+  assert.match(body.innerHTML, /T&amp;008/);
+  assert.match(body.innerHTML, /&lt;Grace&gt;/);
+  assert.match(body.innerHTML, /<td>—<\/td>\s*<td>—<\/td>/);
+  assert.match(body.innerHTML, /<td>—<\/td>\s*<td class="text-nowrap">/);
+  assert.match(body.innerHTML, /borrower\?id=7%2F8/);
+  assert.match(body.innerHTML, /notify\?id=7%2F8/);
+  assert.doesNotMatch(body.innerHTML, /<Grace>/);
+});

@@ -47,7 +47,7 @@ test('teacher catalog and history have independent templates and navigation owne
   assert.match(history, /data-app-page="teacher-history"/);
   assert.match(history, /data-navbar-role="teacher"/);
   assert.match(history, /teacher-history\.page\.js/);
-  assert.match(history, /teacher-library-surfaces\.css/);
+  assert.doesNotMatch(history, /teacher-library-surfaces\.css/);
   assert.match(history, /teacher-history\.css/);
   assert.doesNotMatch(history, /student-(?:history|library-surfaces)\.css/);
   assert.doesNotMatch(history, /features\/student\/pages\/history\/student-history\.page\.js/);

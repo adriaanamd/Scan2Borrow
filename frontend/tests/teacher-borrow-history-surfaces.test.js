@@ -101,6 +101,19 @@ test('teacher history tab has a teacher-owned template and endpoint', () => {
   assert.doesNotMatch(source, /roleFromPath\(/);
   assert.match(template, /teacher-history-page/);
   assert.match(source, /classPrefix: "teacher-history"/);
+  assert.match(source, /surfacePrefix: "teacher-history"/);
+});
+
+test('teacher history uses a standalone presentation surface', () => {
+  const template = read('features/teacher/pages/history/history.html');
+  const styles = read('assets/css/teacher-history.css');
+
+  assert.match(template, /teacher-history-page__content/);
+  assert.match(template, /teacher-history-library-state/);
+  assert.doesNotMatch(template, /teacher-library-surfaces\.css|student-(?:history|library)/);
+  assert.doesNotMatch(styles, /teacher-library|student-/);
+  assert.match(styles, /teacher-history-page__content/);
+  assert.doesNotMatch(styles, /Fraunces|feTurbulence/);
 });
 
 test('student history keeps a student-only role boundary', () => {
@@ -144,7 +157,7 @@ test('teacher history states remain explicit and readable', () => {
   assert.match(shared, /\$\{this\.classPrefix\}-state/);
   assert.match(shared, /\$\{this\.classPrefix\}-state--empty/);
   assert.match(shared, /\$\{this\.classPrefix\}-state--error/);
-  assert.match(styles, /teacher-history-state/);
-  assert.match(styles, /teacher-history-state--empty/);
+  assert.match(styles, /teacher-history-library-state/);
+  assert.match(read('features/teacher/pages/history/history.html'), /teacher-history-state--empty/);
   assert.match(styles, /teacher-history-state--error/);
 });

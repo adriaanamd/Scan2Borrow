@@ -303,6 +303,12 @@ hr { border-color: var(--border); opacity: 1; }
     .libcard { min-width: 0; }
     .form-control, .form-select, .btn { min-height: 44px; }
 }
+
+@media (max-width: 768px) {
+    .content { padding-left: 18px; padding-right: 18px; }
+    .table-card { overflow-x: auto; }
+}
+
 @media print { body { background: #fff; } .sidebar, .topbar { display: none !important; } .main { margin-left: 0; } .content { max-width: none; padding: 0; } }
 
 /* One lightweight SVG language replaces the legacy emoji glyphs without adding a UI framework. */

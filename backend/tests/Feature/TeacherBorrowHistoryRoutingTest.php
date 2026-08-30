@@ -20,8 +20,8 @@ final class TeacherBorrowHistoryRoutingTest extends TestCase
 
     public function testTeacherApiAliasesReuseBorrowerHandlers(): void
     {
-        $bookRoutes = (string) file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Http' . DIRECTORY_SEPARATOR . 'Routing' . DIRECTORY_SEPARATOR . 'BookRouteTable.php');
-        $borrowerRoutes = (string) file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Http' . DIRECTORY_SEPARATOR . 'Routing' . DIRECTORY_SEPARATOR . 'BorrowerRouteTable.php');
+        $bookRoutes = (string) file_get_contents(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Http' . DIRECTORY_SEPARATOR . 'Routing' . DIRECTORY_SEPARATOR . 'BookRouteTable.php');
+        $borrowerRoutes = (string) file_get_contents(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Http' . DIRECTORY_SEPARATOR . 'Routing' . DIRECTORY_SEPARATOR . 'BorrowerRouteTable.php');
 
         self::assertStringContainsString("'/api/teacher/books'", $bookRoutes);
         self::assertStringContainsString("'/api/teacher/borrow/lookup'", $bookRoutes);

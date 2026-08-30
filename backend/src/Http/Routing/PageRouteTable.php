@@ -63,6 +63,16 @@ final class PageRouteTable
                 $featurePath('staff/pages/borrowers/borrowers.html'),
                 ['admin', 'librarian'],
             ),
+            '/staff/reservations' => new PageRoute(
+                '/staff/reservations',
+                $featurePath('staff/pages/reservations/reservations.html'),
+                ['admin', 'librarian'],
+            ),
+            '/staff/renewals' => new PageRoute(
+                '/staff/renewals',
+                $featurePath('staff/pages/renewals/renewals.html'),
+                ['admin', 'librarian'],
+            ),
             '/staff/borrower' => new PageRoute(
                 '/staff/borrower',
                 $featurePath('staff/pages/borrower-detail/borrower-detail.html'),

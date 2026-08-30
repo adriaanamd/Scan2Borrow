@@ -268,6 +268,19 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         return $records[0] ?? null;
     }
 
+    public function titleIdForBook(int $bookId): ?int
+    {
+        if (!$this->hasTable('book_copies')) {
+            return null;
+        }
+
+        $statement = $this->pdo->prepare('SELECT title_id FROM book_copies WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => $bookId]);
+        $value = $statement->fetchColumn();
+
+        return $value === false ? null : (int) $value;
+    }
+
     public function completeReturn(int $loanId, int $bookId, float $fine): void
     {
         if ($this->hasTable('borrowing_items') && $this->itemExists($loanId)) {

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="csrf" content="" />
+    <title>Renewal approvals | Scan2Borrow</title>
+    <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" /><link href="/scan2borrow/frontend/assets/css/reservations.css" rel="stylesheet" />
+    <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
+    <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
+  </head>
+  <body data-app-page="staff-renewals">
+    <div class="app"><aside class="sidebar" data-app-navbar data-navbar-role="session"></aside><main class="main"><header class="topbar"><h1 class="topbar-title">Renewal approvals</h1><div class="topbar-user"><span class="user-role">Staff</span></div></header><div class="content" data-page="staff-renewals"><div class="page-head"><div><span class="staff-reservations__eyebrow">Circulation desk</span><h2>Renewal requests</h2><p>Approve one standard extension when the loan, account, and queue rules permit it.</p></div></div><section class="staff-reservations table-card"><div class="staff-reservations__rule"><h3>Waiting for review</h3><span class="staff-reservations__window">Librarian approval required</span></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Borrower</th><th>Title</th><th>Current due</th><th>Requested due</th><th>Reason</th><th>Decision</th></tr></thead><tbody data-renewal-body><tr><td colspan="6" class="text-center text-muted py-4">Loading renewal requests…</td></tr></tbody></table></div></section></div></main></div>
+    <script type="module" src="/scan2borrow/frontend/features/staff/pages/renewals/entry.js"></script>
+  </body>
+</html>

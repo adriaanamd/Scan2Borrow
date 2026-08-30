@@ -13,6 +13,7 @@ final class ReturnService
         private readonly ReturnRepositoryInterface $repository,
         private readonly ClockInterface $clock,
         private readonly float $finePerDay,
+        private readonly ?ReservationAvailabilityInterface $availability = null,
     ) {
     }
 
@@ -41,6 +42,7 @@ final class ReturnService
 
         $fine = $this->fine($loan);
         $this->repository->completeReturn($loan->id(), $bookId, $fine);
+        $this->advanceAvailability($bookId);
         $title = is_string($book['title'] ?? null) ? $book['title'] : '';
         $message = 'You returned "' . $title . '".';
         if ($fine > 0) {
@@ -60,6 +62,7 @@ final class ReturnService
             $fine = $this->fine($loan);
             $totalFine += $fine;
             $this->repository->completeReturn($loan->id(), $loan->bookId(), $fine);
+            $this->advanceAvailability($loan->bookId());
         }
 
         $message = 'Successfully returned ' . count($loans) . ' book(s) using transaction code.';
@@ -81,6 +84,18 @@ final class ReturnService
         $delta = $this->clock->now()->getTimestamp() - $due->getTimestamp();
 
         return $delta > 0 ? (int) floor($delta / 86400) : 0;
+    }
+
+    private function advanceAvailability(int $bookId): void
+    {
+        if ($this->availability === null) {
+            return;
+        }
+
+        $titleId = $this->repository->titleIdForBook($bookId);
+        if ($titleId !== null) {
+            $this->availability->advance($titleId, $bookId, $this->clock->now());
+        }
     }
 
     private function bookId(mixed $value): int

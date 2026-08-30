@@ -303,6 +303,40 @@ hr { border-color: var(--border); opacity: 1; }
     .libcard { min-width: 0; }
     .form-control, .form-select, .btn { min-height: 44px; }
 }
+
+@media (max-width: 768px) {
+    .content { padding-left: 18px; padding-right: 18px; }
+    .table-card { overflow-x: auto; }
+}
+
+/* Reservation queue: a compact Swiss circulation surface scoped to the component. */
+.reservation-queue {
+    --reservation-ink: #141414;
+    --reservation-paper: #f7f7f8;
+    --reservation-red: #e4002b;
+    background: var(--reservation-paper);
+    border: 1px solid #d8d8dc;
+    color: var(--reservation-ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    padding: 28px;
+}
+.reservation-queue__header { border-bottom: 1px solid #141414; margin-bottom: 8px; padding-bottom: 18px; }
+.reservation-queue__eyebrow, .reservation-queue__position { color: var(--reservation-red); font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.reservation-queue h2, .reservation-queue h3 { color: var(--reservation-ink); margin: 0; }
+.reservation-queue__header h2 { font-size: clamp(1.55rem, 3vw, 2.2rem); letter-spacing: -.04em; }
+.reservation-queue__header p, .reservation-queue__author, .reservation-queue__expiry, .reservation-queue__empty, .reservation-queue__loading { color: #555; margin: 8px 0 0; }
+.reservation-queue__item { border-bottom: 1px solid #c9c9cc; display: flex; gap: 18px; padding: 20px 0; }
+.reservation-queue__rail { border-right: 1px solid var(--reservation-red); display: flex; justify-content: center; min-width: 42px; padding-right: 18px; }
+.reservation-queue__node { align-items: center; background: var(--reservation-red); border-radius: 50%; color: #fff; display: flex; font-size: .75rem; font-weight: 700; height: 32px; justify-content: center; width: 32px; }
+.reservation-queue__content { min-width: 0; }
+.reservation-queue__content h3 { font-size: 1.15rem; }
+.reservation-queue__position { margin: 0 0 5px; }
+.reservation-queue__status { border: 1px solid #141414; display: inline-block; font-size: .72rem; font-weight: 700; margin-top: 12px; padding: 5px 8px; text-transform: uppercase; }
+.reservation-queue__expiry { font-size: .82rem; }
+.reservation-queue__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.reservation-queue__button { background: transparent; border: 1px solid #141414; color: var(--reservation-ink); cursor: pointer; font: inherit; font-size: .78rem; font-weight: 700; padding: 8px 12px; }
+.reservation-queue__button--primary { background: var(--reservation-red); border-color: var(--reservation-red); color: #fff; }
+
 @media print { body { background: #fff; } .sidebar, .topbar { display: none !important; } .main { margin-left: 0; } .content { max-width: none; padding: 0; } }
 
 /* One lightweight SVG language replaces the legacy emoji glyphs without adding a UI framework. */

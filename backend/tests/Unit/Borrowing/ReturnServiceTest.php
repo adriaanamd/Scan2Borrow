@@ -80,6 +80,11 @@ final class FakeReturnRepository implements ReturnRepositoryInterface
         return $this->loan;
     }
 
+    public function titleIdForBook(int $bookId): ?int
+    {
+        return null;
+    }
+
     public function completeReturn(int $loanId, int $bookId, float $fine): void
     {
         $this->completedLoanId = $loanId;

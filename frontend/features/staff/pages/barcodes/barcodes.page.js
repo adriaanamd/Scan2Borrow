@@ -1,8 +1,8 @@
 export class BarcodePrintPage {
-  constructor({ fetcher = fetch, printer = () => window.print(), windowObject = window } = {}) {
-    this.fetcher = fetcher;
-    this.printer = printer;
+  constructor({ fetcher = null, printer = () => window.print(), windowObject = window } = {}) {
     this.windowObject = windowObject;
+    this.fetcher = fetcher || this.windowObject.fetch.bind(this.windowObject);
+    this.printer = printer;
     this.labels = document.getElementById("barcode-labels");
     this.subtitle = document.getElementById("print-subtitle");
     this.error = document.getElementById("print-error");

@@ -57,7 +57,7 @@ final class PdoHoldRepository implements HoldRepositoryInterface
             $id = (int) $this->pdo->lastInsertId();
             $this->pdo->commit();
 
-            $record = $this->findById($id);
+            $record = $this->find($id);
             if ($record === null) {
                 throw new RuntimeException('Reservation was created but could not be loaded.');
             }
@@ -90,7 +90,7 @@ final class PdoHoldRepository implements HoldRepositoryInterface
         );
         $statement->execute(['id' => $holdId, 'user_id' => $userId]);
 
-        return $statement->rowCount() === 1 ? $this->findById($holdId) : null;
+        return $statement->rowCount() === 1 ? $this->find($holdId) : null;
     }
 
     public function fulfil(int $holdId, int $staffId): bool
@@ -118,34 +118,83 @@ final class PdoHoldRepository implements HoldRepositoryInterface
 
     public function offer(int $holdId, int $copyId, DateTimeImmutable $offeredAt, DateTimeImmutable $expiresAt): bool
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE reservations SET status = 'offered', offered_copy_id = :copy_id, offered_at = :offered_at,
-             hold_expires_at = :expires_at, updated_at = :offered_at
-             WHERE id = :id AND status = 'queued'",
-        );
-        $statement->execute([
-            'id' => $holdId,
-            'copy_id' => $copyId,
-            'offered_at' => $offeredAt->format('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
-        ]);
+        $this->pdo->beginTransaction();
+        try {
+            $copy = $this->pdo->prepare(
+                "UPDATE book_copies SET status = 'Reserved' WHERE id = :copy_id AND status = 'Available' AND deleted_at IS NULL",
+            );
+            $copy->execute(['copy_id' => $copyId]);
+            if ($copy->rowCount() !== 1) {
+                $this->pdo->rollBack();
+                return false;
+            }
 
-        return $statement->rowCount() === 1;
+            $statement = $this->pdo->prepare(
+                "UPDATE reservations SET status = 'offered', offered_copy_id = :copy_id, offered_at = :offered_at,
+                 hold_expires_at = :expires_at, updated_at = :offered_at
+                 WHERE id = :id AND status = 'queued'",
+            );
+            $statement->execute([
+                'id' => $holdId,
+                'copy_id' => $copyId,
+                'offered_at' => $offeredAt->format('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
+            ]);
+            if ($statement->rowCount() !== 1) {
+                $this->pdo->rollBack();
+                return false;
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function expire(int $holdId, DateTimeImmutable $expiredAt): bool
     {
-        $statement = $this->pdo->prepare(
-            "UPDATE reservations SET status = 'expired', expired_at = :expired_at, offered_copy_id = NULL,
-             offered_at = NULL, hold_expires_at = NULL, updated_at = :expired_at
-             WHERE id = :id AND status = 'offered' AND hold_expires_at <= :expired_at",
-        );
-        $statement->execute([
-            'id' => $holdId,
-            'expired_at' => $expiredAt->format('Y-m-d H:i:s'),
-        ]);
+        $this->pdo->beginTransaction();
+        try {
+            $copyLookup = $this->pdo->prepare(
+                "SELECT offered_copy_id FROM reservations WHERE id = :id AND status = 'offered' AND hold_expires_at <= :expired_at",
+            );
+            $copyLookup->execute(['id' => $holdId, 'expired_at' => $expiredAt->format('Y-m-d H:i:s')]);
+            $copyId = $copyLookup->fetchColumn();
+            if ($copyId === false) {
+                $this->pdo->rollBack();
+                return false;
+            }
 
-        return $statement->rowCount() === 1;
+            $statement = $this->pdo->prepare(
+                "UPDATE reservations SET status = 'expired', expired_at = :expired_at, offered_copy_id = NULL,
+                 offered_at = NULL, hold_expires_at = NULL, updated_at = :expired_at
+                 WHERE id = :id AND status = 'offered' AND hold_expires_at <= :expired_at",
+            );
+            $statement->execute([
+                'id' => $holdId,
+                'expired_at' => $expiredAt->format('Y-m-d H:i:s'),
+            ]);
+            if ($statement->rowCount() !== 1) {
+                $this->pdo->rollBack();
+                return false;
+            }
+
+            if ($copyId !== null && $copyId !== '') {
+                $release = $this->pdo->prepare("UPDATE book_copies SET status = 'Available', due_date = NULL WHERE id = :copy_id AND status = 'Reserved'");
+                $release->execute(['copy_id' => (int) $copyId]);
+            }
+            $this->pdo->commit();
+            return true;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function listStaff(string $status): array
@@ -176,7 +225,7 @@ final class PdoHoldRepository implements HoldRepositoryInterface
         return array_values(array_unique(array_filter($titles, static fn (int $titleId): bool => $titleId > 0)));
     }
 
-    private function findById(int $holdId): ?HoldRecord
+    public function find(int $holdId): ?HoldRecord
     {
         $statement = $this->pdo->prepare($this->selectSql('r.id = :id'));
         $statement->execute(['id' => $holdId]);

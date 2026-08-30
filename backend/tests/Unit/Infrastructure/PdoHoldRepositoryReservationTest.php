@@ -20,7 +20,7 @@ final class PdoHoldRepositoryReservationTest extends TestCase
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT, status TEXT NOT NULL)');
         $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT NOT NULL, author TEXT)');
-        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER NOT NULL, barcode TEXT NOT NULL, status TEXT NOT NULL, deleted_at TEXT)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER NOT NULL, barcode TEXT NOT NULL, status TEXT NOT NULL, deleted_at TEXT, due_date TEXT)');
         $this->pdo->exec(
             "CREATE TABLE reservations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, title_id INTEGER NOT NULL,
@@ -73,7 +73,9 @@ final class PdoHoldRepositoryReservationTest extends TestCase
 
         self::assertTrue($repository->offer(1, 11, $offeredAt, $offeredAt->modify('+24 hours')));
         self::assertSame(HoldStatus::OFFERED, $repository->listForUser(7)[0]->status());
+        self::assertSame('Reserved', $this->pdo->query("SELECT status FROM book_copies WHERE id = 11")->fetchColumn());
         self::assertTrue($repository->expire(1, $offeredAt->modify('+24 hours')));
         self::assertSame(HoldStatus::EXPIRED, $repository->listForUser(7)[0]->status());
+        self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = 11")->fetchColumn());
     }
 }

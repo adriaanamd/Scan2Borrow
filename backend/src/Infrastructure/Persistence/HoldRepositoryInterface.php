@@ -9,6 +9,8 @@ use DateTimeImmutable;
 
 interface HoldRepositoryInterface
 {
+    public function find(int $holdId): ?HoldRecord;
+
     public function findActiveForUserTitle(int $userId, int $titleId): ?HoldRecord;
 
     /** @return list<HoldRecord> */

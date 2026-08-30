@@ -1,22 +1,31 @@
 export class StudentHistoryPage {
   constructor() {
     this.body = document.getElementById("history-body");
-    this.applyRole(this.cachedRole());
-    this.resolveRole().then((role) => {
-      this.applyRole(role);
+    const initialRole = this.roleFromPath() || this.cachedRole();
+    this.applyRole(initialRole || "student");
+    if (initialRole) {
       this.load();
-    });
+    } else {
+      this.resolveRole().then((role) => {
+        this.applyRole(role);
+        this.load();
+      });
+    }
+  }
+  roleFromPath() {
+    return window.location.pathname.includes("/teacher/") ? "teacher" : "";
   }
   cachedRole() {
     try {
-      return window.sessionStorage?.getItem("scan2borrow.nav.role") || "";
+      const role = window.sessionStorage?.getItem("scan2borrow.nav.role") || "";
+      return role === "teacher" || role === "student" ? role : "";
     } catch {
       return "";
     }
   }
   async resolveRole() {
-    const cached = this.cachedRole();
-    if (cached === "teacher" || cached === "student") return cached;
+    const knownRole = this.roleFromPath() || this.cachedRole();
+    if (knownRole) return knownRole;
     try {
       const response = await window.fetch("/scan2borrow/api/auth/session", {
         headers: { Accept: "application/json" },
@@ -31,10 +40,29 @@ export class StudentHistoryPage {
   }
   applyRole(role) {
     const teacher = role === "teacher";
+    this.role = teacher ? "teacher" : "student";
+    this.historyApi = teacher
+      ? "/scan2borrow/api/teacher/history"
+      : "/scan2borrow/api/student/history";
     document.body.classList.toggle("teacher-history-page", teacher);
     document.body.classList.toggle("student-history-page", !teacher);
     const roleHost = document.getElementById("current-user-role");
     if (roleHost) roleHost.textContent = teacher ? "Teacher" : "Student";
+    const copy = teacher
+      ? {
+          topbar: "Borrowing History",
+          title: "Borrowing History",
+          description: "Review your complete faculty borrowing record.",
+        }
+      : {
+          topbar: "My History",
+          title: "My History",
+          description: "Your complete borrowing record.",
+        };
+    document.title = `${copy.topbar} | Scan2Borrow`;
+    document.querySelector('[data-role-copy="history-topbar"]')?.replaceChildren(document.createTextNode(copy.topbar));
+    document.querySelector('[data-role-copy="history-title"]')?.replaceChildren(document.createTextNode(copy.title));
+    document.querySelector('[data-role-copy="history-description"]')?.replaceChildren(document.createTextNode(copy.description));
   }
   escapeHtml(value) {
     return String(value == null ? "" : value).replace(
@@ -50,7 +78,7 @@ export class StudentHistoryPage {
     );
   }
   load() {
-    fetch("/scan2borrow/api/student/history", {
+    fetch(this.historyApi, {
       headers: { "X-Requested-With": "fetch" },
     })
       .then((response) => response.json())

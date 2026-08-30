@@ -122,3 +122,15 @@ test('borrow catalog exposes role-aware presentation and endpoint hooks', () => 
   assert.match(source, /\/scan2borrow\/api\/teacher\/borrow/);
   assert.match(source, /\/scan2borrow\/teacher\/dashboard/);
 });
+
+test('borrowing history exposes role-aware endpoint and copy hooks', () => {
+  const template = read('features/student/pages/history/history.html');
+  const source = read('features/student/pages/history/student-history.page.js');
+
+  assert.match(template, /data-role-copy="history-title"/);
+  assert.match(template, /data-role-copy="history-description"/);
+  assert.match(source, /roleFromPath\(/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/history/);
+  assert.match(source, /teacher-history-page/);
+  assert.match(source, /student-history-page/);
+});

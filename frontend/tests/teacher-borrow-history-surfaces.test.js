@@ -83,6 +83,16 @@ test('teacher catalog tab has a role-owned route and shared feature entry', () =
   assert.match(source, /teacher-search-page/);
 });
 
+test('teacher history tab has a role-owned route and endpoint', () => {
+  const template = read('features/student/pages/history/history.html');
+  const source = read('features/student/pages/history/student-history.page.js');
+
+  assert.match(template, /teacher-history\.css/);
+  assert.match(source, /\/scan2borrow\/api\/teacher\/history/);
+  assert.match(source, /roleFromPath\(/);
+  assert.match(source, /teacher-history-page/);
+});
+
 test('shared history retains its teacher-compatible route and role boundary', () => {
   const template = read('features/student/pages/history/history.html');
   const source = read('features/student/pages/history/student-history.page.js');

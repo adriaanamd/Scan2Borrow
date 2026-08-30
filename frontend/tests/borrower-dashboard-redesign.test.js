@@ -213,6 +213,18 @@ test('borrower dashboard roles declare responsive compositions', () => {
   assert.match(css, /student-dashboard__table[\s\S]*overflow-x:\s*auto/);
 });
 
+test('borrower summary cards stack into one column at mobile widths', () => {
+  const css = read('assets/css/borrower-dashboards.css');
+  const tabletStart = css.indexOf('@media (max-width: 768px)');
+  const tabletRules = css.slice(
+    tabletStart,
+    css.indexOf('@media (max-width: 576px)', tabletStart),
+  );
+
+  assert.match(tabletRules, /\.borrower-dashboard__stats\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.doesNotMatch(tabletRules, /grid-template-columns:\s*repeat\(2/);
+});
+
 test('borrower dashboard redesign preserves content and controller parity', () => {
   const sharedIds = [
     'active-count', 'overdue-count', 'fine-total', 'on-time-rate',

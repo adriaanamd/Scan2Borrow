@@ -16,6 +16,8 @@ final class SchemaContractTest extends TestCase
             '`barcode`', '`role`', "ENUM('admin','librarian','student','teacher')",
             'CREATE TABLE `books`', '`isbn`', '`cover_file`', '`status`', "ENUM('Available','Borrowed','Reserved','Lost','Damaged')",
             'CREATE TABLE `borrowing`', '`transaction_code`', '`fine_amount`', "ENUM('Pending','Borrowed','Returned','Overdue')",
+            'CREATE TABLE `profile_change_requests`', '`original_values`', '`requested_values`', '`reviewed_by`',
+            "ENUM('pending','approved','rejected')", 'idx_profile_change_status_requested',
         ] as $marker) {
             self::assertStringContainsString($marker, $sql, "Base SQL contract disappeared: {$marker}");
         }
@@ -55,10 +57,25 @@ final class SchemaContractTest extends TestCase
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
             'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
+            'upgrade_profile_change_requests.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
             self::assertFileExists($path, "Missing SQL migration or seed file: {$filename}");
             self::assertNotSame('', trim((string) file_get_contents($path)));
+        }
+    }
+
+    public function testProfileChangeMigrationIsIdempotentAndLinkedToUsers(): void
+    {
+        $sql = $this->readSql('upgrade_profile_change_requests.sql');
+
+        foreach ([
+            'CREATE TABLE IF NOT EXISTS `profile_change_requests`',
+            'CONSTRAINT `fk_profile_change_user`',
+            'CONSTRAINT `fk_profile_change_reviewer`',
+            '`original_photo`', '`requested_photo`', '`review_note`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $sql, 'Profile change migration missing marker: ' . $marker);
         }
     }
 

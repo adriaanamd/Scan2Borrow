@@ -11,6 +11,7 @@ USE `scan2borrow_2.0`;
 
 -- ---- Users (borrowers + staff) ---------------------------------------------
 DROP TABLE IF EXISTS `audit_events`;
+DROP TABLE IF EXISTS `profile_change_requests`;
 DROP TABLE IF EXISTS `borrowing_items`;
 DROP TABLE IF EXISTS `borrowing_transactions`;
 DROP TABLE IF EXISTS `borrowing`;
@@ -34,6 +35,25 @@ CREATE TABLE `users` (
     `photo`         MEDIUMTEXT   DEFAULT NULL,    -- ID photo stored as a base64 data URI
     `status`        ENUM('active','inactive') NOT NULL DEFAULT 'active',
     `created_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ---- Borrower profile change requests -------------------------------------
+CREATE TABLE `profile_change_requests` (
+    `id`               INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id`          INT NOT NULL,
+    `status`           ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    `original_values`  JSON NOT NULL,
+    `requested_values` JSON NOT NULL,
+    `original_photo`   VARCHAR(255) DEFAULT NULL,
+    `requested_photo`  VARCHAR(255) DEFAULT NULL,
+    `review_note`      VARCHAR(500) DEFAULT NULL,
+    `requested_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `reviewed_at`      DATETIME DEFAULT NULL,
+    `reviewed_by`      INT DEFAULT NULL,
+    CONSTRAINT `fk_profile_change_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_profile_change_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    KEY `idx_profile_change_status_requested` (`status`, `requested_at`),
+    KEY `idx_profile_change_user_status` (`user_id`, `status`)
 ) ENGINE=InnoDB;
 
 -- ---- Books (one row per physical copy / barcode) ---------------------------

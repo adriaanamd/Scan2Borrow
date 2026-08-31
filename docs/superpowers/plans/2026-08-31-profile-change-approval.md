@@ -99,7 +99,7 @@
 **Interfaces:**
 - Table `profile_change_requests` columns: `id`, `user_id`, `status`, `original_values`, `requested_values`, `original_photo`, `requested_photo`, `review_note`, `requested_at`, `reviewed_at`, `reviewed_by`.
 
-- [ ] Add the table before dependent cleanup in the fresh schema with JSON fields for values, `MEDIUMTEXT` photo references, status enum, requester/reviewer foreign keys, and indexes on `(status, requested_at)` and `(user_id, status)`.
+- [ ] Add the table before dependent cleanup in the fresh schema with JSON fields for values, `VARCHAR(255)` photo storage references, status enum, requester/reviewer foreign keys, and indexes on `(status, requested_at)` and `(user_id, status)`.
 - [ ] Add an idempotent upgrade migration using `CREATE TABLE IF NOT EXISTS`, matching the base schema and existing MySQL naming conventions.
 - [ ] Extend schema tests to require the table in `database.sql`, the upgrade file, foreign keys, and all status/value columns.
 - [ ] Run schema contract tests/lint.

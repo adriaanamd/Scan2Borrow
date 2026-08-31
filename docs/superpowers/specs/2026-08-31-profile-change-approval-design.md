@@ -34,7 +34,7 @@ Add `profile_change_requests` in the base schema and a standalone upgrade migrat
 - `id`, `user_id`, and `status` (`pending`, `approved`, or `rejected`)
 - `original_values` JSON containing the values shown when the request was submitted
 - `requested_values` JSON containing only changed requestable fields
-- `original_photo` and `requested_photo` storage references
+- `original_photo` and `requested_photo` storage references (`VARCHAR(255)` paths)
 - optional administrator `review_note`
 - `requested_at`, `reviewed_at`, and `reviewed_by`
 

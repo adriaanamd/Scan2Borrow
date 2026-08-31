@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence;
 
 use App\Application\DTO\BarcodePrintBatch;
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditEventType;
+use DateTimeImmutable;
 use PDO;
 
 final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
 {
-    public function __construct(private readonly PDO $pdo)
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly ?AuditEventRepositoryInterface $audit = null,
+    )
     {
     }
 
@@ -66,6 +72,26 @@ final class PdoBarcodePrintRepository implements BarcodePrintRepositoryInterface
                     'shelf_no' => $this->nullableString($label['shelf_no'] ?? null),
                     'row_no' => $this->nullableString($label['row_no'] ?? null),
                 ]);
+                if ($this->audit !== null) {
+                    $this->audit->record(new AuditEvent(
+                        $copyId,
+                        $staffId,
+                        AuditEventType::BARCODE_PRINTED,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        $batchId,
+                        [
+                            'barcode' => $this->stringValue($label['barcode'] ?? null),
+                            'accession_no' => $this->nullableString($label['accession_no'] ?? null),
+                            'title' => $this->stringValue($label['title'] ?? null),
+                            'author' => $this->nullableString($label['author'] ?? null),
+                        ],
+                        new DateTimeImmutable(),
+                    ));
+                }
             }
 
             $placeholders = implode(',', array_fill(0, count($copyIds), '?'));

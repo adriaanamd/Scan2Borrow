@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence;
 
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditEventType;
+use DateTimeImmutable;
 use PDO;
 use RuntimeException;
 
 final class PdoStaffRepository implements StaffRepositoryInterface
 {
-    public function __construct(private readonly PDO $pdo)
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly ?AuditEventRepositoryInterface $audit = null,
+    )
     {
     }
 
@@ -786,16 +792,48 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         try {
             $status = $approve ? 'approved' : 'rejected';
             if ($this->hasTable('borrowing_transactions')) {
+                $copyStatement = $this->pdo->prepare(
+                    'SELECT c.id, c.barcode, t.title, bi.id AS item_id, c.status FROM borrowing_items bi '
+                    . 'JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id '
+                    . 'WHERE bi.transaction_id = :transaction_id'
+                );
+                $copyStatement->execute(['transaction_id' => $borrowingId]);
+                /** @var list<array<string, mixed>> $copies */
+                $copies = $copyStatement->fetchAll(PDO::FETCH_ASSOC);
                 $statement = $this->pdo->prepare(
                     "UPDATE borrowing_transactions SET approval_status = :approval_status,
                      status = CASE WHEN :is_approved = 1 THEN 'Borrowed' ELSE 'Returned' END,
                      approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id AND approval_status = 'pending'"
                 );
                 $statement->execute(['approval_status' => $status, 'is_approved' => $approve ? 1 : 0, 'staff_id' => $staffId, 'id' => $borrowingId]);
+                if ($statement->rowCount() < 1) {
+                    $this->pdo->commit();
+                    return;
+                }
                 $copyStatus = $approve ? 'Borrowed' : 'Available';
                 $this->pdo->prepare("UPDATE book_copies SET status = :status, due_date = CASE WHEN :approve = 1 THEN due_date ELSE NULL END WHERE id IN (SELECT copy_id FROM borrowing_items WHERE transaction_id = :transaction_id)")
                     ->execute(['status' => $copyStatus, 'approve' => $approve ? 1 : 0, 'transaction_id' => $borrowingId]);
                 $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE related_id = :id AND user_id = :staff_id')->execute(['id' => $borrowingId, 'staff_id' => $staffId]);
+                foreach ($copies as $copy) {
+                    $copyId = (int) ($copy['id'] ?? 0);
+                    if ($copyId < 1 || $this->audit === null) {
+                        continue;
+                    }
+                    $fromStatus = $this->string($copy['status'] ?? null) ?: 'Reserved';
+                    $this->audit->record(new AuditEvent(
+                        $copyId,
+                        $staffId,
+                        $approve ? AuditEventType::LOANED : AuditEventType::STATUS_CHANGED,
+                        $fromStatus,
+                        $approve ? 'Borrowed' : 'Available',
+                        $approve ? null : 'Borrow request rejected by staff.',
+                        $borrowingId,
+                        (int) ($copy['item_id'] ?? 0),
+                        null,
+                        ['barcode' => $this->string($copy['barcode'] ?? null), 'title' => $this->string($copy['title'] ?? null)],
+                        new DateTimeImmutable(),
+                    ));
+                }
                 $this->pdo->commit();
                 return;
             }

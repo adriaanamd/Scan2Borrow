@@ -9,4 +9,6 @@ enum BookStatus: string
     case AVAILABLE = 'Available';
     case BORROWED = 'Borrowed';
     case RESERVED = 'Reserved';
+    case LOST = 'Lost';
+    case DAMAGED = 'Damaged';
 }

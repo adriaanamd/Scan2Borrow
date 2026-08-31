@@ -13,20 +13,20 @@ final class BookArchiveService
     }
 
     /** @param list<int> $ids */
-    public function archive(array $ids): int
+    public function archive(array $ids, int $actorId = 0): int
     {
-        return $this->books->archive($ids);
+        return $this->books->archive($ids, $actorId);
     }
 
     /** @param list<int> $ids */
-    public function restore(array $ids): int
+    public function restore(array $ids, int $actorId = 0): int
     {
-        return $this->books->restore($ids);
+        return $this->books->restore($ids, $actorId);
     }
 
     /** @param list<int> $ids */
-    public function delete(array $ids): int
+    public function delete(array $ids, int $actorId = 0): int
     {
-        return $this->books->delete($ids);
+        return $this->books->delete($ids, $actorId);
     }
 }

@@ -36,6 +36,12 @@ final class ProfileChangeRequestService
         ];
     }
 
+    /** @return list<array<string, mixed>> */
+    public function pendingRequests(): array
+    {
+        return $this->repository->pendingRequests();
+    }
+
     /** @param array<string, mixed> $input */
     public function submit(int $userId, array $input): int
     {

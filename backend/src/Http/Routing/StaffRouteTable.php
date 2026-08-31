@@ -23,10 +23,12 @@ final class StaffRouteTable
             Route::create('GET', '/api/staff/reports/export', [$controller, 'exportReport']),
             Route::create('GET', '/api/staff/guest-requests', [$controller, 'guestRequests']),
             Route::create('GET', '/api/admin/staff', [$controller, 'adminStaff']),
+            Route::create('GET', '/api/admin/profile-change-requests', [$controller, 'profileChangeRequests']),
             Route::create('GET', '/api/staff/notifications', [$controller, 'notifications']),
             Route::create('POST', '/api/staff/borrowing-action', [$controller, 'borrowingAction']),
             Route::create('POST', '/api/staff/guest-action', [$controller, 'guestAction']),
             Route::create('POST', '/api/admin/staff-action', [$controller, 'adminAction']),
+            Route::create('POST', '/api/admin/profile-change-request-action', [$controller, 'profileChangeRequestAction']),
             Route::create('POST', '/api/staff/notifications/viewed', [$controller, 'markNotificationViewed']),
         ];
 

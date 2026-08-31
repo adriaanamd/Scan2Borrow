@@ -8,6 +8,7 @@ use App\Application\Services\CsrfService;
 use App\Application\Services\GuestApprovalService;
 use App\Application\Services\BorrowerNotificationService;
 use App\Application\Services\PhotoStorageInterface;
+use App\Application\Services\ProfileChangeRequestService;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Role;
 use App\Http\Requests\ServerRequest;
@@ -25,6 +26,7 @@ final readonly class StaffController
         private ?GuestApprovalService $guestApproval = null,
         private ?PhotoStorageInterface $photoStorage = null,
         private ?BorrowerNotificationService $notifications = null,
+        private ?ProfileChangeRequestService $profileChanges = null,
     ) {
     }
 
@@ -173,6 +175,48 @@ final readonly class StaffController
         return $this->adminResponse([
             'staff' => $this->staff->staffAccounts(),
             'borrowers' => $this->staff->borrowerCandidates($this->queryString($request, 'bsearch')),
+        ]);
+    }
+
+    public function profileChangeRequests(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isAdmin() || $this->profileChanges === null) {
+            return $this->unauthorized();
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => ['requests' => $this->profileChanges->pendingRequests()]]);
+    }
+
+    public function profileChangeRequestAction(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isAdmin() || $this->profileChanges === null) {
+            return $this->unauthorized();
+        }
+        $csrfFailure = $this->csrfFailure($request);
+        if ($csrfFailure !== null) {
+            return $csrfFailure;
+        }
+
+        $id = $this->positiveInt($request->body()['request_id'] ?? null);
+        $action = $this->bodyString($request, 'action');
+        if ($id < 1 || !in_array($action, ['approve', 'reject'], true)) {
+            return new JsonResponse(422, ['ok' => false, 'message' => 'Invalid profile change decision.']);
+        }
+        $identity = $this->sessions->current();
+        if ($identity === null) {
+            return $this->unauthorized();
+        }
+
+        try {
+            $result = $this->profileChanges->decide($id, $identity->userId(), $action, $this->bodyString($request, 'review_note'));
+        } catch (InvalidArgumentException|\RuntimeException $exception) {
+            return new JsonResponse(422, ['ok' => false, 'message' => $exception->getMessage()]);
+        }
+
+        return new JsonResponse(200, [
+            'ok' => true,
+            'data' => $result,
+            'message' => $action === 'approve' ? 'Profile change request approved.' : 'Profile change request rejected.',
         ]);
     }
 

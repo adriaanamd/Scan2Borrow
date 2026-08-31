@@ -28,6 +28,7 @@ final readonly class BookMutationRequest
         public string $status = 'Available',
         public array $keywords = [],
         public int $quantity = 1,
+        public int $actorId = 0,
     ) {
     }
 
@@ -52,6 +53,7 @@ final readonly class BookMutationRequest
             $status,
             $this->keywords,
             $this->quantity,
+            $this->actorId,
         );
     }
 }

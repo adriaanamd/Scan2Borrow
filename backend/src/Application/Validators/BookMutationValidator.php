@@ -15,6 +15,9 @@ final class BookMutationValidator
             return 'Title is required.';
         }
         if ($request->quantity < 1) return 'Quantity must be positive.';
+        if (in_array($request->status, [BookStatus::LOST->value, BookStatus::DAMAGED->value], true)) {
+            return 'Lost or damaged status must be recorded on an individual copy with a reason.';
+        }
 
         return null;
     }

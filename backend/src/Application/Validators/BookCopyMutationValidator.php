@@ -17,6 +17,13 @@ final class BookCopyMutationValidator
         if ($request->barcode === '') {
             return 'Copy barcode is required.';
         }
+        if (BookStatus::tryFrom($request->status) === null) {
+            return 'Copy status is invalid.';
+        }
+        if (in_array($request->status, [BookStatus::LOST->value, BookStatus::DAMAGED->value], true)
+            && trim($request->reason) === '') {
+            return 'A reason is required when marking a copy lost or damaged.';
+        }
 
         return null;
     }

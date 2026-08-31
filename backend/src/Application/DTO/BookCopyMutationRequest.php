@@ -17,6 +17,8 @@ final readonly class BookCopyMutationRequest
         public string $dueDate = '',
         public string $returnDate = '',
         public string $status = 'Available',
+        public string $reason = '',
+        public int $actorId = 0,
     ) {
     }
 }

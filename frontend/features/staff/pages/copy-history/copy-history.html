@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf" content="" />
+    <title>Copy History | Scan2Borrow</title>
+    <link rel="icon" type="image/png" href="/scan2borrow/public/favicon.png" />
+    <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/features/staff/pages/copy-history/copy-history.css" rel="stylesheet" />
+    <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
+    <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
+  </head>
+  <body data-app-page="staff-copy-history" class="copy-history-page">
+    <div class="app">
+      <aside class="sidebar" data-app-navbar data-navbar-role="session"></aside>
+      <main class="main">
+        <header class="topbar">
+          <h1 class="topbar-title">Copy History</h1>
+          <div class="topbar-user"><span class="user-role">Staff</span></div>
+        </header>
+        <div class="content">
+          <div class="page-head">
+            <div>
+              <h2>Physical copy record</h2>
+              <p>Scan a barcode to review acquisition, circulation, status, printing, and archival actions.</p>
+            </div>
+          </div>
+          <form id="copy-history-form" class="copy-history-form">
+            <input id="copy-history-barcode" name="barcode" autocomplete="off" placeholder="Enter copy barcode" aria-label="Copy barcode" />
+            <button type="submit">View history</button>
+            <div id="copy-history-scanner" data-scan-root>
+              <button type="button" data-scan-target="copy-history-barcode" data-scan-submit>Scan with camera</button>
+            </div>
+          </form>
+          <div id="copy-history-status" class="copy-history-status" role="status">Enter or scan a copy barcode.</div>
+          <section id="copy-history-copy" class="copy-history-copy" hidden aria-label="Physical copy details">
+            <div class="copy-history-copy__title">
+              <h2 id="copy-history-title"></h2>
+              <p id="copy-history-author"></p>
+            </div>
+            <dl class="copy-history-copy__field"><dt>Barcode</dt><dd id="copy-history-barcode-value"></dd></dl>
+            <dl class="copy-history-copy__field"><dt>Accession</dt><dd id="copy-history-accession"></dd></dl>
+            <dl class="copy-history-copy__field"><dt>Current status</dt><dd id="copy-history-current-status"></dd></dl>
+            <dl class="copy-history-copy__field"><dt>Location</dt><dd id="copy-history-location"></dd></dl>
+          </section>
+          <section id="copy-history-timeline" class="copy-history-events" aria-label="Audit timeline"></section>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/scan2borrow/frontend/features/staff/pages/copy-history/entry.js"></script>
+  </body>
+</html>

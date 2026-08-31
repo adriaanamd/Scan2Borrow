@@ -5,7 +5,7 @@ Scan2Borrow is a library management and borrowing system for Binalbagan Catholic
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql`, `sql/upgrade_barcode_printing.sql`, and `sql/upgrade_copy_audit_trail.sql` to backfill the seeded legacy rows and enable barcode export history plus the physical-copy audit trail. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_barcode_printing.sql`, then `upgrade_copy_audit_trail.sql`. The bulk-borrowing, barcode-printing, and copy-audit migrations are required in both cases.
+2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql`, `sql/upgrade_barcode_printing.sql`, `sql/upgrade_copy_audit_trail.sql`, and `sql/upgrade_profile_change_requests.sql` to backfill the seeded legacy rows and enable barcode export history, the physical-copy audit trail, and administrator-approved borrower profile changes. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_barcode_printing.sql`, `upgrade_copy_audit_trail.sql`, then `upgrade_profile_change_requests.sql`. The bulk-borrowing, barcode-printing, copy-audit, and profile-change migrations are required in both cases.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
@@ -45,6 +45,10 @@ Staff inventory is managed in two levels: a catalog title stores shared metadata
 ### Printable barcodes
 
 From a title's `View copies` panel, staff can export all active copies whose barcodes have not been exported before. Export generation permanently marks those physical copies as printed and stores an immutable batch snapshot. If no unprinted copy remains, the request is skipped. Existing batches can be exported again from their history without changing the printed state. The print-ready page uses the browser print dialog; choose `Save as PDF` to create the barcode-label PDF. Canceling that dialog does not reverse the printed marker because the irreversible step occurs when the export batch is generated.
+
+### Profile change approval
+
+Students and teachers can request changes to their name, contact details, academic or faculty information, and profile photo from Settings. Requests remain pending until an administrator reviews the before/after values in Admin > Staff. Barcode, role, status, password, and other security fields remain administrator-only. The request record retains the submitted values and final decision for business audit history.
 
 ## Quality checks
 

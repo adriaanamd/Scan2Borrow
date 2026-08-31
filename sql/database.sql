@@ -26,6 +26,8 @@ CREATE TABLE `users` (
     `firstname`     VARCHAR(80)  NOT NULL,
     `middlename`    VARCHAR(80)  DEFAULT NULL,
     `lastname`      VARCHAR(80)  NOT NULL,
+    `department`    VARCHAR(120) DEFAULT NULL,
+    `position`      VARCHAR(120) DEFAULT NULL,
     `course`        VARCHAR(100) DEFAULT NULL,
     `year_level`    VARCHAR(20)  DEFAULT NULL,
     `email`         VARCHAR(120) DEFAULT NULL,

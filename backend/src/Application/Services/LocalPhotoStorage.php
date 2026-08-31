@@ -27,6 +27,10 @@ final class LocalPhotoStorage implements PhotoStorageInterface
             return null;
         }
 
+        if (strlen($binary) > 4 * 1024 * 1024) {
+            return null;
+        }
+
         if (!is_dir($this->directory) && mkdir($this->directory, 0750, true) === false && !is_dir($this->directory)) {
             throw new RuntimeException('Photo storage directory could not be created.');
         }

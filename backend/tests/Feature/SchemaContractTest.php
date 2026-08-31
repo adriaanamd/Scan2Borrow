@@ -13,7 +13,7 @@ final class SchemaContractTest extends TestCase
         $sql = $this->readSql('database.sql');
         foreach ([
             'CREATE TABLE `users`',
-            '`barcode`', '`role`', "ENUM('admin','librarian','student','teacher')",
+            '`barcode`', '`department`', '`position`', '`role`', "ENUM('admin','librarian','student','teacher')",
             'CREATE TABLE `books`', '`isbn`', '`cover_file`', '`status`', "ENUM('Available','Borrowed','Reserved','Lost','Damaged')",
             'CREATE TABLE `borrowing`', '`transaction_code`', '`fine_amount`', "ENUM('Pending','Borrowed','Returned','Overdue')",
             'CREATE TABLE `profile_change_requests`', '`original_values`', '`requested_values`', '`reviewed_by`',

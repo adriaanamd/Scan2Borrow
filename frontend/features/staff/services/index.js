@@ -1,5 +1,6 @@
 export { StaffApprovalService } from './approval.service.js';
 export { AdminStaffService } from './admin-staff.service.js';
+export { ProfileChangeRequestService } from './profile-change-request.service.js';
 export { StaffDashboardService } from './dashboard.service.js';
 export { StaffGuestRequestService } from './guest-request.service.js';
 export { StaffNotificationService } from './notification.service.js';

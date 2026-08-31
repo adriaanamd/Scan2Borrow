@@ -1,5 +1,5 @@
 export class AdminStaffPage {
-  constructor(root = globalThis.document, { service, window = globalThis.window } = {}) { this.root = root; this.service = service; this.window = window; }
+  constructor(root = globalThis.document, { service, profileService, window = globalThis.window } = {}) { this.root = root; this.service = service; this.profileService = profileService; this.window = window; this.profileChanges = []; this.selectedProfileChange = null; }
 
   start() { return this.load(); }
 
@@ -7,6 +7,16 @@ export class AdminStaffPage {
     const search = new URLSearchParams(this.window.location.search).get('bsearch') || '';
     const response = await this.service?.list(search);
     if (response) this.render(response.data || {});
+    if (this.profileService) {
+      try {
+        const profileResponse = await this.profileService.list();
+        this.profileChanges = profileResponse?.data?.requests || [];
+        this.renderProfileChangeRequests(this.profileChanges);
+      } catch (error) {
+        const node = this.root.querySelector?.('.alert.alert-danger');
+        if (node) { node.textContent = error.message || 'Could not load profile change requests.'; node.classList.remove('d-none'); }
+      }
+    }
     return response;
   }
 
@@ -15,6 +25,7 @@ export class AdminStaffPage {
     if (tables[0]) tables[0].innerHTML = this.staffRows(data.staff || []);
     if (tables[1]) tables[1].innerHTML = this.borrowerRows(data.borrowers || []);
     this.bindAdminActions();
+    this.renderProfileChangeRequests(data.profile_change_requests || this.profileChanges);
   }
 
   staffRows(rows) {
@@ -59,6 +70,53 @@ export class AdminStaffPage {
       if (node) { node.textContent = error.message || 'Could not save staff changes.'; node.classList.remove('d-none'); }
     }
   }
+
+  renderProfileChangeRequests(rows = []) {
+    const body = this.root.querySelector?.('#profile-change-requests-body');
+    if (!body) return;
+    body.innerHTML = rows.length ? rows.map((row) => {
+      const changes = Object.keys(row.requested_values || {});
+      if (row.requested_photo) changes.push('photo');
+      return `<tr><td><strong>${this.escape(row.user_name)}</strong><br><span class="text-muted small">${this.escape(row.barcode)}</span></td><td>${this.escape(row.role)}</td><td class="text-muted small">${this.escape(row.requested_at)}</td><td>${this.escape(changes.join(', '))}</td><td><button type="button" class="btn btn-primary btn-sm" data-profile-request-id="${this.escape(row.id)}">Review</button></td></tr>`;
+    }).join('') : '<tr><td colspan="5" class="text-center text-muted py-4">No pending profile change requests.</td></tr>';
+    this.bindProfileChangeActions();
+  }
+
+  profileChangeDetail(request) {
+    const rows = Object.keys(request.requested_values || {}).map((field) => `<div class="profile-review-row"><span>${this.escape(this.label(field))}</span><span>${this.escape(request.original_values?.[field] || '(empty)')} → ${this.escape(request.requested_values?.[field] || '(empty)')}</span></div>`);
+    if (request.requested_photo) rows.push(`<div class="profile-review-row"><span>Profile photo</span><span>New photo attached</span></div>`);
+    return rows.join('') || '<p class="text-muted">No text fields changed.</p>';
+  }
+
+  bindProfileChangeActions() {
+    this.root.querySelectorAll?.('[data-profile-request-id]').forEach((button) => button.addEventListener('click', () => {
+      this.selectedProfileChange = this.profileChanges.find((row) => String(row.id) === String(button.dataset.profileRequestId)) || null;
+      if (!this.selectedProfileChange) return;
+      const title = this.root.querySelector?.('#profileChangeModalTitle');
+      const detail = this.root.querySelector?.('#profile-change-detail');
+      if (title) title.textContent = `Review ${this.selectedProfileChange.user_name || 'profile'}'s request`;
+      if (detail) detail.innerHTML = this.profileChangeDetail(this.selectedProfileChange);
+      const modal = this.window?.bootstrap?.Modal?.getOrCreateInstance(this.root.querySelector?.('#profileChangeModal'));
+      modal?.show();
+    }));
+    this.root.querySelectorAll?.('[data-profile-decision]').forEach((button) => button.addEventListener('click', () => this.decideProfileChange(button.dataset.profileDecision)));
+  }
+
+  async decideProfileChange(action) {
+    if (!this.selectedProfileChange || !this.profileService) return;
+    const note = this.root.querySelector?.('#profile-change-review-note')?.value || '';
+    const confirmation = this.window?.Scan2BorrowConfirmation;
+    const proceed = () => this.profileService.action(action, this.selectedProfileChange.id, note).then(() => this.load());
+    try {
+      if (confirmation?.confirm) await confirmation.confirm({ title: action === 'approve' ? 'Approve profile change?' : 'Reject profile change?', message: `This will ${action} the requested account changes.`, confirmLabel: action === 'approve' ? 'Approve' : 'Reject', confirmClass: action === 'approve' ? 'btn-primary' : 'btn-danger', onConfirm: proceed });
+      else await proceed();
+    } catch (error) {
+      const node = this.root.querySelector?.('.alert.alert-danger');
+      if (node) { node.textContent = error.message || 'Could not save profile change decision.'; node.classList.remove('d-none'); }
+    }
+  }
+
+  label(field) { return String(field || '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase()); }
 
   escape(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
 }

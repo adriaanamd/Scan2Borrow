@@ -199,6 +199,25 @@
             </div>
           </div>
 
+          <div class="table-card profile-approval-card mb-4">
+            <div class="section-title"><span class="dot"></span> Profile Change Requests</div>
+            <p class="text-muted small">Review student and teacher updates before they become active. Only administrators can approve these requests.</p>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead><tr><th>Requester</th><th>Role</th><th>Submitted</th><th>Changes</th><th>Action</th></tr></thead>
+                <tbody id="profile-change-requests-body"><tr><td colspan="5" class="text-center text-muted py-4">No pending profile change requests.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="modal fade" id="profileChangeModal" tabindex="-1" aria-labelledby="profileChangeModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title" id="profileChangeModalTitle">Profile change request</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+              <div class="modal-body"><div id="profile-change-detail"></div><label class="form-label mt-3" for="profile-change-review-note">Review note <span class="text-muted fw-normal">(optional)</span></label><textarea id="profile-change-review-note" class="form-control" rows="3" maxlength="500" placeholder="Add context for the requester"></textarea></div>
+              <div class="modal-footer"><button type="button" class="btn btn-outline-danger" data-profile-decision="reject">Reject</button><button type="button" class="btn btn-primary" data-profile-decision="approve">Approve</button></div>
+            </div></div>
+          </div>
+
           <div class="modal fade" id="promoteModal" tabindex="-1">
             <div class="modal-dialog">
               <div class="modal-content">

@@ -152,6 +152,13 @@ final class ApplicationFactory
             new ReturnService($borrowings, new SystemClock(), 20.0, $reservationAvailability),
             new PdoBorrowerPortalRepository($pdo),
         );
+        $profileChangeService = new \App\Application\Services\ProfileChangeRequestService(
+            new \App\Infrastructure\Persistence\PdoProfileChangeRequestRepository($pdo),
+            new \App\Infrastructure\Persistence\PdoProfileChangeNotificationRepository($pdo),
+            new \App\Application\Validators\ProfileChangeRequestValidator(),
+            new LocalPhotoStorage(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads', '/scan2borrow/uploads'),
+        );
+        $profileChangeController = new \App\Http\Controllers\ProfileChangeRequestController($sessions, $csrf, $profileChangeService);
         $reservationController = new ReservationController(
             $sessions,
             $csrf,
@@ -197,6 +204,7 @@ final class ApplicationFactory
                 $staffRepository,
                 new SmtpEmailSender(),
             ),
+            $profileChangeService,
         );
         $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());
         $apiRouter = new Router(array_merge(
@@ -207,7 +215,7 @@ final class ApplicationFactory
                 $sessions,
                 new \App\Application\Services\CopyHistoryService($auditRepository),
             )),
-            (new BorrowerRouteTable())->routes($borrowerController),
+            (new BorrowerRouteTable())->routes($borrowerController, $profileChangeController),
             (new ReservationRouteTable())->routes($reservationController),
             (new StaffReservationRouteTable())->routes($staffReservationController),
             (new RenewalRouteTable())->routes($renewalController),

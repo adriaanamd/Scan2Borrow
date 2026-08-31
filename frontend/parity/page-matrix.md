@@ -16,6 +16,7 @@ This matrix records the route-to-feature ownership model for the vanilla Angular
 | /teacher/settings | teacher | features/teacher/pages/settings/settings.html | features/teacher/pages/settings/teacher-settings.page.js | canonical |
 | /staff/dashboard | admin, librarian | features/staff/pages/dashboard/dashboard.html | features/staff/pages/dashboard/staff-dashboard.page.js | canonical |
 | /staff/books | admin, librarian | features/staff/pages/inventory/inventory.html | features/staff/pages/inventory/inventory.page.js | canonical |
+| /staff/copy-history | admin, librarian | features/staff/pages/copy-history/copy-history.html | features/staff/pages/copy-history/entry.js | canonical |
 | /staff/students | admin, librarian | features/staff/pages/borrowers/borrowers.html | features/staff/pages/borrowers/entry.js | canonical |
 | /staff/borrower | admin, librarian | features/staff/pages/borrower-detail/borrower-detail.html | features/staff/pages/borrower-detail/entry.js | canonical |
 | /staff/notify | admin, librarian | features/staff/pages/notify/notify.html | features/staff/pages/notify/entry.js | canonical |

@@ -163,6 +163,9 @@ class AppNavbar {
         <a href="/scan2borrow/staff/books" data-nav-path="/scan2borrow/staff/books">
           <span class="nav-icon">&#128218;</span>Book Inventory
         </a>
+        <a href="/scan2borrow/staff/copy-history" data-nav-path="/scan2borrow/staff/copy-history">
+          <span class="nav-icon" aria-hidden="true"></span>Copy History
+        </a>
         <a href="/scan2borrow/staff/students" data-nav-path="/scan2borrow/staff/students">
           <span class="nav-icon">&#128100;</span>Borrowers
         </a>

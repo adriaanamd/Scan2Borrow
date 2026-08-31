@@ -7,6 +7,7 @@ namespace Tests\Unit\Infrastructure;
 use App\Infrastructure\Persistence\PdoProfileChangeRequestRepository;
 use PDO;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class PdoProfileChangeRequestRepositoryTest extends TestCase
 {
@@ -45,5 +46,34 @@ final class PdoProfileChangeRequestRepositoryTest extends TestCase
         self::assertSame(['firstname' => 'Grace'], $request['requested_values']);
         self::assertSame('uploads/grace.jpg', $request['requested_photo']);
         self::assertSame('2026-08-31 14:32:00', $request['requested_at']);
+    }
+
+    public function testCreateStoresSnapshotsAndReturnsRequestId(): void
+    {
+        $repository = new PdoProfileChangeRequestRepository($this->pdo);
+
+        $id = $repository->create(
+            7,
+            ['firstname' => 'Ada', 'email' => 'ada@example.test'],
+            ['firstname' => 'Grace', 'email' => 'grace@example.test'],
+            'uploads/ada.jpg',
+            'uploads/grace.jpg',
+        );
+
+        self::assertSame(1, $id);
+        $row = $this->pdo->query('SELECT user_id, status, original_values, requested_values, original_photo, requested_photo FROM profile_change_requests')->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame('pending', $row['status']);
+        self::assertSame('{"firstname":"Ada","email":"ada@example.test"}', $row['original_values']);
+        self::assertSame('uploads/grace.jpg', $row['requested_photo']);
+    }
+
+    public function testCreateRejectsASecondPendingRequest(): void
+    {
+        $repository = new PdoProfileChangeRequestRepository($this->pdo);
+        $repository->create(7, ['firstname' => 'Ada'], ['firstname' => 'Grace'], null, null);
+
+        $this->expectException(RuntimeException::class);
+        $repository->create(7, ['firstname' => 'Ada'], ['firstname' => 'Marie'], null, null);
     }
 }

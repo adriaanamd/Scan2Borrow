@@ -84,7 +84,43 @@ final class PdoProfileChangeRequestRepository implements ProfileChangeRequestRep
     /** @param array<string, string> $originalValues @param array<string, string> $requestedValues */
     public function create(int $userId, array $originalValues, array $requestedValues, ?string $originalPhoto, ?string $requestedPhoto): int
     {
-        throw new RuntimeException('Profile change request creation is not available yet.');
+        $this->pdo->beginTransaction();
+        try {
+            $pending = $this->pdo->prepare(
+                "SELECT id FROM profile_change_requests WHERE user_id = :user_id AND status = 'pending' LIMIT 1",
+            );
+            $pending->execute(['user_id' => $userId]);
+            if ($pending->fetchColumn() !== false) {
+                $this->pdo->rollBack();
+                throw new RuntimeException('A profile change request is already pending.');
+            }
+
+            $statement = $this->pdo->prepare(
+                'INSERT INTO profile_change_requests (user_id, status, original_values, requested_values, original_photo, requested_photo) '
+                . "VALUES (:user_id, 'pending', :original_values, :requested_values, :original_photo, :requested_photo)",
+            );
+            $statement->execute([
+                'user_id' => $userId,
+                'original_values' => json_encode($originalValues, JSON_THROW_ON_ERROR),
+                'requested_values' => json_encode($requestedValues, JSON_THROW_ON_ERROR),
+                'original_photo' => $originalPhoto,
+                'requested_photo' => $requestedPhoto,
+            ]);
+            $id = (int) $this->pdo->lastInsertId();
+            $this->pdo->commit();
+
+            return $id;
+        } catch (RuntimeException $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw new RuntimeException('Profile change request could not be saved.', 0, $exception);
+        }
     }
 
     /** @param array<string, mixed> $row @return array<string, mixed> */

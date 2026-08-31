@@ -14,7 +14,7 @@ final class SchemaContractTest extends TestCase
         foreach ([
             'CREATE TABLE `users`',
             '`barcode`', '`role`', "ENUM('admin','librarian','student','teacher')",
-            'CREATE TABLE `books`', '`isbn`', '`cover_file`', '`status`', "ENUM('Available','Borrowed','Reserved')",
+            'CREATE TABLE `books`', '`isbn`', '`cover_file`', '`status`', "ENUM('Available','Borrowed','Reserved','Lost','Damaged')",
             'CREATE TABLE `borrowing`', '`transaction_code`', '`fine_amount`', "ENUM('Pending','Borrowed','Returned','Overdue')",
         ] as $marker) {
             self::assertStringContainsString($marker, $sql, "Base SQL contract disappeared: {$marker}");
@@ -54,7 +54,7 @@ final class SchemaContractTest extends TestCase
             'upgrade.sql', 'upgrade_add_teacher_fields.sql', 'upgrade_approval_system.sql',
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
-            'upgrade_barcode_printing.sql',
+            'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
             self::assertFileExists($path, "Missing SQL migration or seed file: {$filename}");

@@ -43,4 +43,14 @@ final class BookMutationValidatorTest extends TestCase
 
         self::assertNull((new BookMutationValidator())->firstError($request));
     }
+
+    public function testLossAndDamageAreRecordedThroughPhysicalCopyManagement(): void
+    {
+        $validator = new BookMutationValidator();
+
+        self::assertSame(
+            'Lost or damaged status must be recorded on an individual copy with a reason.',
+            $validator->firstError(new BookMutationRequest('BK-3', 'Clean Code', status: 'Lost')),
+        );
+    }
 }

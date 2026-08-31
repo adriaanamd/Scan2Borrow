@@ -6,13 +6,18 @@ namespace App\Infrastructure\Persistence;
 
 use App\Application\DTO\BookMutationRequest;
 use App\Application\DTO\BookCopyMutationRequest;
+use App\Domain\Audit\AuditEvent;
+use App\Domain\Audit\AuditEventType;
 use App\Domain\Book\BookSearchCriteria;
 use App\Domain\Book\BookSearchResult;
 use PDO;
 
 final class PdoBookRepository implements BookRepositoryInterface, BookAdministrationRepositoryInterface
 {
-    public function __construct(private readonly PDO $pdo)
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly ?AuditEventRepositoryInterface $audit = null,
+    )
     {
     }
 
@@ -114,6 +119,8 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                 'Available' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Available' AND status_copy.deleted_at IS NULL)",
                 'Borrowed' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Borrowed' AND status_copy.deleted_at IS NULL)",
                 'Reserved' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Reserved' AND status_copy.deleted_at IS NULL)",
+                'Lost' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Lost' AND status_copy.deleted_at IS NULL)",
+                'Damaged' => "EXISTS (SELECT 1 FROM book_copies status_copy WHERE status_copy.title_id = t.id AND status_copy.status = 'Damaged' AND status_copy.deleted_at IS NULL)",
             };
         }
 
@@ -131,6 +138,8 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
             . "SUM(CASE WHEN c.status = 'Available' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS available_quantity, "
             . "SUM(CASE WHEN c.status = 'Reserved' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS reserved_quantity, "
             . "SUM(CASE WHEN c.status = 'Borrowed' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS borrowed_quantity, "
+            . "SUM(CASE WHEN c.status = 'Lost' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS lost_quantity, "
+            . "SUM(CASE WHEN c.status = 'Damaged' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS damaged_quantity, "
             . 'MIN(c.floor_no) AS floor_no, MIN(c.section_name) AS section_name, MIN(c.shelf_no) AS shelf_no, MIN(c.row_no) AS row_no '
             . 'FROM book_titles t LEFT JOIN book_copies c ON c.title_id = t.id WHERE ' . $condition
             . ' GROUP BY t.id ORDER BY ' . $sort . ' ' . $criteria->direction() . ' LIMIT :limit OFFSET :offset'
@@ -146,9 +155,13 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         foreach ($books as &$book) {
             $availableValue = $book['available_quantity'] ?? 0;
             $borrowedValue = $book['borrowed_quantity'] ?? 0;
+            $lostValue = $book['lost_quantity'] ?? 0;
+            $damagedValue = $book['damaged_quantity'] ?? 0;
             $available = is_numeric($availableValue) ? (int) $availableValue : 0;
             $borrowed = is_numeric($borrowedValue) ? (int) $borrowedValue : 0;
-            $book['status'] = $available > 0 ? 'Available' : ($borrowed > 0 ? 'Borrowed' : 'Reserved');
+            $lost = is_numeric($lostValue) ? (int) $lostValue : 0;
+            $damaged = is_numeric($damagedValue) ? (int) $damagedValue : 0;
+            $book['status'] = $available > 0 ? 'Available' : ($borrowed > 0 ? 'Borrowed' : ($lost > 0 ? 'Lost' : ($damaged > 0 ? 'Damaged' : 'Reserved')));
         }
         unset($book);
 
@@ -253,6 +266,24 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                         'due_date' => $request->dueDate !== '' ? $request->dueDate : null,
                         'return_date' => $request->returnDate !== '' ? $request->returnDate : null, 'status' => $request->status,
                     ]);
+                    $this->recordCopyAudit(
+                        (int) $this->pdo->lastInsertId(),
+                        $request->actorId,
+                        AuditEventType::ACQUIRED,
+                        null,
+                        $request->status,
+                        null,
+                        [
+                            'barcode' => $barcode,
+                            'accession_no' => $accession,
+                            'title' => $request->title,
+                            'author' => $request->author,
+                            'floor_no' => $request->floorNo,
+                            'section_name' => $request->sectionName,
+                            'shelf_no' => $request->shelfNo,
+                            'row_no' => $request->rowNo,
+                        ],
+                    );
                 }
                 $this->pdo->commit();
                 return $titleId;
@@ -330,9 +361,13 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                 if (count($removableIds) < $currentQuantity - $request->quantity) {
                     throw new \InvalidArgumentException('Cannot reduce quantity below the number of active copies.');
                 }
+                $removedCopies = $this->copyRecords($removableIds);
                 $placeholders = implode(',', array_fill(0, count($removableIds), '?'));
                 $deleteStatement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (' . $placeholders . ')');
                 $deleteStatement->execute($removableIds);
+                foreach ($removedCopies as $removedCopy) {
+                    $this->recordCopyAudit((int) $removedCopy['id'], $request->actorId, AuditEventType::ARCHIVED, null, null, null, $removedCopy);
+                }
             }
 
             $titleStatement = $this->pdo->prepare(
@@ -353,10 +388,12 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                     'INSERT INTO book_copies (title_id, barcode, accession_no, floor_no, section_name, shelf_no, row_no, due_date, return_date, status) VALUES (:title_id, :barcode, :accession_no, :floor_no, :section_name, :shelf_no, :row_no, :due_date, :return_date, :status)'
                 );
                 for ($index = $quantityAfterRemoval; $index < $request->quantity; $index++) {
+                    $barcode = $index === 0 && $request->barcode !== '' ? $request->barcode : 'PENDING-' . $id . '-' . ($index + 1) . '-' . bin2hex(random_bytes(3));
+                    $accession = $index === 0 && $request->accessionNo !== '' ? $request->accessionNo : 'ACC-' . $id . '-' . ($index + 1);
                     $copyInsert->execute([
                         'title_id' => $id,
-                        'barcode' => $index === 0 && $request->barcode !== '' ? $request->barcode : 'PENDING-' . $id . '-' . ($index + 1) . '-' . bin2hex(random_bytes(3)),
-                        'accession_no' => $index === 0 && $request->accessionNo !== '' ? $request->accessionNo : 'ACC-' . $id . '-' . ($index + 1),
+                        'barcode' => $barcode,
+                        'accession_no' => $accession,
                         'floor_no' => $request->floorNo !== '' ? $request->floorNo : null,
                         'section_name' => $request->sectionName !== '' ? $request->sectionName : null,
                         'shelf_no' => $request->shelfNo !== '' ? $request->shelfNo : null,
@@ -365,6 +402,24 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                         'return_date' => $request->returnDate !== '' ? $request->returnDate : null,
                         'status' => $request->status,
                     ]);
+                    $this->recordCopyAudit(
+                        (int) $this->pdo->lastInsertId(),
+                        $request->actorId,
+                        AuditEventType::ACQUIRED,
+                        null,
+                        $request->status,
+                        null,
+                        [
+                            'barcode' => $barcode,
+                            'accession_no' => $accession,
+                            'title' => $request->title,
+                            'author' => $request->author,
+                            'floor_no' => $request->floorNo,
+                            'section_name' => $request->sectionName,
+                            'shelf_no' => $request->shelfNo,
+                            'row_no' => $request->rowNo,
+                        ],
+                    );
                 }
             }
             $this->pdo->commit();
@@ -375,10 +430,10 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     }
 
     /** @param list<int> $ids */
-    public function archive(array $ids): int
+    public function archive(array $ids, int $actorId = 0): int
     {
         if ($this->hasTable('book_titles')) {
-            return $this->setTitleArchived($ids, true);
+            return $this->setTitleArchived($ids, true, $actorId);
         }
         $this->assertNoActiveLoans($ids, 'archive');
 
@@ -386,26 +441,37 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     }
 
     /** @param list<int> $ids */
-    public function restore(array $ids): int
+    public function restore(array $ids, int $actorId = 0): int
     {
         if ($this->hasTable('book_titles')) {
-            return $this->setTitleArchived($ids, false);
+            return $this->setTitleArchived($ids, false, $actorId);
         }
 
         return $this->setArchived($ids, false);
     }
 
     /** @param list<int> $ids */
-    public function delete(array $ids): int
+    public function delete(array $ids, int $actorId = 0): int
     {
         if ($this->hasTable('book_titles')) {
             $this->assertTitleIds($ids);
             $this->assertNoActiveTitleLoans($ids, 'delete');
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            $statement = $this->pdo->prepare('DELETE FROM book_titles WHERE id IN (' . $placeholders . ')');
-            $statement->execute($ids);
+            $copies = $this->copyRecordsForTitles($ids);
+            $this->pdo->beginTransaction();
+            try {
+                foreach ($copies as $copy) {
+                    $this->recordCopyAudit((int) $copy['id'], $actorId, AuditEventType::DELETED, null, null, null, $copy);
+                }
+                $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                $statement = $this->pdo->prepare('DELETE FROM book_titles WHERE id IN (' . $placeholders . ')');
+                $statement->execute($ids);
+                $this->pdo->commit();
 
-            return $statement->rowCount();
+                return $statement->rowCount();
+            } catch (\Throwable $exception) {
+                if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+                throw $exception;
+            }
         }
         $this->assertIds($ids);
         $this->assertNoActiveLoans($ids, 'delete');
@@ -461,51 +527,90 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         }
         $copyStatus = is_string($copy['status'] ?? null) ? $copy['status'] : '';
         if ($request->status !== $copyStatus) {
-            throw new \InvalidArgumentException('Copy status is managed by the borrowing workflow.');
+            $isLossOrDamageTransition = in_array($copyStatus, ['Lost', 'Damaged'], true)
+                || in_array($request->status, ['Lost', 'Damaged'], true);
+            if (!$isLossOrDamageTransition) {
+                throw new \InvalidArgumentException('Copy status is managed by the borrowing workflow.');
+            }
+            if (($copyStatus === 'Lost' || $copyStatus === 'Damaged' || $request->status === 'Lost' || $request->status === 'Damaged')
+                && trim($request->reason) === '') {
+                throw new \InvalidArgumentException('A reason is required when marking a copy lost or damaged.');
+            }
         }
 
-        $statement = $this->pdo->prepare(
-            'UPDATE book_copies SET barcode = :barcode, accession_no = :accession_no, floor_no = :floor_no,
-             section_name = :section_name, shelf_no = :shelf_no, row_no = :row_no, due_date = :due_date,
-             return_date = :return_date, status = :status WHERE id = :id'
-        );
-        $statement->execute([
-            'barcode' => $request->barcode,
-            'accession_no' => $this->nullable($request->accessionNo),
-            'floor_no' => $this->nullable($request->floorNo),
-            'section_name' => $this->nullable($request->sectionName),
-            'shelf_no' => $this->nullable($request->shelfNo),
-            'row_no' => $this->nullable($request->rowNo),
-            'due_date' => $this->nullable($request->dueDate),
-            'return_date' => $this->nullable($request->returnDate),
-            'status' => $request->status,
-            'id' => $request->copyId,
-        ]);
+        $this->pdo->beginTransaction();
+        try {
+            $statement = $this->pdo->prepare(
+                'UPDATE book_copies SET barcode = :barcode, accession_no = :accession_no, floor_no = :floor_no,
+                 section_name = :section_name, shelf_no = :shelf_no, row_no = :row_no, due_date = :due_date,
+                 return_date = :return_date, status = :status WHERE id = :id'
+            );
+            $statement->execute([
+                'barcode' => $request->barcode,
+                'accession_no' => $this->nullable($request->accessionNo),
+                'floor_no' => $this->nullable($request->floorNo),
+                'section_name' => $this->nullable($request->sectionName),
+                'shelf_no' => $this->nullable($request->shelfNo),
+                'row_no' => $this->nullable($request->rowNo),
+                'due_date' => $this->nullable($request->dueDate),
+                'return_date' => $this->nullable($request->returnDate),
+                'status' => $request->status,
+                'id' => $request->copyId,
+            ]);
+            if ($request->status !== $copyStatus) {
+                $this->recordCopyAudit(
+                    $request->copyId,
+                    $request->actorId,
+                    AuditEventType::STATUS_CHANGED,
+                    $copyStatus,
+                    $request->status,
+                    $request->reason,
+                    $copy,
+                );
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $exception;
+        }
     }
 
     /** @param list<int> $ids */
-    public function archiveCopies(array $ids): int
+    public function archiveCopies(array $ids, int $actorId = 0): int
     {
-        return $this->setCopyArchived($ids, true);
+        return $this->setCopyArchived($ids, true, $actorId);
     }
 
     /** @param list<int> $ids */
-    public function restoreCopies(array $ids): int
+    public function restoreCopies(array $ids, int $actorId = 0): int
     {
-        return $this->setCopyArchived($ids, false);
+        return $this->setCopyArchived($ids, false, $actorId);
     }
 
     /** @param list<int> $ids */
-    public function deleteCopies(array $ids): int
+    public function deleteCopies(array $ids, int $actorId = 0): int
     {
         $this->assertNormalizedSchema();
         $this->assertCopyIds($ids);
         $this->assertNoActiveCopyLoans($ids, 'delete');
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $statement = $this->pdo->prepare('DELETE FROM book_copies WHERE id IN (' . $placeholders . ')');
-        $statement->execute($ids);
+        $copies = $this->copyRecords($ids);
+        $this->pdo->beginTransaction();
+        try {
+            foreach ($copies as $copy) {
+                $this->recordCopyAudit((int) $copy['id'], $actorId, AuditEventType::DELETED, null, null, null, $copy);
+            }
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $statement = $this->pdo->prepare('DELETE FROM book_copies WHERE id IN (' . $placeholders . ')');
+            $statement->execute($ids);
+            $this->pdo->commit();
 
-        return $statement->rowCount();
+            return $statement->rowCount();
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     /** @return array<string, mixed>|null */
@@ -517,6 +622,67 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         $copy = $statement->fetch(PDO::FETCH_ASSOC);
 
         return $copy === false ? null : $copy;
+    }
+
+    /** @param list<int> $ids @return list<array<string, mixed>> */
+    private function copyRecords(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $statement = $this->pdo->prepare(
+            'SELECT c.*, t.title, t.author FROM book_copies c JOIN book_titles t ON t.id = c.title_id '
+            . 'WHERE c.id IN (' . $placeholders . ')'
+        );
+        $statement->execute($ids);
+        /** @var list<array<string, mixed>> $copies */
+        $copies = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        return $copies;
+    }
+
+    /** @param array<string, mixed> $copy */
+    private function recordCopyAudit(
+        int $copyId,
+        int $actorId,
+        AuditEventType $type,
+        ?string $fromStatus,
+        ?string $toStatus,
+        ?string $reason,
+        array $copy,
+    ): void {
+        if ($this->audit === null) {
+            return;
+        }
+
+        $this->audit->record(new AuditEvent(
+            $copyId,
+            $actorId > 0 ? $actorId : null,
+            $type,
+            $fromStatus,
+            $toStatus,
+            $reason === '' ? null : $reason,
+            null,
+            null,
+            null,
+            [
+                'barcode' => $this->stringValue($copy['barcode'] ?? null),
+                'accession_no' => $this->stringValue($copy['accession_no'] ?? null),
+                'title' => $this->stringValue($copy['title'] ?? null),
+                'author' => $this->stringValue($copy['author'] ?? null),
+                'floor_no' => $this->stringValue($copy['floor_no'] ?? null),
+                'section_name' => $this->stringValue($copy['section_name'] ?? null),
+                'shelf_no' => $this->stringValue($copy['shelf_no'] ?? null),
+                'row_no' => $this->stringValue($copy['row_no'] ?? null),
+            ],
+            new \DateTimeImmutable(),
+        ));
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        return is_string($value) || is_numeric($value) ? (string) $value : '';
     }
 
     private function copyIdentifierExists(string $column, string $value, int $exceptId): bool
@@ -544,35 +710,76 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
     }
 
     /** @param list<int> $ids */
-    private function setCopyArchived(array $ids, bool $archived): int
+    private function setCopyArchived(array $ids, bool $archived, int $actorId): int
     {
         $this->assertNormalizedSchema();
         $this->assertCopyIds($ids);
         if ($archived) {
             $this->assertNoActiveCopyLoans($ids, 'archive');
         }
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
-        $statement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = ' . $value . ' WHERE id IN (' . $placeholders . ')');
-        $statement->execute($ids);
+        $copies = $this->copyRecords($ids);
+        $this->pdo->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
+            $statement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = ' . $value . ' WHERE id IN (' . $placeholders . ')');
+            $statement->execute($ids);
+            $eventType = $archived ? AuditEventType::ARCHIVED : AuditEventType::RESTORED;
+            foreach ($copies as $copy) {
+                $this->recordCopyAudit((int) $copy['id'], $actorId, $eventType, null, null, null, $copy);
+            }
+            $this->pdo->commit();
 
-        return $statement->rowCount();
+            return $statement->rowCount();
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     /** @param list<int> $ids */
-    private function setTitleArchived(array $ids, bool $archived): int
+    private function setTitleArchived(array $ids, bool $archived, int $actorId): int
     {
         $this->assertNormalizedSchema();
         $this->assertTitleIds($ids);
         if ($archived) {
             $this->assertNoActiveTitleLoans($ids, 'archive');
         }
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
-        $statement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = ' . $value . ' WHERE title_id IN (' . $placeholders . ')');
-        $statement->execute($ids);
+        $copies = $this->copyRecordsForTitles($ids);
+        $this->pdo->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $value = $archived ? 'CURRENT_TIMESTAMP' : 'NULL';
+            $statement = $this->pdo->prepare('UPDATE book_copies SET deleted_at = ' . $value . ' WHERE title_id IN (' . $placeholders . ')');
+            $statement->execute($ids);
+            $eventType = $archived ? AuditEventType::ARCHIVED : AuditEventType::RESTORED;
+            foreach ($copies as $copy) {
+                $this->recordCopyAudit((int) $copy['id'], $actorId, $eventType, null, null, null, $copy);
+            }
+            $this->pdo->commit();
 
-        return $statement->rowCount();
+            return $statement->rowCount();
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $exception;
+        }
+    }
+
+    /** @param list<int> $titleIds @return list<array<string, mixed>> */
+    private function copyRecordsForTitles(array $titleIds): array
+    {
+        if ($titleIds === []) return [];
+        $placeholders = implode(',', array_fill(0, count($titleIds), '?'));
+        $statement = $this->pdo->prepare(
+            'SELECT c.*, t.title, t.author FROM book_copies c JOIN book_titles t ON t.id = c.title_id WHERE c.title_id IN (' . $placeholders . ')'
+        );
+        $statement->execute($titleIds);
+        /** @var list<array<string, mixed>> $copies */
+        $copies = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        return $copies;
     }
 
     /** @param list<int> $ids */

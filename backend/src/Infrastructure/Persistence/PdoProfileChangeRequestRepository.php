@@ -72,13 +72,115 @@ final class PdoProfileChangeRequestRepository implements ProfileChangeRequestRep
     /** @return array<string, mixed>|null */
     public function decide(int $requestId, int $reviewerId, string $decision, string $reviewNote): ?array
     {
-        throw new RuntimeException('Profile change decisions are not available yet.');
+        $this->pdo->beginTransaction();
+        try {
+            $lockClause = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? '' : ' FOR UPDATE';
+            $statement = $this->pdo->prepare(
+                "SELECT r.id, r.user_id, r.status, r.original_values, r.requested_values, r.original_photo,
+                        r.requested_photo, r.review_note, r.requested_at, r.reviewed_at, r.reviewed_by,
+                        u.firstname, u.lastname, u.barcode, u.email, u.role, u.status AS user_status
+                 FROM profile_change_requests r JOIN users u ON u.id = r.user_id
+                 WHERE r.id = :id AND r.status = 'pending' LIMIT 1" . $lockClause,
+            );
+            $statement->execute(['id' => $requestId]);
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                $this->pdo->rollBack();
+                return null;
+            }
+            if (!in_array($this->stringValue($row['role'] ?? null), ['student', 'teacher'], true)
+                || $this->stringValue($row['user_status'] ?? null) !== 'active') {
+                throw new RuntimeException('Only active student and teacher accounts can be approved.');
+            }
+
+            if ($decision === 'approve') {
+                $requested = $this->decodeMap($row['requested_values'] ?? null);
+                $sets = [];
+                $parameters = ['user_id' => $this->intValue($row['user_id'] ?? 0)];
+                foreach (self::PROFILE_COLUMNS as $field => $column) {
+                    if (!array_key_exists($field, $requested)) {
+                        continue;
+                    }
+                    $sets[] = $column . ' = :' . $field;
+                    $parameters[$field] = $requested[$field];
+                }
+                $requestedPhoto = $this->nullableString($row['requested_photo'] ?? null);
+                if ($requestedPhoto !== null) {
+                    $sets[] = 'photo = :photo';
+                    $parameters['photo'] = $requestedPhoto;
+                }
+                if ($sets !== []) {
+                    $this->pdo->prepare('UPDATE users SET ' . implode(', ', $sets) . ' WHERE id = :user_id')->execute($parameters);
+                }
+            }
+
+            $update = $this->pdo->prepare(
+                "UPDATE profile_change_requests
+                 SET status = :status, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = :reviewed_by, review_note = :review_note
+                 WHERE id = :id AND status = 'pending'",
+            );
+            $update->execute([
+                'status' => $decision === 'approve' ? 'approved' : 'rejected',
+                'reviewed_by' => $reviewerId,
+                'review_note' => $reviewNote === '' ? null : $reviewNote,
+                'id' => $requestId,
+            ]);
+            if ($update->rowCount() < 1) {
+                $this->pdo->rollBack();
+                return null;
+            }
+            $this->pdo->commit();
+
+            $result = $this->requestRow($row);
+            $result['status'] = $decision === 'approve' ? 'approved' : 'rejected';
+            $result['review_note'] = $reviewNote === '' ? null : $reviewNote;
+            $result['user_name'] = trim($this->stringValue($row['firstname'] ?? null) . ' ' . $this->stringValue($row['lastname'] ?? null));
+            $result['barcode'] = $this->stringValue($row['barcode'] ?? null);
+            $result['email'] = $this->stringValue($row['email'] ?? null);
+
+            return $result;
+        } catch (RuntimeException $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw new RuntimeException('Profile change decision could not be saved.', 0, $exception);
+        }
     }
 
     /** @return list<array<string, mixed>> */
     public function pendingRequests(): array
     {
-        throw new RuntimeException('Profile change request listing is not available yet.');
+        $statement = $this->pdo->query(
+            "SELECT r.id, r.user_id, r.status, r.original_values, r.requested_values, r.original_photo,
+                    r.requested_photo, r.review_note, r.requested_at, r.reviewed_at, r.reviewed_by,
+                    u.firstname, u.lastname, u.barcode, u.email, u.role
+             FROM profile_change_requests r JOIN users u ON u.id = r.user_id
+             WHERE r.status = 'pending'
+             ORDER BY r.requested_at ASC, r.id ASC",
+        );
+        if ($statement === false) {
+            return [];
+        }
+
+        $rows = [];
+        while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $request = $this->requestRow($row);
+            $request['user_name'] = trim($this->stringValue($row['firstname'] ?? null) . ' ' . $this->stringValue($row['lastname'] ?? null));
+            $request['barcode'] = $this->stringValue($row['barcode'] ?? null);
+            $request['email'] = $this->stringValue($row['email'] ?? null);
+            $request['role'] = $this->stringValue($row['role'] ?? null);
+            $rows[] = $request;
+        }
+
+        return $rows;
     }
 
     /** @param array<string, string> $originalValues @param array<string, string> $requestedValues */

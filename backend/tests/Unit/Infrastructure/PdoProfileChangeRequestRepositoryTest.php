@@ -76,4 +76,45 @@ final class PdoProfileChangeRequestRepositoryTest extends TestCase
         $this->expectException(RuntimeException::class);
         $repository->create(7, ['firstname' => 'Ada'], ['firstname' => 'Marie'], null, null);
     }
+
+    public function testApproveUpdatesStoredFieldsAndRecordsReviewer(): void
+    {
+        $repository = new PdoProfileChangeRequestRepository($this->pdo);
+        $id = $repository->create(7, ['firstname' => 'Ada'], ['firstname' => 'Grace', 'email' => 'grace@example.test'], 'uploads/ada.jpg', 'uploads/grace.jpg');
+
+        $result = $repository->decide($id, 99, 'approve', 'Verified by registrar.');
+        $user = $this->pdo->query('SELECT firstname, email, photo FROM users WHERE id = 7')->fetch(PDO::FETCH_ASSOC);
+        $request = $this->pdo->query('SELECT status, reviewed_by, review_note FROM profile_change_requests WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+
+        self::assertIsArray($result);
+        self::assertSame('Grace', $user['firstname']);
+        self::assertSame('grace@example.test', $user['email']);
+        self::assertSame('uploads/grace.jpg', $user['photo']);
+        self::assertSame('approved', $request['status']);
+        self::assertSame('99', (string) $request['reviewed_by']);
+        self::assertSame('Verified by registrar.', $request['review_note']);
+    }
+
+    public function testRejectLeavesUserUnchangedAndSecondDecisionReturnsNull(): void
+    {
+        $repository = new PdoProfileChangeRequestRepository($this->pdo);
+        $id = $repository->create(7, ['firstname' => 'Ada'], ['firstname' => 'Grace'], 'uploads/ada.jpg', 'uploads/grace.jpg');
+
+        self::assertNotNull($repository->decide($id, 99, 'reject', 'Name does not match the submitted record.'));
+        self::assertSame('Ada', $this->pdo->query('SELECT firstname FROM users WHERE id = 7')->fetchColumn());
+        self::assertNull($repository->decide($id, 99, 'approve', 'Too late.'));
+    }
+
+    public function testPendingRequestsIncludeRequesterDetails(): void
+    {
+        $repository = new PdoProfileChangeRequestRepository($this->pdo);
+        $repository->create(7, ['firstname' => 'Ada'], ['firstname' => 'Grace'], null, null);
+
+        $rows = $repository->pendingRequests();
+
+        self::assertCount(1, $rows);
+        self::assertSame('Ada Lovelace', $rows[0]['user_name']);
+        self::assertSame('STU-7', $rows[0]['barcode']);
+        self::assertSame(['firstname' => 'Grace'], $rows[0]['requested_values']);
+    }
 }

@@ -18,6 +18,9 @@ test('copy panel exposes irreversible unprinted export and historical PDF contro
   assert.match(source, /id="copy-print-history"/);
   assert.match(source, /Save as PDF|Export unprinted barcodes/);
   assert.match(fs.readFileSync(path.join(root, 'features', 'staff', 'components', 'copy-panel', 'copy-panel.component.js'), 'utf8'), /barcode-print-batches/);
+  assert.match(fs.readFileSync(path.join(root, 'features', 'staff', 'components', 'copy-panel', 'copy-panel.component.js'), 'utf8'), /staff\/copy-history/);
+  assert.match(fs.readFileSync(path.join(root, 'features', 'staff', 'components', 'copy-panel', 'copy-panel.component.js'), 'utf8'), /value=\"Lost\"/);
+  assert.match(fs.readFileSync(path.join(root, 'features', 'staff', 'components', 'copy-panel', 'copy-panel.component.js'), 'utf8'), /value=\"Damaged\"/);
 });
 
 test('print page is staff-protected and uses a dedicated browser PDF export controller', () => {

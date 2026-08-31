@@ -98,6 +98,12 @@ test('staff account actions use shared confirmation and admin markup has no nati
   assert.doesNotMatch(template, /onsubmit=.*confirm\(/);
 });
 
+test('staff navigation exposes the copy history page', () => {
+  const navbar = fs.readFileSync(path.resolve(testsDirectory, '..', 'assets', 'js', 'core', 'app-navbar.js'), 'utf8');
+  assert.match(navbar, /staff\/copy-history/);
+  assert.match(navbar, /Copy History/);
+});
+
 test('approval and guest rejection templates use shared confirmation metadata', () => {
   for (const templatePath of [dashboardTemplate, guestRequestsTemplate]) {
     const source = fs.readFileSync(templatePath, 'utf8');

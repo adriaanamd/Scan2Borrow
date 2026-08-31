@@ -57,7 +57,7 @@ final readonly class BookCopyController
         $action = $this->string($body, 'action');
         try {
             if ($action === 'update') {
-                $copyRequest = $this->copyRequest($body);
+                $copyRequest = $this->copyRequest($body, $this->sessions->current()?->userId() ?? 0);
                 $error = $this->validator->firstError($copyRequest);
                 if ($error !== null) {
                     return new JsonResponse(422, ['ok' => false, 'message' => $error]);
@@ -68,10 +68,11 @@ final readonly class BookCopyController
             }
 
             $ids = $this->ids($body['ids'] ?? ($body['copy_id'] ?? []));
+            $actorId = $this->sessions->current()?->userId() ?? 0;
             $count = match ($action) {
-                'archive' => $this->books->archiveCopies($ids),
-                'restore' => $this->books->restoreCopies($ids),
-                'delete' => $this->books->deleteCopies($ids),
+                'archive' => $this->books->archiveCopies($ids, $actorId),
+                'restore' => $this->books->restoreCopies($ids, $actorId),
+                'delete' => $this->books->deleteCopies($ids, $actorId),
                 default => throw new InvalidArgumentException('Unknown copy action.'),
             };
 
@@ -94,7 +95,7 @@ final readonly class BookCopyController
     }
 
     /** @param array<string, mixed> $body */
-    private function copyRequest(array $body): BookCopyMutationRequest
+    private function copyRequest(array $body, int $actorId): BookCopyMutationRequest
     {
         $statusValue = BookStatus::tryFrom($this->string($body, 'status'));
         $status = $statusValue === null ? BookStatus::AVAILABLE->value : $statusValue->value;
@@ -110,6 +111,8 @@ final readonly class BookCopyController
             $this->string($body, 'due_date'),
             $this->string($body, 'return_date'),
             $status,
+            $this->string($body, 'reason'),
+            $actorId,
         );
     }
 

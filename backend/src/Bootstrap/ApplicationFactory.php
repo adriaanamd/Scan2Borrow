@@ -51,6 +51,7 @@ use App\Http\Responses\ResponseEmitter;
 use App\Http\Routing\AuthRouteTable;
 use App\Http\Routing\BookRouteTable;
 use App\Http\Routing\BarcodePrintRouteTable;
+use App\Http\Routing\CopyHistoryRouteTable;
 use App\Http\Routing\BorrowerRouteTable;
 use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
@@ -66,6 +67,7 @@ use App\Infrastructure\Database\PdoConnectionFactory;
 use App\Infrastructure\Persistence\PdoUserRepository;
 use App\Infrastructure\Persistence\PdoBookRepository;
 use App\Infrastructure\Persistence\PdoBarcodePrintRepository;
+use App\Infrastructure\Persistence\PdoAuditEventRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
 use App\Infrastructure\Persistence\PdoGuestIdentityRepository;
@@ -102,7 +104,8 @@ final class ApplicationFactory
         $guestVisitors = new PdoVisitorRegistrationRepository($pdo);
         $authentication = new AuthenticationService(new PdoUserRepository($pdo), $sessions, new PdoGuestIdentityRepository($pdo));
         $authController = new AuthController($sessions, $csrf, $authentication);
-        $bookRepository = new PdoBookRepository($pdo);
+        $auditRepository = new PdoAuditEventRepository($pdo);
+        $bookRepository = new PdoBookRepository($pdo, $auditRepository);
         $bookController = new BookController(
             $sessions,
             new BookQueryService($bookRepository),
@@ -118,10 +121,10 @@ final class ApplicationFactory
         );
         $barcodePrintController = new BarcodePrintController(
             $sessions,
-            new \App\Application\Services\BarcodePrintService(new PdoBarcodePrintRepository($pdo)),
+            new \App\Application\Services\BarcodePrintService(new PdoBarcodePrintRepository($pdo, $auditRepository)),
             $csrf,
         );
-        $borrowings = new PdoBorrowingRepository($pdo);
+        $borrowings = new PdoBorrowingRepository($pdo, $auditRepository);
         $holds = new \App\Infrastructure\Persistence\PdoHoldRepository($pdo);
         $reservationAvailability = new ReservationAvailabilityService(
             $holds,
@@ -180,9 +183,10 @@ final class ApplicationFactory
             $csrf,
             new GuestProfileCompletionService($otp, $visitorDetails),
         );
+        $staffRepository = new \App\Infrastructure\Persistence\PdoStaffRepository($pdo, $auditRepository);
         $staffController = new StaffController(
             $sessions,
-            new \App\Infrastructure\Persistence\PdoStaffRepository($pdo),
+            $staffRepository,
             $csrf,
             new \App\Application\Services\GuestApprovalService(
                 new \App\Infrastructure\Persistence\PdoGuestApprovalRepository($pdo),
@@ -190,7 +194,7 @@ final class ApplicationFactory
             ),
             new LocalPhotoStorage(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads', '/scan2borrow/uploads'),
             new BorrowerNotificationService(
-                new \App\Infrastructure\Persistence\PdoStaffRepository($pdo),
+                $staffRepository,
                 new SmtpEmailSender(),
             ),
         );
@@ -199,6 +203,10 @@ final class ApplicationFactory
             (new AuthRouteTable())->routes($authController, $registration),
             (new BookRouteTable())->routes($bookController, $bookCopyController),
             (new BarcodePrintRouteTable())->routes($barcodePrintController),
+            (new CopyHistoryRouteTable())->routes(new \App\Http\Controllers\CopyHistoryController(
+                $sessions,
+                new \App\Application\Services\CopyHistoryService($auditRepository),
+            )),
             (new BorrowerRouteTable())->routes($borrowerController),
             (new ReservationRouteTable())->routes($reservationController),
             (new StaffReservationRouteTable())->routes($staffReservationController),

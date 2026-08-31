@@ -64,9 +64,9 @@ final readonly class BookController
             $ids = $this->ids($body['ids'] ?? ($body['id'] ?? []));
             try {
                 $count = match ($action) {
-                    'archive' => $this->archive->archive($ids),
-                    'restore' => $this->archive->restore($ids),
-                    'delete' => $this->archive->delete($ids),
+                    'archive' => $this->archive->archive($ids, $this->sessions->current()?->userId() ?? 0),
+                    'restore' => $this->archive->restore($ids, $this->sessions->current()?->userId() ?? 0),
+                    'delete' => $this->archive->delete($ids, $this->sessions->current()?->userId() ?? 0),
                 };
             } catch (InvalidArgumentException $exception) {
                 return new JsonResponse(422, ['ok' => false, 'message' => $exception->getMessage()]);
@@ -80,11 +80,11 @@ final readonly class BookController
             if (in_array($action, ['update', 'update_title'], true)) {
                 $result = $this->mutations->update(
                     $this->positiveInt($body['title_id'] ?? $body['id'] ?? null),
-                    $this->bookRequest($body),
+                    $this->bookRequest($body, $this->sessions->current()?->userId() ?? 0),
                 );
                 $message = 'Book updated successfully.';
             } elseif (in_array($action, ['create', 'create_title'], true)) {
-                $result = $this->mutations->create($this->bookRequest($body));
+                $result = $this->mutations->create($this->bookRequest($body, $this->sessions->current()?->userId() ?? 0));
                 $message = 'Book added successfully.';
             } else {
                 return new JsonResponse(400, ['ok' => false, 'message' => 'Unknown action.']);
@@ -175,7 +175,7 @@ final readonly class BookController
     }
 
     /** @param array<string, mixed> $body */
-    private function bookRequest(array $body): \App\Application\DTO\BookMutationRequest
+    private function bookRequest(array $body, int $actorId = 0): \App\Application\DTO\BookMutationRequest
     {
         return new \App\Application\DTO\BookMutationRequest(
             $this->string($body, 'barcode'),
@@ -196,6 +196,7 @@ final readonly class BookController
             $this->string($body, 'status') === '' ? 'Available' : $this->string($body, 'status'),
             [],
             max(1, $this->positiveInt($body['quantity'] ?? 1)),
+            $actorId,
         );
     }
 

@@ -84,7 +84,11 @@ export class AdminStaffPage {
 
   profileChangeDetail(request) {
     const rows = Object.keys(request.requested_values || {}).map((field) => `<div class="profile-review-row"><span>${this.escape(this.label(field))}</span><span>${this.escape(request.original_values?.[field] || '(empty)')} → ${this.escape(request.requested_values?.[field] || '(empty)')}</span></div>`);
-    if (request.requested_photo) rows.push(`<div class="profile-review-row"><span>Profile photo</span><span>New photo attached</span></div>`);
+    if (request.requested_photo) {
+      const originalPhoto = this.safePhotoPath(request.original_photo);
+      const requestedPhoto = this.safePhotoPath(request.requested_photo);
+      rows.push(`<div class="profile-review-row"><span>Profile photo</span><span class="profile-review-photos">${originalPhoto ? `<img src="${this.escape(originalPhoto)}" alt="Current profile photo">` : '<span>(none)</span>'}<span aria-hidden="true">→</span><img src="${this.escape(requestedPhoto)}" alt="Requested profile photo"></span></div>`);
+    }
     return rows.join('') || '<p class="text-muted">No text fields changed.</p>';
   }
 
@@ -117,6 +121,7 @@ export class AdminStaffPage {
   }
 
   label(field) { return String(field || '').replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase()); }
+  safePhotoPath(path) { if (!path || typeof path !== 'string') return ''; return path.startsWith('/scan2borrow/uploads/') || path.startsWith('uploads/') ? (path.startsWith('uploads/') ? `/scan2borrow/${path}` : path) : ''; }
 
   escape(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
 }

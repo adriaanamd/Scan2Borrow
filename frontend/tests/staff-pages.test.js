@@ -104,6 +104,15 @@ test('staff navigation exposes the copy history page', () => {
   assert.match(navbar, /Copy History/);
 });
 
+test('admin profile approval stays visible only on the protected admin surface', () => {
+  const page = fs.readFileSync(path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'admin-staff', 'admin-staff.page.js'), 'utf8');
+  const template = fs.readFileSync(adminTemplate, 'utf8');
+  assert.match(page, /profile-change-requests-body/);
+  assert.match(page, /safePhotoPath/);
+  assert.match(template, /Only administrators can approve/);
+  assert.match(template, /profile-change-review-note/);
+});
+
 test('approval and guest rejection templates use shared confirmation metadata', () => {
   for (const templatePath of [dashboardTemplate, guestRequestsTemplate]) {
     const source = fs.readFileSync(templatePath, 'utf8');

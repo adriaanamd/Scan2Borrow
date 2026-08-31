@@ -10,9 +10,10 @@ CREATE DATABASE IF NOT EXISTS `scan2borrow_2.0`
 USE `scan2borrow_2.0`;
 
 -- ---- Users (borrowers + staff) ---------------------------------------------
-DROP TABLE IF EXISTS `borrowing`;
+DROP TABLE IF EXISTS `audit_events`;
 DROP TABLE IF EXISTS `borrowing_items`;
 DROP TABLE IF EXISTS `borrowing_transactions`;
+DROP TABLE IF EXISTS `borrowing`;
 DROP TABLE IF EXISTS `book_copies`;
 DROP TABLE IF EXISTS `book_titles`;
 DROP TABLE IF EXISTS `books`;
@@ -54,7 +55,7 @@ CREATE TABLE `books` (
     `row_no`       VARCHAR(20)  DEFAULT NULL,
     `due_date`     DATE         DEFAULT NULL,
     `return_date`  DATE         DEFAULT NULL,
-    `status`       ENUM('Available','Borrowed','Reserved') NOT NULL DEFAULT 'Available',
+    `status`       ENUM('Available','Borrowed','Reserved','Lost','Damaged') NOT NULL DEFAULT 'Available',
     `deleted_at`   DATETIME DEFAULT NULL,        -- soft delete (archived) timestamp
     `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -113,7 +114,7 @@ CREATE TABLE `book_copies` (
     `row_no`       VARCHAR(20) DEFAULT NULL,
     `due_date`     DATE DEFAULT NULL,
     `return_date`  DATE DEFAULT NULL,
-    `status`       ENUM('Available','Borrowed','Reserved') NOT NULL DEFAULT 'Available',
+    `status`       ENUM('Available','Borrowed','Reserved','Lost','Damaged') NOT NULL DEFAULT 'Available',
     `deleted_at`   DATETIME DEFAULT NULL,
     `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_copy_title` FOREIGN KEY (`title_id`) REFERENCES `book_titles`(`id`) ON DELETE CASCADE,
@@ -154,6 +155,29 @@ CREATE TABLE `borrowing_items` (
     CONSTRAINT `fk_item_copy` FOREIGN KEY (`copy_id`) REFERENCES `book_copies`(`id`) ON DELETE RESTRICT,
     UNIQUE KEY `uq_transaction_copy` (`transaction_id`, `copy_id`),
     KEY `idx_items_copy_active` (`copy_id`, `return_date`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `audit_events` (
+    `id`                INT AUTO_INCREMENT PRIMARY KEY,
+    `copy_id`           INT DEFAULT NULL,
+    `actor_user_id`     INT DEFAULT NULL,
+    `event_type`        ENUM('acquired','status_changed','loaned','returned','barcode_printed','archived','restored','deleted') NOT NULL,
+    `from_status`       ENUM('Available','Borrowed','Reserved','Lost','Damaged') DEFAULT NULL,
+    `to_status`         ENUM('Available','Borrowed','Reserved','Lost','Damaged') DEFAULT NULL,
+    `reason`            VARCHAR(500) DEFAULT NULL,
+    `transaction_id`    INT DEFAULT NULL,
+    `borrowing_item_id` INT DEFAULT NULL,
+    `print_batch_id`    INT DEFAULT NULL,
+    `legacy_source`     VARCHAR(190) DEFAULT NULL,
+    `metadata`          JSON NOT NULL,
+    `occurred_at`       DATETIME NOT NULL,
+    `created_at`        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_audit_copy` FOREIGN KEY (`copy_id`) REFERENCES `book_copies`(`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_audit_actor` FOREIGN KEY (`actor_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_audit_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `borrowing_transactions`(`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_audit_item` FOREIGN KEY (`borrowing_item_id`) REFERENCES `borrowing_items`(`id`) ON DELETE SET NULL,
+    UNIQUE KEY `uq_audit_legacy_source` (`legacy_source`),
+    KEY `idx_audit_copy_occurred` (`copy_id`, `occurred_at`, `id`)
 ) ENGINE=InnoDB;
 
 -- ============================================================================

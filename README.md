@@ -5,7 +5,7 @@ Scan2Borrow is a library management and borrowing system for Binalbagan Catholic
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql` and `sql/upgrade_barcode_printing.sql` to backfill the seeded legacy rows and enable barcode export history. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, then `upgrade_barcode_printing.sql`. The bulk-borrowing and barcode-printing migrations are required in both cases.
+2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql`, `sql/upgrade_barcode_printing.sql`, and `sql/upgrade_copy_audit_trail.sql` to backfill the seeded legacy rows and enable barcode export history plus the physical-copy audit trail. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_barcode_printing.sql`, then `upgrade_copy_audit_trail.sql`. The bulk-borrowing, barcode-printing, and copy-audit migrations are required in both cases.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 

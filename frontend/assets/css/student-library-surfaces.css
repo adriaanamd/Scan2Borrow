@@ -14,7 +14,7 @@
   z-index: 0;
 }
 
-.student-library-page > * {
+.student-library-page > :not(.modal) {
   position: relative;
   z-index: 1;
 }

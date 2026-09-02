@@ -48,3 +48,28 @@ test('borrower dashboards mount the renewal panel for the current loans', () => 
     assert.match(source, /renewalPanel\.load\(data\.current_loans \|\| \[\]\)/);
   }
 });
+
+test('borrower dashboards load the shared renewal presentation', () => {
+  for (const page of [
+    'features/student/pages/dashboard/dashboard.html',
+    'features/teacher/pages/dashboard/dashboard.html',
+  ]) {
+    assert.match(read(page), /frontend\/assets\/css\/reservations\.css/);
+  }
+
+  const styles = read('assets/css/reservations.css');
+  assert.match(styles, /\.renewal-panel\s*\{[\s\S]*border-left:\s*4px solid #002FA7;/);
+  assert.match(styles, /\.renewal-panel__row\s*\{[\s\S]*display:\s*grid;/);
+  assert.doesNotMatch(styles, /\.renewal-panel__button\s*\{[\s\S]*#e4002b/);
+});
+
+test('renewal rows expose a quiet operational hierarchy', () => {
+  const root = { innerHTML: '', addEventListener() {} };
+  const panel = new RenewalPanelComponent(root, { service: { list: async () => ({}) } });
+  panel.render([{ id: 88, title: 'Clean Code', due_date: '2026-08-30' }], []);
+
+  assert.match(root.innerHTML, /renewal-panel__loan/);
+  assert.match(root.innerHTML, /renewal-panel__due/);
+  assert.match(root.innerHTML, /renewal-panel__actions/);
+  assert.doesNotMatch(root.innerHTML, /Borrower request/);
+});

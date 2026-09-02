@@ -8,13 +8,29 @@
 .staff-reservations .table td { border-color: #c9c9cc; }
 .staff-reservations__status { border: 1px solid var(--reservation-ink); display: inline-block; font-size: .7rem; font-weight: 700; padding: 4px 7px; text-transform: uppercase; }
 .staff-reservations__status--offered { border-color: var(--reservation-red); color: var(--reservation-red); }
-.renewal-panel { background: #f7f7f8; border: 1px solid #d8d8dc; color: #141414; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 24px; }
-.renewal-panel__header { border-bottom: 1px solid #141414; margin-bottom: 4px; padding-bottom: 16px; }
-.renewal-panel__eyebrow { color: #e4002b; font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.renewal-panel h2 { font-size: 1.55rem; letter-spacing: -.04em; margin: 0; }
-.renewal-panel__header p, .renewal-panel__row span { color: #555; display: block; font-size: .82rem; margin: 6px 0 0; }
-.renewal-panel__row { align-items: center; border-bottom: 1px solid #c9c9cc; display: flex; gap: 16px; justify-content: space-between; padding: 14px 0; }
-.renewal-panel__form { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-.renewal-panel__form input { border: 1px solid #aaa; min-width: 160px; padding: 7px 8px; }
-.renewal-panel__button { background: #e4002b; border: 1px solid #e4002b; color: #fff; cursor: pointer; font-size: .76rem; font-weight: 700; padding: 8px 10px; }
-.renewal-panel__status { border: 1px solid #141414; color: #141414 !important; display: inline-block !important; font-size: .7rem !important; font-weight: 700; margin: 0 !important; padding: 5px 8px; text-transform: uppercase; }
+.renewal-panel { background: #F7F7F8; border: 1px solid #D4E0E8; border-left: 4px solid #002FA7; color: #102F52; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 20px 24px 8px; }
+.renewal-panel__header { align-items: baseline; border-bottom: 1px solid #102F52; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 0; padding: 4px 0 14px; }
+.renewal-panel h2 { color: #102F52; font-size: 1.35rem; letter-spacing: -.02em; margin: 0; }
+.renewal-panel__header p { color: #63798B; flex: 1; font-size: .82rem; margin: 0; max-width: 560px; }
+.renewal-panel__row { align-items: center; border-bottom: 1px solid #D4E0E8; display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) minmax(0, auto); padding: 16px 0; }
+.renewal-panel__row:last-child { border-bottom: 0; }
+.renewal-panel__loan { min-width: 0; }
+.renewal-panel__title { color: #102F52; display: block; font-size: .95rem; font-weight: 700; }
+.renewal-panel__due { color: #63798B; display: block; font-size: .8rem; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.renewal-panel__actions { min-width: 0; }
+.renewal-panel__form { display: grid; gap: 8px; grid-template-columns: minmax(180px, 240px) auto; justify-content: end; }
+.renewal-panel__form input { background: #FFFFFF; border: 1px solid #AEBFCB; border-radius: 3px; color: #102F52; min-width: 0; padding: 8px 10px; }
+.renewal-panel__form input:focus { border-color: #002FA7; box-shadow: 0 0 0 2px rgba(0, 47, 167, .12); outline: 0; }
+.renewal-panel__button { background: #002FA7; border: 1px solid #002FA7; border-radius: 3px; color: #FFFFFF; cursor: pointer; font-size: .76rem; font-weight: 700; padding: 8px 12px; }
+.renewal-panel__button:hover, .renewal-panel__button:focus-visible { background: #001F73; border-color: #001F73; }
+.renewal-panel__button:disabled { cursor: wait; opacity: .65; }
+.renewal-panel__status { background: #FFFFFF; border: 1px solid #002FA7; border-radius: 3px; color: #002FA7 !important; display: inline-block !important; font-size: .72rem !important; font-weight: 700; margin: 0 !important; padding: 6px 9px; text-transform: uppercase; }
+
+@media (max-width: 760px) {
+  .renewal-panel { padding: 18px 16px 6px; }
+  .renewal-panel__header { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .renewal-panel__row { gap: 12px; grid-template-columns: 1fr; }
+  .renewal-panel__actions { width: 100%; }
+  .renewal-panel__form { grid-template-columns: 1fr; justify-content: stretch; }
+  .renewal-panel__form input, .renewal-panel__button { width: 100%; }
+}

@@ -116,7 +116,13 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
             $statusClause = $includeReturned ? '' : ' AND bi.return_date IS NULL';
             $statement = $this->pdo->prepare(
                 "SELECT MIN(bi.id) AS id, bt.transaction_code, bt.borrow_date, bt.due_date, MAX(bi.return_date) AS return_date,
-                        CASE WHEN SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) > 0 THEN bt.status ELSE 'Returned' END AS status,
+                        CASE
+                            WHEN SUM(CASE WHEN bi.return_date IS NULL
+                                           AND (bi.status = 'Pending' OR bt.approval_status = 'pending')
+                                          THEN 1 ELSE 0 END) > 0 THEN 'Pending'
+                            WHEN SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) > 0 THEN bt.status
+                            ELSE 'Returned'
+                        END AS status,
                         SUM(bi.fine_amount) AS fine_amount, t.title, t.author, COUNT(bi.id) AS quantity,
                         GROUP_CONCAT(c.barcode) AS barcode
                  FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id

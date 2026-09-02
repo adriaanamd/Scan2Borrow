@@ -28,7 +28,17 @@ export class RenewalPanelComponent {
     const rows = activeLoans.map((loan) => {
       const loanId = loan.id || loan.loan_id;
       const renewal = byLoan.get(String(loanId));
-      const state = renewal ? `<span class="renewal-panel__status">${this.escape(renewal.status_label || renewal.status)}</span>` : `<form class="renewal-panel__form" data-renewal-form><input type="hidden" name="loan_id" value="${this.escape(loanId)}"><input name="reason" maxlength="500" placeholder="Reason (optional)" aria-label="Reason for ${this.escape(loan.title)}"><button type="submit" class="renewal-panel__button">Request +7 days</button></form>`;
+      const status = String(loan.status || '').toLowerCase();
+      const unavailableLabel = status === 'pending'
+        ? 'Awaiting approval'
+        : status === 'overdue'
+          ? 'Resolve overdue balance'
+          : 'Renewal unavailable';
+      const state = renewal
+        ? `<span class="renewal-panel__status">${this.escape(renewal.status_label || renewal.status)}</span>`
+        : status === 'borrowed'
+          ? `<form class="renewal-panel__form" data-renewal-form><input type="hidden" name="loan_id" value="${this.escape(loanId)}"><input name="reason" maxlength="500" placeholder="Reason (optional)" aria-label="Reason for ${this.escape(loan.title)}"><button type="submit" class="renewal-panel__button">Request +7 days</button></form>`
+          : `<span class="renewal-panel__status renewal-panel__status--muted">${unavailableLabel}</span>`;
       return `<div class="renewal-panel__row" data-loan-id="${this.escape(loanId)}"><div class="renewal-panel__loan"><strong class="renewal-panel__title">${this.escape(loan.title)}</strong><span class="renewal-panel__due">Due ${this.escape(loan.due_date || '—')}</span></div><div class="renewal-panel__actions">${state}</div></div>`;
     }).join('');
     this.root.innerHTML = `<section class="renewal-panel"><div class="renewal-panel__header"><h2>Renewals</h2><p>Requests add one standard period and require librarian approval.</p></div>${rows}</section>`;

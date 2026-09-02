@@ -25,6 +25,7 @@
 .renewal-panel__button:hover, .renewal-panel__button:focus-visible { background: #001F73; border-color: #001F73; }
 .renewal-panel__button:disabled { cursor: wait; opacity: .65; }
 .renewal-panel__status { background: #FFFFFF; border: 1px solid #002FA7; border-radius: 3px; color: #002FA7 !important; display: inline-block !important; font-size: .72rem !important; font-weight: 700; margin: 0 !important; padding: 6px 9px; text-transform: uppercase; }
+.renewal-panel__status--muted { border-color: #AEBFCB; color: #63798B !important; }
 
 @media (max-width: 760px) {
   .renewal-panel { padding: 18px 16px 6px; }

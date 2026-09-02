@@ -73,3 +73,16 @@ test('renewal rows expose a quiet operational hierarchy', () => {
   assert.match(root.innerHTML, /renewal-panel__actions/);
   assert.doesNotMatch(root.innerHTML, /Borrower request/);
 });
+
+test('renewal rows do not offer requests for loans that are not borrowable', () => {
+  const root = { innerHTML: '', addEventListener() {} };
+  const panel = new RenewalPanelComponent(root, { service: { list: async () => ({}) } });
+  panel.render([
+    { id: 11, title: 'Awaiting Book', due_date: '2026-09-05', status: 'Pending' },
+    { id: 12, title: 'Late Book', due_date: '2026-08-12', status: 'Overdue' },
+  ], []);
+
+  assert.doesNotMatch(root.innerHTML, /renewal-panel__form/);
+  assert.match(root.innerHTML, /Awaiting approval/);
+  assert.match(root.innerHTML, /Resolve overdue balance/);
+});

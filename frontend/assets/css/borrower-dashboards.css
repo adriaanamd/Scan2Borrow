@@ -703,7 +703,7 @@
   min-height: calc(100vh - 76px);
 }
 
-.borrower-dashboard .content > * {
+.borrower-dashboard .content > :not(.modal) {
   position: relative;
   z-index: 1;
 }

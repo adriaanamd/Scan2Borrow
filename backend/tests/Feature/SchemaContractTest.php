@@ -57,11 +57,30 @@ final class SchemaContractTest extends TestCase
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
             'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
-            'upgrade_profile_change_requests.sql',
+            'upgrade_profile_change_requests.sql', 'upgrade_approval_status_sync.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
             self::assertFileExists($path, "Missing SQL migration or seed file: {$filename}");
             self::assertNotSame('', trim((string) file_get_contents($path)));
+        }
+    }
+
+    public function testApprovalStatusRepairMigrationIsAvailableAndIdempotentByPredicate(): void
+    {
+        $migration = str_replace(["\r\n", "\r"], "\n", $this->readSql('upgrade_approval_status_sync.sql'));
+
+        foreach ([
+            'USE `scan2borrow_2.0`;',
+            'UPDATE `borrowing_items` AS item_record',
+            'JOIN `borrowing_transactions` AS transaction_record',
+            "transaction_record.`approval_status` = 'approved'",
+            "item_record.`status` = 'Pending'",
+            "item_record.`status` = 'Borrowed'",
+            "transaction_record.`approval_status` = 'rejected'",
+            "item_record.`status` = 'Returned'",
+            'CURRENT_TIMESTAMP',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $migration, 'Approval status repair migration missing marker: ' . $marker);
         }
     }
 

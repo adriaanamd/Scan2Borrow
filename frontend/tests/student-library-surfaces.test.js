@@ -49,6 +49,7 @@ test('student search exposes catalog masthead, filter, result, and borrow bounda
   assert.match(source, /id="show-all-books"/);
   assert.match(source, /id="all-books-panel"/);
   assert.match(source, /id="book-pagination"/);
+  assert.match(source, /id="toast-host"/);
 });
 
 test('student surface styles remain scoped away from navigation', () => {

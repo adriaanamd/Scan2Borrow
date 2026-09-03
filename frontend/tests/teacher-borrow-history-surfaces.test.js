@@ -90,6 +90,7 @@ test('teacher catalog tab has a teacher-owned template and role boundary', () =>
   assert.match(template, /id="show-all-books"/);
   assert.match(template, /id="all-books-panel"/);
   assert.match(template, /id="book-pagination"/);
+  assert.match(template, /id="toast-host"/);
 });
 
 test('teacher catalog owns its book cards and modal interaction surface', () => {

@@ -60,3 +60,130 @@ test('catalog query detection distinguishes the landing view from filtered inten
   assert.equal(BorrowerSearchPage.prototype.hasCatalogQuery.call({ params: new URLSearchParams('search=history') }), true);
   assert.equal(BorrowerSearchPage.prototype.hasCatalogQuery.call({ params: new URLSearchParams('status=Available') }), true);
 });
+
+test('active waitlist state keeps only actionable hold statuses', () => {
+  const holds = [
+    { title_id: 11, status: 'queued' },
+    { title_id: 12, status: 'offered' },
+    { title_id: 13, status: 'claimed' },
+    { title_id: 14, status: 'fulfilled' },
+    { title_id: 15, status: 'cancelled' },
+    { title_id: 'invalid', status: 'queued' },
+  ];
+
+  const ids = BorrowerSearchPage.prototype.activeWaitlistTitleIds.call({}, holds);
+
+  assert.deepEqual([...ids], [11, 12, 13]);
+});
+
+test('unavailable catalog actions offer a safe waitlist button', () => {
+  const context = {
+    classPrefix: 'student',
+    waitlistedTitleIds: new Set(),
+    escapeHtml: BorrowerSearchPage.prototype.escapeHtml,
+    waitlistTitleId: BorrowerSearchPage.prototype.waitlistTitleId,
+  };
+  const action = BorrowerSearchPage.prototype.waitlistAction.call(context, {
+    id: 21,
+    title: '<Clean Code>',
+  });
+
+  assert.match(action, /Join waitlist/);
+  assert.match(action, /data-waitlist-title-id="21"/);
+  assert.match(action, /data-waitlist-title="&lt;Clean Code&gt;"/);
+  assert.doesNotMatch(action, />Unavailable</);
+});
+
+test('waitlisted catalog actions are disabled and cannot be joined again', () => {
+  const context = {
+    classPrefix: 'teacher',
+    waitlistedTitleIds: new Set([21]),
+    escapeHtml: BorrowerSearchPage.prototype.escapeHtml,
+    waitlistTitleId: BorrowerSearchPage.prototype.waitlistTitleId,
+  };
+  const action = BorrowerSearchPage.prototype.waitlistAction.call(context, {
+    id: 21,
+    title: 'Clean Code',
+  });
+
+  assert.match(action, /disabled/);
+  assert.match(action, /On waitlist/);
+  assert.doesNotMatch(action, /Join waitlist/);
+});
+
+test('waitlist confirmation cancels without joining', async () => {
+  const calls = [];
+  const button = {
+    dataset: { waitlistTitleId: '31', waitlistTitle: 'Clean Code' },
+    disabled: false,
+    textContent: 'Join waitlist',
+  };
+  const context = {
+    waitlistedTitleIds: new Set(),
+    confirmation: {
+      confirm: async () => false,
+    },
+    reservationService: {
+      join: async () => calls.push('join'),
+    },
+    notify: (...args) => calls.push(args),
+  };
+
+  const result = await BorrowerSearchPage.prototype.confirmWaitlist.call(context, button);
+
+  assert.equal(result, false);
+  assert.deepEqual(calls, []);
+  assert.equal(button.disabled, false);
+  assert.equal(button.textContent, 'Join waitlist');
+});
+
+test('waitlist confirmation joins after acceptance and marks the button', async () => {
+  const calls = [];
+  const button = {
+    dataset: { waitlistTitleId: '32', waitlistTitle: 'Refactoring' },
+    disabled: false,
+    textContent: 'Join waitlist',
+  };
+  const context = {
+    waitlistedTitleIds: new Set(),
+    confirmation: {
+      confirm: async (options) => {
+        await options.onConfirm();
+        return true;
+      },
+    },
+    reservationService: {
+      join: async (titleId) => {
+        calls.push(['join', titleId]);
+        return { data: { message: 'You joined the queue for "Refactoring".' } };
+      },
+    },
+    markWaitlisted: BorrowerSearchPage.prototype.markWaitlisted,
+    notify: (...args) => calls.push(args),
+  };
+
+  const result = await BorrowerSearchPage.prototype.confirmWaitlist.call(context, button);
+
+  assert.equal(result, true);
+  assert.deepEqual(calls, [
+    ['join', 32],
+    ['You joined the queue for "Refactoring".', 'success'],
+  ]);
+  assert.equal(button.disabled, true);
+  assert.equal(button.textContent, 'On waitlist');
+  assert.equal(context.waitlistedTitleIds.has(32), true);
+});
+
+test('catalog waitlist wiring preserves role endpoints and toast mounts', () => {
+  const student = read('features/student/pages/search/student-search.page.js');
+  const teacher = read('features/teacher/pages/borrow/teacher-borrow.page.js');
+  const reservationService = read('app/core/services/reservation.service.js');
+  const studentTemplate = read('features/student/pages/search/search.html');
+  const teacherTemplate = read('features/teacher/pages/borrow/borrow.html');
+
+  assert.match(student, /role: ['"]student['"]/);
+  assert.match(teacher, /role: ['"]teacher['"]/);
+  assert.match(reservationService, /\/scan2borrow\/api\/\$\{this\.role\}\/holds/);
+  assert.match(studentTemplate, /id="toast-host"/);
+  assert.match(teacherTemplate, /id="toast-host"/);
+});

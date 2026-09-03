@@ -188,3 +188,88 @@
     transform: none;
   }
 }
+
+.teacher-search-page .teacher-search-recommendations {
+  border-left: 4px solid #002FA7;
+  border-radius: 4px;
+}
+
+.teacher-search-page .teacher-search-recommendations__header {
+  align-items: flex-end;
+  border-bottom: 1px solid #D4E0E8;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: .9rem;
+}
+
+.teacher-search-page .teacher-search-recommendations__state > .row,
+.teacher-search-page .teacher-search-results__state > .row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.teacher-search-page .teacher-search-recommendations__state > .row > *,
+.teacher-search-page .teacher-search-results__state > .row > * {
+  padding: 0;
+  width: auto;
+}
+
+.teacher-search-page .teacher-recommended-card,
+.teacher-search-page .teacher-recommended-card .book-card {
+  height: 300px;
+  min-height: 300px;
+}
+
+.teacher-search-page .teacher-recommended-card .book-face {
+  border-radius: 4px;
+}
+
+.teacher-search-page .teacher-search-recommendations__footer {
+  border-top: 1px solid #D4E0E8;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.teacher-search-page .teacher-search-results__header {
+  align-items: flex-end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.teacher-search-page .teacher-search-results__range {
+  color: #002FA7;
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.teacher-search-page .borrower-catalog__pagination-controls {
+  align-items: center;
+  display: flex;
+  gap: .75rem;
+  justify-content: center;
+  padding-top: 1.25rem;
+}
+
+@media (max-width: 680px) {
+  .teacher-search-page .teacher-search-recommendations__header,
+  .teacher-search-page .teacher-search-results__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .teacher-search-page .teacher-search-recommendations__footer .btn {
+    width: 100%;
+  }
+
+  .teacher-search-page .teacher-search-recommendations__state > .row,
+  .teacher-search-page .teacher-search-results__state > .row {
+    grid-template-columns: 1fr;
+  }
+}

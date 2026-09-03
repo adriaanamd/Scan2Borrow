@@ -45,6 +45,10 @@ test('student search exposes catalog masthead, filter, result, and borrow bounda
   assert.match(source, /student-search-results/);
   assert.match(source, /student-search-results__header/);
   assert.match(source, /student-search-results__state/);
+  assert.match(source, /id="recommendation-panel"/);
+  assert.match(source, /id="show-all-books"/);
+  assert.match(source, /id="all-books-panel"/);
+  assert.match(source, /id="book-pagination"/);
 });
 
 test('student surface styles remain scoped away from navigation', () => {

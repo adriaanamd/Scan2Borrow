@@ -31,6 +31,19 @@
             </div>
             <div class="teacher-search-masthead__mark" aria-hidden="true">FAC</div>
           </div>
+          <section id="recommendation-panel" class="teacher-library-panel teacher-search-recommendations mb-4">
+            <div class="teacher-library-panel__header teacher-search-recommendations__header">
+              <div>
+                <div class="teacher-library-eyebrow">Recommended</div>
+                <h3 class="mb-1">Recommended books</h3>
+                <p class="text-muted small mb-0">Five available titles from the current catalog.</p>
+              </div>
+            </div>
+            <div id="book-recommendations" class="teacher-search-recommendations__state"></div>
+            <div class="teacher-search-recommendations__footer">
+              <button type="button" id="show-all-books" class="btn btn-primary" aria-controls="all-books-panel" aria-expanded="false">Show all books</button>
+            </div>
+          </section>
           <div class="teacher-library-panel teacher-search-filters mb-4">
             <form method="GET" id="searchForm" action="/scan2borrow/teacher/borrow">
               <div class="mb-3">
@@ -50,10 +63,23 @@
               <div id="active-filters" class="teacher-search-filters__active"></div>
             </form>
           </div>
-          <div class="teacher-library-panel teacher-search-results">
-            <div class="teacher-library-panel__header teacher-search-results__header"><div><strong id="book-count">0</strong> <span class="text-muted" id="book-count-label">books found</span><br /><small class="text-muted" id="trending-label">&#128202; Showing faculty catalog</small></div><div class="text-muted small" id="availability-label"></div></div>
-            <div id="book-results" class="teacher-search-results__state"><div class="teacher-library-state"><div class="teacher-library-state__icon" aria-hidden="true">&#128233;</div><strong>No books found</strong><p class="text-muted small mb-0">Try adjusting your search or filters.</p></div></div>
-          </div>
+          <section id="all-books-panel" class="teacher-library-panel teacher-search-results" hidden>
+            <div class="teacher-library-panel__header teacher-search-results__header">
+              <div>
+                <div class="teacher-library-eyebrow">Catalog</div>
+                <h3 class="mb-1">All books</h3>
+                <strong id="book-count">0</strong>
+                <span class="text-muted" id="book-count-label">books found</span>
+                <br /><small class="text-muted" id="trending-label">Showing all books</small>
+              </div>
+              <div class="text-muted small" id="availability-label"></div>
+              <span id="catalog-range" class="teacher-search-results__range">0-0 of 0</span>
+            </div>
+            <div id="book-results" class="teacher-search-results__state">
+              <div class="teacher-library-state"><strong>Show all books to browse the catalog.</strong></div>
+            </div>
+            <nav id="book-pagination" class="teacher-search-results__pagination" aria-label="All books pages"></nav>
+          </section>
           <div class="modal fade teacher-borrow-modal" id="borrowModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="teacher-borrow-modal-title" aria-describedby="teacher-borrow-modal-description">
             <div class="modal-dialog"><div class="modal-content"><form method="POST" id="borrowFormModal">
               <input type="hidden" name="book_barcode" id="modal-book-barcode" /><input type="hidden" name="book_title" id="modal-book-title" /><input type="hidden" name="borrow" value="1" />

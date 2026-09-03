@@ -55,6 +55,19 @@
             </div>
             <div class="student-search-masthead__mark" aria-hidden="true">S2B</div>
           </div>
+          <section id="recommendation-panel" class="student-library-panel student-search-recommendations mb-4">
+            <div class="student-library-panel__header student-search-recommendations__header">
+              <div>
+                <div class="student-library-eyebrow">Recommended</div>
+                <h3 class="mb-1">Recommended books</h3>
+                <p class="text-muted small mb-0">Five available titles from the current catalog.</p>
+              </div>
+            </div>
+            <div id="book-recommendations" class="student-search-recommendations__state"></div>
+            <div class="student-search-recommendations__footer">
+              <button type="button" id="show-all-books" class="btn btn-primary" aria-controls="all-books-panel" aria-expanded="false">Show all books</button>
+            </div>
+          </section>
           <div class="student-library-panel student-search-filters mb-4">
             <form
               method="GET"
@@ -129,31 +142,26 @@
               ></div>
             </form>
           </div>
-          <div class="student-library-panel student-search-results">
-            <div
-              class="student-library-panel__header student-search-results__header"
-            >
+          <section id="all-books-panel" class="student-library-panel student-search-results" hidden>
+            <div class="student-library-panel__header student-search-results__header">
               <div>
+                <div class="student-library-eyebrow">Catalog</div>
+                <h3 class="mb-1">All books</h3>
                 <strong id="book-count">0</strong>
-                <span class="text-muted" id="book-count-label">books found</span
-                ><br /><small class="text-muted" id="trending-label"
-                  >&#128202; Showing trending books</small
-                >
+                <span class="text-muted" id="book-count-label">books found</span>
+                <br /><small class="text-muted" id="trending-label">Showing all books</small>
               </div>
               <div class="text-muted small" id="availability-label"></div>
+              <span id="catalog-range" class="student-search-results__range">0-0 of 0</span>
             </div>
             <div id="book-results" class="student-search-results__state">
               <div class="student-library-state">
-                <div class="student-library-state__icon" aria-hidden="true">
-                  &#128233;
-                </div>
-                <strong>No books found</strong>
-                <p class="text-muted small">
-                  Try adjusting your search or filters.
-                </p>
+                <div class="student-library-state__icon" aria-hidden="true">&#128233;</div>
+                <strong>Show all books to browse the catalog.</strong>
               </div>
             </div>
-          </div>
+            <nav id="book-pagination" class="student-search-results__pagination" aria-label="All books pages"></nav>
+          </section>
           <div class="modal fade" id="borrowModal" tabindex="-1">
             <div class="modal-dialog">
               <div class="modal-content">

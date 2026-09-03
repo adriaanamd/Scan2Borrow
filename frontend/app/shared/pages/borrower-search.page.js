@@ -12,6 +12,17 @@ export class BorrowerSearchPage {
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.form = document.getElementById("searchForm");
     this.results = document.getElementById("book-results");
+    this.recommendationPanel = document.getElementById("recommendation-panel");
+    this.recommendationResults = document.getElementById("book-recommendations");
+    this.showAllBooksButton = document.getElementById("show-all-books");
+    this.allBooksPanel = document.getElementById("all-books-panel");
+    this.catalogRange = document.getElementById("catalog-range");
+    this.pagination = document.getElementById("book-pagination");
+    this.pageSize = 10;
+    this.recommendationSize = 5;
+    this.catalogPage = 1;
+    this.catalogTotal = 0;
+    this.catalogRequestId = 0;
     this.params = new URLSearchParams(window.location.search);
     this.cart = new BulkBorrowCart();
     this.applyCopy();
@@ -45,19 +56,163 @@ export class BorrowerSearchPage {
     );
   }
 
+  hasCatalogQuery() {
+    return ["search", "category_name", "status", "floor", "sort"]
+      .some((name) => (this.params.get(name) || "") !== "");
+  }
+
+  recommendationQuery() {
+    return new URLSearchParams({
+      status: "Available",
+      page: "1",
+      per_page: String(this.recommendationSize || 5),
+      sort: "created_at",
+      dir: "desc",
+    });
+  }
+
+  catalogQuery(page = 1) {
+    const query = new URLSearchParams(this.params);
+    query.set("page", String(Math.max(1, Number(page) || 1)));
+    query.set("per_page", String(this.pageSize || 10));
+    return query;
+  }
+
+  rangeLabel(total, page) {
+    const count = Math.max(0, Number(total) || 0);
+    if (count === 0) return "0-0 of 0";
+    const currentPage = Math.max(1, Number(page) || 1);
+    const start = ((currentPage - 1) * (this.pageSize || 10)) + 1;
+    const end = Math.min(currentPage * (this.pageSize || 10), count);
+    return `${start}-${end} of ${count}`;
+  }
+
+  paginationState(total, page) {
+    const count = Math.max(0, Number(total) || 0);
+    const pages = Math.max(1, Math.ceil(count / (this.pageSize || 10)));
+    const currentPage = Math.min(Math.max(1, Number(page) || 1), pages);
+    return {
+      page: currentPage,
+      pages,
+      previous: currentPage > 1,
+      next: currentPage < pages,
+    };
+  }
+
   load() {
-    const query = this.params.toString();
-    fetch(this.api + (query ? `?${query}` : ""), {
-      headers: { "X-Requested-With": "fetch" },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        if (!response.ok) throw new Error(response.message || "Unable to load books.");
-        this.render(response.data || {});
+    const filtered = this.hasCatalogQuery();
+    this.setAllBooksVisible(filtered);
+    this.recommendationPanel.hidden = filtered;
+    if (filtered) {
+      this.loadCatalog(Number(this.params.get("page") || 1));
+      return;
+    }
+    this.renderRecommendationsLoading();
+    this.loadRecommendations();
+  }
+
+  loadRecommendations() {
+    const query = this.recommendationQuery().toString();
+    fetch(`${this.api}?${query}`, { headers: { "X-Requested-With": "fetch" } })
+      .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
+      .then(({ ok, payload }) => {
+        if (!ok) throw new Error(payload.message || "Unable to load recommendations.");
+        this.renderRecommendations(payload.data?.books || []);
+      })
+      .catch(() => this.renderRecommendationsError());
+  }
+
+  loadCatalog(page = 1) {
+    const requestId = ++this.catalogRequestId;
+    this.catalogPage = Math.max(1, Number(page) || 1);
+    this.setAllBooksVisible(true);
+    this.renderCatalogLoading();
+    const query = this.catalogQuery(this.catalogPage).toString();
+    fetch(`${this.api}?${query}`, { headers: { "X-Requested-With": "fetch" } })
+      .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
+      .then(({ ok, payload }) => {
+        if (!ok) throw new Error(payload.message || "Unable to load books.");
+        if (requestId !== this.catalogRequestId) return;
+        const data = payload.data || {};
+        const total = Number(data.total || 0);
+        const lastPage = Math.max(1, Math.ceil(total / this.pageSize));
+        if (total > 0 && this.catalogPage > lastPage) {
+          this.loadCatalog(lastPage);
+          return;
+        }
+        this.render(data);
       })
       .catch((error) => {
-        this.results.innerHTML = `<div class="${this.classPrefix}-library-state ${this.classPrefix}-library-state--error"><strong>We couldn't load the catalog</strong><p class="text-muted small mb-0">${this.escapeHtml(error.message)}</p></div>`;
+        if (requestId === this.catalogRequestId) this.renderCatalogError(error.message);
       });
+  }
+
+  renderRecommendationsLoading() {
+    this.recommendationResults.innerHTML = `<div class="${this.classPrefix}-library-state"><strong>Loading recommendations...</strong></div>`;
+  }
+
+  renderRecommendationsError() {
+    this.recommendationResults.innerHTML = `<div class="${this.classPrefix}-library-state ${this.classPrefix}-library-state--error"><strong>Recommendations are unavailable right now.</strong></div>`;
+  }
+
+  renderRecommendations(books) {
+    this.recommendationResults.replaceChildren();
+    if (!books.length) {
+      this.recommendationResults.innerHTML = `<div class="${this.classPrefix}-library-state"><strong>No recommended books are available right now.</strong></div>`;
+      return;
+    }
+    const grid = document.createElement("div");
+    grid.className = `row g-4 ${this.classPrefix}-recommended-grid`;
+    books.slice(0, this.recommendationSize).forEach((book) => {
+      const card = this.bookCard(book);
+      card.classList.add(`${this.classPrefix}-recommended-card`);
+      grid.appendChild(card);
+    });
+    this.recommendationResults.appendChild(grid);
+  }
+
+  renderCatalogLoading() {
+    this.catalogRange.textContent = "Loading...";
+    this.pagination.replaceChildren();
+    this.results.innerHTML = `<div class="${this.classPrefix}-library-state"><strong>Loading books...</strong></div>`;
+  }
+
+  renderCatalogError(message) {
+    this.catalogRange.textContent = "0-0 of 0";
+    this.pagination.replaceChildren();
+    this.results.innerHTML = `<div class="${this.classPrefix}-library-state ${this.classPrefix}-library-state--error"><strong>We couldn't load the catalog</strong><p class="text-muted small mb-0">${this.escapeHtml(message)}</p></div>`;
+  }
+
+  renderCatalog(data) {
+    const books = data.books || [];
+    const total = Number(data.total || books.length);
+    const state = this.paginationState(total, this.catalogPage);
+    this.catalogTotal = total;
+    this.catalogRange.textContent = this.rangeLabel(total, state.page);
+    this.renderActiveFilters();
+    this.results.replaceChildren();
+    if (!books.length) {
+      this.results.innerHTML = `<div class="${this.classPrefix}-library-state"><div class="${this.classPrefix}-library-state__icon" aria-hidden="true">&#128233;</div><strong>No books found</strong><p class="text-muted small mb-0">Try adjusting your search or filters.</p></div>`;
+      this.renderPagination(state);
+      return;
+    }
+    const grid = document.createElement("div");
+    grid.className = "row g-4";
+    books.forEach((book) => grid.appendChild(this.bookCard(book)));
+    this.results.appendChild(grid);
+    this.renderPagination(state);
+  }
+
+  renderPagination(state) {
+    this.pagination.replaceChildren();
+    if (state.pages <= 1) return;
+    this.pagination.innerHTML = `<div class="borrower-catalog__pagination-controls"><button type="button" class="btn btn-outline-secondary btn-sm" data-catalog-page="${state.page - 1}" ${state.previous ? "" : "disabled"}>Previous</button><span aria-live="polite">Page ${state.page} of ${state.pages}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-catalog-page="${state.page + 1}" ${state.next ? "" : "disabled"}>Next</button></div>`;
+  }
+
+  setAllBooksVisible(visible) {
+    this.allBooksPanel.hidden = !visible;
+    this.showAllBooksButton.setAttribute("aria-expanded", String(visible));
+    this.showAllBooksButton.textContent = visible ? "Hide all books" : "Show all books";
   }
 
   render(data) {
@@ -77,15 +232,8 @@ export class BorrowerSearchPage {
         ? '<span class="badge bg-success">&#10003; Available to Borrow</span>'
         : "";
     this.renderActiveFilters();
-    this.results.replaceChildren();
-    if (!books.length) {
-      this.results.innerHTML = `<div class="${this.classPrefix}-library-state"><div class="${this.classPrefix}-library-state__icon" aria-hidden="true">&#128233;</div><strong>No books found</strong><p class="text-muted small mb-0">Try adjusting your search or filters.</p></div>`;
-      return;
-    }
-    const grid = document.createElement("div");
-    grid.className = "row g-4";
-    books.forEach((book) => grid.appendChild(this.bookCard(book)));
-    this.results.appendChild(grid);
+    this.catalogTotal = Number(data.total || 0);
+    this.renderCatalog(data);
   }
 
   setOptions(select, values, first, prefix = "") {
@@ -109,6 +257,16 @@ export class BorrowerSearchPage {
     });
   }
 
+  bookAction(book) {
+    const availableQuantity = Number(book.available_quantity ?? (book.status === "Available" ? 1 : 0));
+    const borrowed = Boolean(book.already_borrowed);
+    return borrowed
+      ? '<span class="badge bg-info w-100 py-2">&#128214; You have this</span>'
+      : availableQuantity > 0
+        ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${this.escapeHtml(book.title || "")}" data-author="${this.escapeHtml(book.author || "Unknown Author")}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`
+        : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
+  }
+
   bookCard(book) {
     const column = document.createElement("div");
     column.className = `col-xl-4 col-lg-6 col-md-6 ${this.classPrefix}-search-result`;
@@ -118,14 +276,8 @@ export class BorrowerSearchPage {
     const status = this.escapeHtml(book.status || "");
     const totalQuantity = Number(book.quantity ?? 1);
     const availableQuantity = Number(book.available_quantity ?? (book.status === "Available" ? 1 : 0));
-    const available = availableQuantity > 0;
-    const borrowed = Boolean(book.already_borrowed);
     const coverMarkup = cover ? `<img src="${this.escapeHtml(cover)}" alt="${title}" class="book-cover-img">` : "";
-    const action = borrowed
-      ? '<span class="badge bg-info w-100 py-2">&#128214; You have this</span>'
-      : available
-        ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${title}" data-author="${author}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`
-        : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
+    const action = this.bookAction(book);
     column.innerHTML = `<div class="book-card-shell"><div class="book-card"><div class="book-face book-face-front"><div class="book-cover${cover ? "" : " book-cover-fallback"}">${coverMarkup}<div class="book-cover-content"><span class="badge bg-light text-dark mb-3">${this.escapeHtml(book.category_name || "Library")}</span><h4 class="fw-bold text-white mb-2">${title}</h4><p class="text-white-50 small mb-0">${author}</p></div></div></div><div class="book-face book-face-back"><div class="book-back-content"><div class="d-flex justify-content-between align-items-start mb-3"><div><h5 class="fw-bold mb-1">${title}</h5><p class="text-muted small mb-0">${author}</p></div>${this.badge(status)}</div><p class="text-muted small mb-3">${this.escapeHtml(book.description || "No description available")}</p><div class="small text-muted mb-3"><div><strong>Copies:</strong> ${totalQuantity} total · ${availableQuantity} available</div><div><strong>Publisher:</strong> ${this.escapeHtml(book.publisher || "N/A")}</div><div><strong>Location:</strong> Floor ${this.escapeHtml(book.floor_no)} · Shelf ${this.escapeHtml(book.shelf_no)} · Row ${this.escapeHtml(book.row_no)}</div></div>${action}</div></div></div></div>`;
     const cardShell = column.querySelector(".book-card-shell");
     cardShell?.classList.add(`${this.classPrefix}-search-card`);
@@ -146,9 +298,21 @@ export class BorrowerSearchPage {
   bindEvents() {
     this.form.addEventListener("submit", (event) => {
       event.preventDefault();
-      window.location.href = this.form.action + "?" + new URLSearchParams(new FormData(this.form)).toString();
+      const query = new URLSearchParams(new FormData(this.form));
+      query.delete("page");
+      window.location.href = this.form.action + "?" + query.toString();
     });
     ["category_name", "status", "floor", "sort"].forEach((name) => this.form.elements[name].addEventListener("change", () => this.form.requestSubmit()));
+    this.showAllBooksButton.addEventListener("click", () => {
+      const visible = !this.allBooksPanel.hidden;
+      this.setAllBooksVisible(!visible);
+      if (!visible) this.loadCatalog(1);
+    });
+    this.pagination.addEventListener("click", (event) => {
+      const button = event.target.closest?.("[data-catalog-page]");
+      if (!button || button.disabled) return;
+      this.loadCatalog(Number(button.dataset.catalogPage));
+    });
     const modal = document.getElementById("borrowModal");
     modal.addEventListener("show.bs.modal", (event) => {
       const button = event.relatedTarget;

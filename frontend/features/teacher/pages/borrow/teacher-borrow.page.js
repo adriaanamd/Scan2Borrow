@@ -25,24 +25,15 @@ export class TeacherBorrowPage extends BorrowerSearchPage {
     this.borrowModal = installTeacherBorrowModal();
   }
 
-  bookCard(book) {
-    const column = super.bookCard(book);
+  bookAction(book) {
     const availableQuantity = Number(book.available_quantity ?? (book.status === "Available" ? 1 : 0));
-    if (availableQuantity <= 0 || Boolean(book.already_borrowed)) return column;
-
-    const action = document.createElement("button");
-    action.type = "button";
-    action.className = "btn btn-accent teacher-search-card__action";
-    action.dataset.bsToggle = "modal";
-    action.dataset.bsTarget = "#borrowModal";
-    action.dataset.titleId = String(book.title_id ?? book.id ?? "");
-    action.dataset.title = book.title || "";
-    action.dataset.author = book.author || "Unknown Author";
-    action.dataset.availableQuantity = String(book.available_quantity ?? 1);
-    action.dataset.bookBarcode = book.barcode || "";
-    action.textContent = "Add to Borrow Cart";
-    column.querySelector(".book-card-shell")?.appendChild(action);
-    return column;
+    if (Boolean(book.already_borrowed)) {
+      return '<span class="badge bg-info w-100 py-2">&#128214; You have this</span>';
+    }
+    if (availableQuantity <= 0) {
+      return '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
+    }
+    return `<button type="button" class="btn btn-accent teacher-search-card__action w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${this.escapeHtml(book.title || "")}" data-author="${this.escapeHtml(book.author || "Unknown Author")}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`;
   }
 }
 

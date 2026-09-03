@@ -96,3 +96,87 @@
 		min-height: 320px;
 	}
 }
+
+.student-search-page .student-search-recommendations {
+  border-radius: 22px;
+}
+
+.student-search-page .student-search-recommendations__header {
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border-strong);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: .9rem;
+}
+
+.student-search-page .student-search-recommendations__state > .row,
+.student-search-page .student-search-results__state > .row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.student-search-page .student-search-recommendations__state > .row > *,
+.student-search-page .student-search-results__state > .row > * {
+  padding: 0;
+  width: auto;
+}
+
+.student-search-page .student-recommended-card,
+.student-search-page .student-recommended-card .book-card {
+  height: 320px;
+  min-height: 320px;
+}
+
+.student-search-page .student-recommended-card .book-face {
+  border-radius: 18px;
+}
+
+.student-search-page .student-search-recommendations__footer {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.student-search-page .student-search-results__header {
+  align-items: flex-end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.student-search-page .student-search-results__range {
+  color: var(--borrower-deep);
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.student-search-page .borrower-catalog__pagination-controls {
+  align-items: center;
+  display: flex;
+  gap: .75rem;
+  justify-content: center;
+  padding-top: 1.25rem;
+}
+
+@media (max-width: 680px) {
+  .student-search-page .student-search-recommendations__header,
+  .student-search-page .student-search-results__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .student-search-page .student-search-recommendations__footer .btn {
+    width: 100%;
+  }
+
+  .student-search-page .student-search-recommendations__state > .row,
+  .student-search-page .student-search-results__state > .row {
+    grid-template-columns: 1fr;
+  }
+}

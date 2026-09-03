@@ -3,7 +3,7 @@ import { ApiClient } from "../../../../app/core/api/api-client.js";
 import { ReservationService } from "../../../../app/core/services/reservation.service.js";
 import { ReservationQueueComponent } from "../../../../app/shared/components/reservation-queue/reservation-queue.component.js";
 import { RenewalService } from "../../../../app/core/services/renewal.service.js";
-import { RenewalPanelComponent } from "../../../../app/shared/components/renewal-panel/renewal-panel.component.js";
+import { RenewalModalComponent } from "../../../../app/shared/components/renewal-modal/renewal-modal.component.js";
 
 export class StudentDashboardPage {
   constructor() {
@@ -19,11 +19,18 @@ export class StudentDashboardPage {
         role: "student",
       }),
     });
-    this.renewalPanel = new RenewalPanelComponent(this.$("renewalPanel"), {
-      service: new RenewalService({
-        api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
-        role: "student",
-      }),
+    this.renewalService = new RenewalService({
+      api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+      role: "student",
+    });
+    this.currentLoans = [];
+    this.renewals = new Map();
+    this.renewalModal = new RenewalModalComponent(this.$("renewalModal"), {
+      service: this.renewalService,
+      contentClass: "student-dashboard__modal",
+      headerClass: "student-dashboard__modal-header",
+      onChanged: () => this.load(),
+      onError: (error) => this.showToast(error?.message || "Renewal request failed.", false),
     });
     this.bindEvents();
     this.reservationQueue.load();
@@ -97,9 +104,25 @@ export class StudentDashboardPage {
       data.favorite_category || "",
     );
     this.renderAchievements(data.achievements || this.defaultAchievements());
-    this.renderLoans(data.current_loans || []);
-    this.renewalPanel.load(data.current_loans || []);
+    this.currentLoans = data.current_loans || [];
+    this.renewals = new Map();
+    this.renderLoans(this.currentLoans);
+    this.loadRenewals();
     this.renderBarcode(user.barcode || "");
+  }
+
+  async loadRenewals() {
+    try {
+      const response = await this.renewalService.list();
+      this.renewals = new Map();
+      (response?.data?.renewals || []).forEach((renewal) => {
+        const loanId = String(renewal.loan_id);
+        if (!this.renewals.has(loanId)) this.renewals.set(loanId, renewal);
+      });
+    } catch {
+      this.renewals = new Map();
+    }
+    this.renderLoans(this.currentLoans);
   }
 
   peso(value) {
@@ -218,9 +241,30 @@ export class StudentDashboardPage {
     loans.forEach((loan) => {
       const row = document.createElement("tr");
       if (loan.status === "Overdue") row.className = "row-overdue";
-      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author)}</span></td><td>${Number(loan.quantity || 1)}</td><td>${this.formatDate(loan.borrow_date)}</td><td>${this.formatDate(loan.due_date)}</td><td>${this.badge(loan.status)}</td><td><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" class="btn btn-outline-secondary btn-sm">View</a></td>`;
+      row.innerHTML = `<td>${this.escapeHtml(loan.title)}<br><span class="text-muted small">${this.escapeHtml(loan.author)}</span></td><td>${Number(loan.quantity || 1)}</td><td>${this.formatDate(loan.borrow_date)}</td><td>${this.formatDate(loan.due_date)}</td><td>${this.badge(loan.status)}</td><td><div class="borrower-dashboard__loan-actions"><a href="/scan2borrow/receipt?code=${encodeURIComponent(loan.transaction_code || "")}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">View receipt</a>${this.renewalAction(loan)}</div></td>`;
       body.appendChild(row);
     });
+  }
+
+  renewalAction(loan) {
+    const loanId = loan.id ?? loan.loan_id ?? "";
+    const renewal = this.renewals.get(String(loanId));
+    const renewalStatus = String(renewal?.status || "").toLowerCase();
+    if (renewal && ["pending", "approved"].includes(renewalStatus)) {
+      return `<span class="borrower-dashboard__renewal-status">${this.escapeHtml(renewal.status_label || renewal.status || "Renewal requested")}</span>`;
+    }
+
+    const status = String(loan.status || "").toLowerCase();
+    if (status === "borrowed") {
+      return `<button type="button" class="btn btn-sm borrower-dashboard__renew-action" data-renewal-open data-loan-id="${this.escapeHtml(loanId)}">Renew</button>`;
+    }
+    if (status === "pending") {
+      return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Awaiting approval</span>';
+    }
+    if (status === "overdue") {
+      return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Resolve overdue balance</span>';
+    }
+    return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Renewal unavailable</span>';
   }
 
   formatDate(value) {
@@ -332,6 +376,14 @@ export class StudentDashboardPage {
       if (button.dataset.cartAction === "remove") this.cart.removeTitle(id);
       else this.cart.setQuantity(id, this.cart.lines.get(id).quantity + (button.dataset.cartAction === "increase" ? 1 : -1));
       this.renderCart();
+    });
+    this.$("current-loans")?.addEventListener("click", (event) => {
+      const button = event.target.closest?.("[data-renewal-open]");
+      if (!button) return;
+      const loan = this.currentLoans.find(
+        (item) => String(item.id ?? item.loan_id ?? "") === button.dataset.loanId,
+      );
+      if (loan) this.renewalModal.open(loan);
     });
   }
 

@@ -145,21 +145,21 @@ test('teacher work area exposes desk, activity, and panel composition hooks', ()
   }
 });
 
-test('student active loans keep quantity and receipt columns inside the reading surface', () => {
+test('student active loans keep quantity and Actions columns inside the reading surface', () => {
   const source = read('features/student/pages/dashboard/dashboard.html');
   assert.match(source, /student-dashboard__loans/);
   assert.match(source, /student-dashboard__table/);
-  for (const heading of ['Book', 'Quantity', 'Borrowed', 'Due', 'Status', 'Receipt']) {
+  for (const heading of ['Book', 'Quantity', 'Borrowed', 'Due', 'Status', 'Actions']) {
     assert.match(source, new RegExp(`<th>${heading}<\\/th>`));
   }
   assert.match(source, /id="current-loans"/);
 });
 
-test('teacher active loans keep quantity and receipt columns inside the faculty surface', () => {
+test('teacher active loans keep quantity and Actions columns inside the faculty surface', () => {
   const source = read('features/teacher/pages/dashboard/dashboard.html');
   assert.match(source, /teacher-dashboard__loans/);
   assert.match(source, /teacher-dashboard__table/);
-  for (const heading of ['Book', 'Quantity', 'Borrowed', 'Due', 'Status', 'Receipt']) {
+  for (const heading of ['Book', 'Quantity', 'Borrowed', 'Due', 'Status', 'Actions']) {
     assert.match(source, new RegExp(`<th>${heading}<\\/th>`));
   }
   assert.match(source, /id="current-loans"/);

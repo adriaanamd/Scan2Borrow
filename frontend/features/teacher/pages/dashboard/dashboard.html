@@ -360,7 +360,6 @@
             </div>
           </div>
           <div id="reservationQueue" class="mb-4 reservation-queue-mount"></div>
-          <div id="renewalPanel" class="mb-4 renewal-panel-mount"></div>
 
           <div class="table-card borrower-dashboard__table teacher-dashboard__loans">
             <div class="section-title"><span class="dot"></span> My Books</div>
@@ -373,7 +372,7 @@
                     <th>Borrowed</th>
                     <th>Due</th>
                     <th>Status</th>
-                    <th>Receipt</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="current-loans">
@@ -387,6 +386,7 @@
               </table>
             </div>
           </div>
+          <div class="modal fade teacher-dashboard__renewal-modal" id="renewalModal" tabindex="-1" aria-hidden="true"></div>
           <div class="modal fade teacher-borrow-modal-layer" id="borrowModal" tabindex="-1" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="teacher-dashboard-borrow-modal-title">
             <div class="modal-dialog">
               <div class="modal-content teacher-dashboard__modal teacher-borrow-modal">

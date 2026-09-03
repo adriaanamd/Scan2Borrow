@@ -148,6 +148,7 @@ After the full dump, apply the normalized-library and newer feature migrations:
 $mysql = 'C:\xampp\mysql\bin\mysql.exe'
 $upgradeFiles = @(
     'sql\upgrade_bulk_borrowing.sql',
+    'sql\upgrade_approval_status_sync.sql',
     'sql\upgrade_barcode_printing.sql',
     'sql\upgrade_copy_audit_trail.sql',
     'sql\upgrade_renewals.sql',
@@ -720,6 +721,7 @@ Main SQL files:
 sql/database.sql                         Clean current base schema and seed
 scan2borrow_2_0.sql                      Existing full seeded database dump
 sql/upgrade_bulk_borrowing.sql           Titles, copies, transactions, backfill
+sql/upgrade_approval_status_sync.sql     Repair approved/rejected normalized item statuses
 sql/upgrade_barcode_printing.sql         Printed markers and print batches
 sql/upgrade_copy_audit_trail.sql         Copy statuses and audit backfill
 sql/upgrade_renewals.sql                  Renewal request table
@@ -1013,6 +1015,27 @@ For profile requests:
 ~~~powershell
 & 'C:\xampp\mysql\bin\mysql.exe' --protocol=tcp -h localhost -P 3306 -u root --database='scan2borrow_2.0' -e "SELECT id, user_id, status, requested_at, reviewed_at, reviewed_by, review_note FROM profile_change_requests ORDER BY id DESC LIMIT 20;"
 ~~~
+
+### Approved request still shows Pending
+
+Run the repair migration after the normalized bulk-borrowing migration:
+
+~~~powershell
+Get-Content -Raw 'sql\upgrade_approval_status_sync.sql' | & 'C:\xampp\mysql\bin\mysql.exe' --protocol=tcp -h localhost -P 3306 -u root
+~~~
+
+Verify that no active approved item remains Pending:
+
+~~~sql
+SELECT COUNT(*) AS inconsistent_rows
+FROM borrowing_items bi
+JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+WHERE bt.approval_status = 'approved'
+  AND bi.return_date IS NULL
+  AND bi.status = 'Pending';
+~~~
+
+The expected count is `0`.
 
 ### Copy history is empty
 

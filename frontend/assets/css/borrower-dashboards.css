@@ -758,6 +758,115 @@
   min-width: 680px;
 }
 
+.borrower-dashboard__loan-actions {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  min-width: 10rem;
+}
+
+.borrower-dashboard__loan-actions .btn {
+  white-space: nowrap;
+}
+
+.borrower-dashboard--student .borrower-dashboard__renew-action {
+  background: var(--borrower-accent);
+  border-color: var(--borrower-accent);
+  border-radius: 12px;
+  color: var(--borrower-deep);
+  font-weight: 700;
+}
+
+.borrower-dashboard--student .borrower-dashboard__renew-action:hover,
+.borrower-dashboard--student .borrower-dashboard__renew-action:focus-visible {
+  background: var(--borrower-deep);
+  border-color: var(--borrower-deep);
+  color: var(--card);
+}
+
+.borrower-dashboard--teacher .borrower-dashboard__renew-action {
+  background: var(--borrower-accent);
+  border-color: var(--borrower-accent);
+  border-radius: 3px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.borrower-dashboard--teacher .borrower-dashboard__renew-action:hover,
+.borrower-dashboard--teacher .borrower-dashboard__renew-action:focus-visible {
+  background: #001f73;
+  border-color: #001f73;
+  color: #fff;
+}
+
+.borrower-dashboard__renewal-status {
+  align-items: center;
+  border: 1px solid currentColor;
+  display: inline-flex;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  min-height: 2rem;
+  padding: .35rem .55rem;
+}
+
+.borrower-dashboard--student .borrower-dashboard__loan-actions {
+  align-items: center;
+}
+
+.borrower-dashboard--student .borrower-dashboard__renewal-status {
+  background: color-mix(in srgb, var(--borrower-accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--borrower-accent) 40%, transparent);
+  border-radius: 999px;
+  color: var(--borrower-deep);
+}
+
+.borrower-dashboard--student .borrower-dashboard__renewal-status--muted {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--muted);
+}
+
+.borrower-dashboard--teacher .borrower-dashboard__renewal-status {
+  background: #fff;
+  border-color: var(--borrower-accent);
+  color: var(--borrower-accent);
+  text-transform: uppercase;
+}
+
+.borrower-dashboard--teacher .borrower-dashboard__renewal-status--muted {
+  border-color: #b9c9d5;
+  color: #63798b;
+}
+
+.borrower-dashboard__renewal-modal .renewal-modal__loan {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.borrower-dashboard__renewal-modal .renewal-modal__loan span {
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.borrower-dashboard--student .renewal-modal__submit {
+  background: var(--borrower-accent);
+  border-color: var(--borrower-accent);
+  border-radius: 12px;
+  color: var(--borrower-deep);
+  font-weight: 700;
+}
+
+.borrower-dashboard--teacher .renewal-modal__submit {
+  background: var(--borrower-accent);
+  border-color: var(--borrower-accent);
+  border-radius: 3px;
+  color: #fff;
+  font-weight: 700;
+}
+
 .borrower-dashboard .content :is(a, button, input, select, textarea):focus-visible {
   outline: 3px solid color-mix(in srgb, var(--borrower-accent) 60%, white);
   outline-offset: 3px;
@@ -800,6 +909,20 @@
   .borrower-dashboard--teacher .teacher-dashboard__analytics-grid,
   .borrower-dashboard--teacher .teacher-dashboard__insight-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .borrower-dashboard__loan-actions {
+    align-items: stretch;
+    flex-direction: column;
+    min-width: 132px;
+  }
+
+  .borrower-dashboard__loan-actions .btn,
+  .borrower-dashboard__loan-actions .borrower-dashboard__renewal-status {
+    text-align: center;
+    width: 100%;
   }
 }
 

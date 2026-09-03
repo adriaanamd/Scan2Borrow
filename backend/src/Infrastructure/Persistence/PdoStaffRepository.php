@@ -800,16 +800,27 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 $copyStatement->execute(['transaction_id' => $borrowingId]);
                 /** @var list<array<string, mixed>> $copies */
                 $copies = $copyStatement->fetchAll(PDO::FETCH_ASSOC);
+                $transactionStatus = $approve ? 'Borrowed' : 'Returned';
                 $statement = $this->pdo->prepare(
                     "UPDATE borrowing_transactions SET approval_status = :approval_status,
-                     status = CASE WHEN :is_approved = 1 THEN 'Borrowed' ELSE 'Returned' END,
+                     status = :transaction_status,
                      approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id AND approval_status = 'pending'"
                 );
-                $statement->execute(['approval_status' => $status, 'is_approved' => $approve ? 1 : 0, 'staff_id' => $staffId, 'id' => $borrowingId]);
+                $statement->execute([
+                    'approval_status' => $status,
+                    'transaction_status' => $transactionStatus,
+                    'staff_id' => $staffId,
+                    'id' => $borrowingId,
+                ]);
                 if ($statement->rowCount() < 1) {
                     $this->pdo->commit();
                     return;
                 }
+                $itemStatement = $this->pdo->prepare($approve
+                    ? "UPDATE borrowing_items SET status = 'Borrowed' WHERE transaction_id = :transaction_id AND return_date IS NULL"
+                    : "UPDATE borrowing_items SET status = 'Returned', return_date = CURRENT_TIMESTAMP WHERE transaction_id = :transaction_id AND return_date IS NULL"
+                );
+                $itemStatement->execute(['transaction_id' => $borrowingId]);
                 $copyStatus = $approve ? 'Borrowed' : 'Available';
                 $this->pdo->prepare("UPDATE book_copies SET status = :status, due_date = CASE WHEN :approve = 1 THEN due_date ELSE NULL END WHERE id IN (SELECT copy_id FROM borrowing_items WHERE transaction_id = :transaction_id)")
                     ->execute(['status' => $copyStatus, 'approve' => $approve ? 1 : 0, 'transaction_id' => $borrowingId]);

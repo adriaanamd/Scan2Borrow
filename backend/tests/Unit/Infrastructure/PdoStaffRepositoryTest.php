@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Infrastructure;
 
 use App\Infrastructure\Persistence\PdoStaffRepository;
+use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -120,6 +121,62 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertNotFalse($book);
         self::assertSame('approved', $approval->fetchColumn());
         self::assertSame('Borrowed', $book->fetchColumn());
+    }
+
+    private function normalizedApprovalFixture(): PDO
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, barcode TEXT, firstname TEXT, middlename TEXT, lastname TEXT, department TEXT, position TEXT, course TEXT, year_level TEXT, photo TEXT, role TEXT)');
+        $pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT, author TEXT, category_name TEXT, created_at TEXT)');
+        $pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode TEXT, status TEXT, due_date TEXT, floor_no TEXT, deleted_at TEXT)');
+        $pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, processed_by INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, status TEXT, fine_amount NUMERIC, requested_at TEXT, approved_at TEXT, approved_by INTEGER)');
+        $pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date TEXT, status TEXT, fine_amount NUMERIC)');
+        $pdo->exec('CREATE TABLE notifications (id INTEGER PRIMARY KEY, user_id INTEGER, type TEXT, title TEXT, message TEXT, related_id INTEGER, is_read INTEGER, created_at TEXT)');
+        $pdo->exec("INSERT INTO users VALUES (2, 'STU-1', 'Grace', NULL, 'Hopper', 'IT', NULL, 'CS', '4', NULL, 'student')");
+        $pdo->exec("INSERT INTO book_titles VALUES (1, 'Clean Code', 'Martin', 'Computer Science', '2026-08-01')");
+        $pdo->exec("INSERT INTO book_copies VALUES (1, 1, 'COPY-1', 'Reserved', '2026-09-10', '2', NULL)");
+        $pdo->exec("INSERT INTO borrowing_transactions VALUES (1, 'TX-PENDING', 2, NULL, 'pending', '2026-09-03 10:00:00', '2026-09-10', NULL, 'Pending', 0, '2026-09-03 10:00:00', NULL, NULL)");
+        $pdo->exec("INSERT INTO borrowing_items VALUES (1, 1, 1, NULL, 'Pending', 0)");
+
+        return $pdo;
+    }
+
+    public function testNormalizedApprovalSynchronizesAllBorrowingStatusProjections(): void
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $repository = new PdoStaffRepository($pdo);
+
+        $repository->approveBorrowing(1, 99);
+
+        $transaction = $pdo->query('SELECT approval_status, status FROM borrowing_transactions WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+        $itemStatus = $pdo->query('SELECT status, return_date FROM borrowing_items WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+        $copyStatus = $pdo->query('SELECT status FROM book_copies WHERE id = 1')->fetchColumn();
+        self::assertSame(['approval_status' => 'approved', 'status' => 'Borrowed'], $transaction);
+        self::assertSame('Borrowed', $itemStatus['status']);
+        self::assertNull($itemStatus['return_date']);
+        self::assertSame('Borrowed', $copyStatus);
+        self::assertSame([], $repository->pendingBorrowings());
+
+        $dashboard = (new PdoBorrowerPortalRepository($pdo))->dashboard(2);
+        self::assertSame('Borrowed', $dashboard['current_loans'][0]['status']);
+    }
+
+    public function testNormalizedRejectionClosesItemsAndLeavesCopiesAvailable(): void
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $repository = new PdoStaffRepository($pdo);
+
+        $repository->rejectBorrowing(1, 99);
+
+        $transaction = $pdo->query('SELECT approval_status, status FROM borrowing_transactions WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+        $item = $pdo->query('SELECT status, return_date FROM borrowing_items WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+        $copyStatus = $pdo->query('SELECT status FROM book_copies WHERE id = 1')->fetchColumn();
+        self::assertSame(['approval_status' => 'rejected', 'status' => 'Returned'], $transaction);
+        self::assertSame('Returned', $item['status']);
+        self::assertNotNull($item['return_date']);
+        self::assertSame('Available', $copyStatus);
+        self::assertSame([], (new PdoBorrowerPortalRepository($pdo))->dashboard(2)['current_loans']);
     }
 
     public function testBorrowerDetailsPreserveProfileHistoryAndSummary(): void

@@ -1,7 +1,10 @@
 import { BulkBorrowCart } from "../../core/models/bulk-borrow-cart.js";
+import { ApiClient } from "../../core/api/api-client.js";
+import { ReservationService } from "../../core/services/reservation.service.js";
+import { ToastService } from "../../core/services/toast.service.js";
 
 export class BorrowerSearchPage {
-  constructor({ api, lookupApi, borrowApi, dashboardPath, formAction, classPrefix, copy }) {
+  constructor({ api, lookupApi, borrowApi, dashboardPath, formAction, classPrefix, copy, role, reservationService, toastService, confirmation }) {
     this.api = api;
     this.lookupApi = lookupApi;
     this.borrowApi = borrowApi;
@@ -10,6 +13,14 @@ export class BorrowerSearchPage {
     this.classPrefix = classPrefix;
     this.copy = copy;
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
+    this.role = role === "teacher" ? "teacher" : "student";
+    this.reservationService = reservationService || new ReservationService({
+      api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+      role: this.role,
+    });
+    this.toastService = toastService || new ToastService({ document });
+    this.confirmation = confirmation || window.Scan2BorrowConfirmation;
+    this.waitlistedTitleIds = new Set();
     this.form = document.getElementById("searchForm");
     this.results = document.getElementById("book-results");
     this.recommendationPanel = document.getElementById("recommendation-panel");
@@ -99,16 +110,38 @@ export class BorrowerSearchPage {
     };
   }
 
+  activeWaitlistTitleIds(holds) {
+    const activeStatuses = new Set(["queued", "offered", "claimed"]);
+    return new Set(
+      (Array.isArray(holds) ? holds : [])
+        .filter((hold) => activeStatuses.has(hold?.status))
+        .map((hold) => Number(hold?.title_id || 0))
+        .filter((titleId) => Number.isInteger(titleId) && titleId > 0),
+    );
+  }
+
+  loadWaitlist() {
+    return this.reservationService.list()
+      .then((response) => {
+        this.waitlistedTitleIds = this.activeWaitlistTitleIds(response?.data?.holds || []);
+      })
+      .catch(() => {
+        this.waitlistedTitleIds = new Set();
+      });
+  }
+
   load() {
-    const filtered = this.hasCatalogQuery();
-    this.setAllBooksVisible(filtered);
-    this.recommendationPanel.hidden = filtered;
-    if (filtered) {
-      this.loadCatalog(Number(this.params.get("page") || 1));
-      return;
-    }
-    this.renderRecommendationsLoading();
-    this.loadRecommendations();
+    return this.loadWaitlist().then(() => {
+      const filtered = this.hasCatalogQuery();
+      this.setAllBooksVisible(filtered);
+      this.recommendationPanel.hidden = filtered;
+      if (filtered) {
+        this.loadCatalog(Number(this.params.get("page") || 1));
+        return;
+      }
+      this.renderRecommendationsLoading();
+      this.loadRecommendations();
+    });
   }
 
   loadRecommendations() {
@@ -263,8 +296,77 @@ export class BorrowerSearchPage {
     return borrowed
       ? '<span class="badge bg-info w-100 py-2">&#128214; You have this</span>'
       : availableQuantity > 0
-        ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${this.escapeHtml(book.title || "")}" data-author="${this.escapeHtml(book.author || "Unknown Author")}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`
-        : '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
+      ? `<button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${this.escapeHtml(book.title || "")}" data-author="${this.escapeHtml(book.author || "Unknown Author")}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`
+        : this.waitlistAction(book);
+  }
+
+  waitlistTitleId(book) {
+    const titleId = Number(book?.title_id ?? book?.id ?? 0);
+    return Number.isInteger(titleId) && titleId > 0 ? titleId : 0;
+  }
+
+  waitlistAction(book) {
+    const titleId = this.waitlistTitleId(book);
+    if (this.waitlistedTitleIds.has(titleId)) {
+      return '<button type="button" class="btn btn-outline-secondary w-100" disabled>On waitlist</button>';
+    }
+    if (!titleId) {
+      return '<button type="button" class="btn btn-outline-secondary w-100" disabled>Waitlist unavailable</button>';
+    }
+    return `<button type="button" class="btn btn-outline-primary w-100" data-waitlist-title-id="${this.escapeHtml(titleId)}" data-waitlist-title="${this.escapeHtml(book.title || "")}">Join waitlist</button>`;
+  }
+
+  markWaitlisted(button) {
+    button.disabled = true;
+    button.textContent = "On waitlist";
+    button.classList?.remove("btn-outline-primary");
+    button.classList?.add("btn-outline-secondary");
+  }
+
+  async confirmWaitlist(button) {
+    const titleId = Number(button.dataset.waitlistTitleId || 0);
+    if (!titleId || this.waitlistedTitleIds.has(titleId)) return false;
+
+    try {
+      return await this.confirmation.confirm({
+        title: "Join waitlist",
+        message: `Join the waitlist for "${button.dataset.waitlistTitle || "this book"}"?`,
+        confirmLabel: "Join waitlist",
+        confirmClass: this.role === "teacher" ? "btn-accent" : "btn-primary",
+        trigger: button,
+        onConfirm: async () => {
+          button.disabled = true;
+          button.textContent = "Joining…";
+          try {
+            const response = await this.reservationService.join(titleId);
+            this.waitlistedTitleIds.add(titleId);
+            this.markWaitlisted(button);
+            this.notify(response?.data?.message || "You joined the waitlist.", "success");
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = "Join waitlist";
+            this.notify(error?.message || "Unable to join the waitlist.", "danger");
+            throw error;
+          }
+        },
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  notify(message, type = "info") {
+    const toast = this.toastService.show(message, type);
+    toast?.classList?.add("show");
+    if (toast && typeof window.setTimeout === "function") {
+      window.setTimeout(() => toast.remove(), 3500);
+    }
+  }
+
+  handleWaitlistClick(event) {
+    const button = event.target.closest?.("[data-waitlist-title-id]");
+    if (!button) return;
+    this.confirmWaitlist(button).catch(() => {});
   }
 
   bookCard(book) {
@@ -313,6 +415,8 @@ export class BorrowerSearchPage {
       if (!button || button.disabled) return;
       this.loadCatalog(Number(button.dataset.catalogPage));
     });
+    this.recommendationResults.addEventListener("click", (event) => this.handleWaitlistClick(event));
+    this.results.addEventListener("click", (event) => this.handleWaitlistClick(event));
     const modal = document.getElementById("borrowModal");
     modal.addEventListener("show.bs.modal", (event) => {
       const button = event.relatedTarget;

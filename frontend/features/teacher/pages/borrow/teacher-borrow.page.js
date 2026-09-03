@@ -10,6 +10,7 @@ export class TeacherBorrowPage extends BorrowerSearchPage {
       dashboardPath: "/scan2borrow/teacher/dashboard",
       formAction: "/scan2borrow/teacher/borrow",
       classPrefix: "teacher",
+      role: "teacher",
       copy: {
         topbar: "Borrow Books",
         eyebrow: "Faculty library",
@@ -31,7 +32,7 @@ export class TeacherBorrowPage extends BorrowerSearchPage {
       return '<span class="badge bg-info w-100 py-2">&#128214; You have this</span>';
     }
     if (availableQuantity <= 0) {
-      return '<button class="btn btn-outline-secondary w-100" disabled>Unavailable</button>';
+      return this.waitlistAction(book);
     }
     return `<button type="button" class="btn btn-accent teacher-search-card__action w-100" data-bs-toggle="modal" data-bs-target="#borrowModal" data-title-id="${this.escapeHtml(book.title_id ?? book.id)}" data-title="${this.escapeHtml(book.title || "")}" data-author="${this.escapeHtml(book.author || "Unknown Author")}" data-available-quantity="${this.escapeHtml(book.available_quantity ?? 1)}" data-book-barcode="${this.escapeHtml(book.barcode || "")}" title="Add this title">Add to Borrow Cart</button>`;
   }

@@ -166,13 +166,13 @@ test('waitlist confirmation joins after acceptance and marks the button', async 
 test('catalog waitlist wiring preserves role endpoints and toast mounts', () => {
   const student = read('features/student/pages/search/student-search.page.js');
   const teacher = read('features/teacher/pages/borrow/teacher-borrow.page.js');
+  const reservationService = read('app/core/services/reservation.service.js');
   const studentTemplate = read('features/student/pages/search/search.html');
   const teacherTemplate = read('features/teacher/pages/borrow/borrow.html');
 
   assert.match(student, /role: ['"]student['"]/);
   assert.match(teacher, /role: ['"]teacher['"]/);
-  assert.match(student, /student\/holds/);
-  assert.match(teacher, /teacher\/holds/);
+  assert.match(reservationService, /\/scan2borrow\/api\/\$\{this\.role\}\/holds/);
   assert.match(studentTemplate, /id="toast-host"/);
   assert.match(teacherTemplate, /id="toast-host"/);
 });

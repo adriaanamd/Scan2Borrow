@@ -46,12 +46,12 @@ final class SchemaContractTest extends TestCase
             'CREATE TABLE IF NOT EXISTS `book_title_keywords`',
             'UNIQUE KEY `uq_book_title_keyword` (`title_id`, `keyword_id`)',
             'KEY `idx_book_title_keywords_keyword_title` (`keyword_id`, `title_id`)',
-            'FULLTEXT KEY `ft_book_titles_title` (`title`)',
-            'FULLTEXT KEY `ft_book_titles_category` (`category_name`)',
-            'FULLTEXT KEY `ft_book_titles_author` (`author`)',
-            'FULLTEXT KEY `ft_book_titles_publisher_description` (`publisher`, `description`)',
-            'KEY `idx_copies_status_deleted_title` (`status`, `deleted_at`, `title_id`)',
-            'KEY `idx_transactions_user_return_id` (`user_id`, `return_date`, `id`)',
+            'ADD FULLTEXT KEY IF NOT EXISTS `ft_book_titles_title` (`title`)',
+            'ADD FULLTEXT KEY IF NOT EXISTS `ft_book_titles_category` (`category_name`)',
+            'ADD FULLTEXT KEY IF NOT EXISTS `ft_book_titles_author` (`author`)',
+            'ADD FULLTEXT KEY IF NOT EXISTS `ft_book_titles_publisher_description` (`publisher`, `description`)',
+            'ADD INDEX IF NOT EXISTS `idx_copies_status_deleted_title` (`status`, `deleted_at`, `title_id`)',
+            'ADD INDEX IF NOT EXISTS `idx_transactions_user_return_id` (`user_id`, `return_date`, `id`)',
         ] as $marker) {
             self::assertStringContainsString($marker, $migration, "Recommendation migration missing marker: {$marker}");
         }

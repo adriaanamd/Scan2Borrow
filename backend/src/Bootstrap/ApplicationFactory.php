@@ -23,8 +23,10 @@ use App\Application\Services\RegistrationService;
 use App\Application\Services\SmtpEmailSender;
 use App\Application\Services\ReturnService;
 use App\Application\Services\ReturnApprovalService;
+use App\Application\Services\RecommendationService;
 use App\Application\Services\ReservationAvailabilityService;
 use App\Application\Services\ReservationService;
+use App\Application\Services\SearchHistoryService;
 use App\Application\Services\SystemClock;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\AuthorizationPolicy;
@@ -33,6 +35,7 @@ use App\Application\Validators\BookMutationValidator;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookCopyController;
+use App\Http\Controllers\BorrowerRecommendationController;
 use App\Http\Controllers\BarcodePrintController;
 use App\Http\Controllers\BorrowerController;
 use App\Http\Controllers\GuestAuthController;
@@ -51,6 +54,7 @@ use App\Http\Middleware\SessionPageAccessAuthorizer;
 use App\Http\Responses\ResponseEmitter;
 use App\Http\Routing\AuthRouteTable;
 use App\Http\Routing\BookRouteTable;
+use App\Http\Routing\RecommendationRouteTable;
 use App\Http\Routing\BarcodePrintRouteTable;
 use App\Http\Routing\CopyHistoryRouteTable;
 use App\Http\Routing\BorrowerRouteTable;
@@ -120,6 +124,16 @@ final class ApplicationFactory
             $bookRepository,
             new \App\Application\Validators\BookCopyMutationValidator(),
             $csrf,
+        );
+        $searchHistoryRepository = new \App\Infrastructure\Persistence\PdoSearchHistoryRepository($pdo);
+        $recommendationController = new BorrowerRecommendationController(
+            $sessions,
+            $csrf,
+            new SearchHistoryService($searchHistoryRepository),
+            new RecommendationService(
+                $searchHistoryRepository,
+                new \App\Infrastructure\Persistence\PdoRecommendationRepository($pdo),
+            ),
         );
         $barcodePrintController = new BarcodePrintController(
             $sessions,
@@ -219,6 +233,7 @@ final class ApplicationFactory
         $apiRouter = new Router(array_merge(
             (new AuthRouteTable())->routes($authController, $registration),
             (new BookRouteTable())->routes($bookController, $bookCopyController),
+            (new RecommendationRouteTable())->routes($recommendationController),
             (new BarcodePrintRouteTable())->routes($barcodePrintController),
             (new CopyHistoryRouteTable())->routes(new \App\Http\Controllers\CopyHistoryController(
                 $sessions,

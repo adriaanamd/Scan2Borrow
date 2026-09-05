@@ -44,12 +44,12 @@ final class ApiDocumentationControllerTest extends TestCase
         $store->setPrincipal(new Principal(1, Role::ADMIN));
 
         $response = $this->controller($store)->index($this->request());
-        /** @var array{ok: bool, data: array{endpoints: list<array<string, mixed>>}} $payload */
+        /** @var array{ok: bool, data: array{endpoints: list<array{method: string, path: string, ...}>}} $payload */
         $payload = json_decode($response->toString(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $response->statusCode());
         self::assertTrue($payload['ok']);
-        self::assertCount(64, $payload['data']['endpoints']);
+        self::assertCount(68, $payload['data']['endpoints']);
         $paths = array_map(
             static fn (array $endpoint): string => $endpoint['method'] . ' ' . $endpoint['path'],
             $payload['data']['endpoints'],
@@ -58,6 +58,8 @@ final class ApiDocumentationControllerTest extends TestCase
         self::assertContains('GET /api/teacher/activity', $paths);
         self::assertContains('GET /api/staff/return-approvals', $paths);
         self::assertContains('POST /api/staff/return-action', $paths);
+        self::assertContains('GET /api/student/recommendations', $paths);
+        self::assertContains('POST /api/teacher/search-history', $paths);
     }
 
     private function controller(ApiDocumentationSessionStore $store): ApiDocumentationController

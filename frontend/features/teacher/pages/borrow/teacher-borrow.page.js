@@ -5,6 +5,8 @@ export class TeacherBorrowPage extends BorrowerSearchPage {
   constructor() {
     super({
       api: "/scan2borrow/api/teacher/books",
+      recommendationApi: "/scan2borrow/api/teacher/recommendations",
+      searchHistoryApi: "/scan2borrow/api/teacher/search-history",
       lookupApi: "/scan2borrow/api/teacher/borrow/lookup",
       borrowApi: "/scan2borrow/api/teacher/borrow",
       dashboardPath: "/scan2borrow/teacher/dashboard",

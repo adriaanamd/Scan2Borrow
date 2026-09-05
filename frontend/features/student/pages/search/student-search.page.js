@@ -4,6 +4,8 @@ export class StudentSearchPage extends BorrowerSearchPage {
   constructor() {
     super({
       api: "/scan2borrow/api/student/books",
+      recommendationApi: "/scan2borrow/api/student/recommendations",
+      searchHistoryApi: "/scan2borrow/api/student/search-history",
       lookupApi: "/scan2borrow/api/student/borrow/lookup",
       borrowApi: "/scan2borrow/api/student/borrow",
       dashboardPath: "/scan2borrow/student/dashboard",

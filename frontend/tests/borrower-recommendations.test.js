@@ -24,6 +24,8 @@ test('recommendation panels expose supporting-copy mounts for personalized and f
   ]) {
     assert.match(read(file), /id="recommendation-supporting-copy"/);
   }
+  assert.equal(BorrowerSearchPage.prototype.recommendationCopy.call({}, true), 'Based on your searches.');
+  assert.equal(BorrowerSearchPage.prototype.recommendationCopy.call({}, false), 'Newly added available books.');
 });
 
 test('recordSearch posts deliberate non-empty searches with the current CSRF token', async () => {
@@ -50,7 +52,7 @@ test('recordSearch posts deliberate non-empty searches with the current CSRF tok
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, '/scan2borrow/api/student/search-history');
   assert.equal(calls[0].options.method, 'POST');
-  assert.equal(calls[0].options.body.toString(), 'search=++Clean+Code++&csrf=csrf-token');
+  assert.equal(calls[0].options.body.toString(), 'search=Clean+Code&csrf=csrf-token');
 });
 
 test('recommendation loader uses the personalized API without catalog query parameters', () => {
@@ -58,4 +60,5 @@ test('recommendation loader uses the personalized API without catalog query para
   assert.match(source, /fetch\(this\.recommendationApi/);
   assert.match(source, /personalized/);
   assert.doesNotMatch(source, /recommendationQuery\(\)\.toString\(\)/);
+  assert.match(source, /skipSearchTracking/);
 });

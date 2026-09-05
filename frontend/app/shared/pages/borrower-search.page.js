@@ -4,8 +4,10 @@ import { ReservationService } from "../../core/services/reservation.service.js";
 import { ToastService } from "../../core/services/toast.service.js";
 
 export class BorrowerSearchPage {
-  constructor({ api, lookupApi, borrowApi, dashboardPath, formAction, classPrefix, copy, role, reservationService, toastService, confirmation }) {
+  constructor({ api, recommendationApi, searchHistoryApi, lookupApi, borrowApi, dashboardPath, formAction, classPrefix, copy, role, reservationService, toastService, confirmation }) {
     this.api = api;
+    this.recommendationApi = recommendationApi;
+    this.searchHistoryApi = searchHistoryApi;
     this.lookupApi = lookupApi;
     this.borrowApi = borrowApi;
     this.dashboardPath = dashboardPath;
@@ -72,16 +74,6 @@ export class BorrowerSearchPage {
       .some((name) => (this.params.get(name) || "") !== "");
   }
 
-  recommendationQuery() {
-    return new URLSearchParams({
-      status: "Available",
-      page: "1",
-      per_page: String(this.recommendationSize || 5),
-      sort: "created_at",
-      dir: "desc",
-    });
-  }
-
   catalogQuery(page = 1) {
     const query = new URLSearchParams(this.params);
     query.set("page", String(Math.max(1, Number(page) || 1)));
@@ -145,14 +137,46 @@ export class BorrowerSearchPage {
   }
 
   loadRecommendations() {
-    const query = this.recommendationQuery().toString();
-    fetch(`${this.api}?${query}`, { headers: { "X-Requested-With": "fetch" } })
+    fetch(this.recommendationApi, { headers: { "X-Requested-With": "fetch" } })
       .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
       .then(({ ok, payload }) => {
         if (!ok) throw new Error(payload.message || "Unable to load recommendations.");
-        this.renderRecommendations(payload.data?.books || []);
+        const data = payload.data || {};
+        this.renderRecommendationCopy(Boolean(data.personalized));
+        this.renderRecommendations(data.books || []);
       })
       .catch(() => this.renderRecommendationsError());
+  }
+
+  renderRecommendationCopy(personalized) {
+    const host = document.getElementById("recommendation-supporting-copy");
+    if (!host) return;
+    host.textContent = this.recommendationCopy(personalized);
+  }
+
+  recommendationCopy(personalized) {
+    return personalized ? "Based on your searches." : "Newly added available books.";
+  }
+
+  recordSearch(search) {
+    const normalized = String(search || "").trim().replace(/\s+/g, " ");
+    if (!normalized || !this.searchHistoryApi) return Promise.resolve();
+    const body = new URLSearchParams({ search: normalized, csrf: this.csrf });
+    return fetch(this.searchHistoryApi, {
+      method: "POST",
+      body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        Accept: "application/json",
+        "X-Requested-With": "fetch",
+      },
+      credentials: "same-origin",
+    })
+      .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
+      .then(({ ok, payload }) => {
+        if (!ok) throw new Error(payload.message || payload.errors?.[0] || "Unable to record search.");
+      })
+      .catch(() => undefined);
   }
 
   loadCatalog(page = 1) {
@@ -400,11 +424,20 @@ export class BorrowerSearchPage {
   bindEvents() {
     this.form.addEventListener("submit", (event) => {
       event.preventDefault();
+      const skipTracking = this.skipSearchTracking === true;
+      this.skipSearchTracking = false;
       const query = new URLSearchParams(new FormData(this.form));
       query.delete("page");
-      window.location.href = this.form.action + "?" + query.toString();
+      const destination = this.form.action + "?" + query.toString();
+      const tracking = skipTracking ? Promise.resolve() : this.recordSearch(query.get("search") || "");
+      tracking.finally(() => {
+        window.location.href = destination;
+      });
     });
-    ["category_name", "status", "floor", "sort"].forEach((name) => this.form.elements[name].addEventListener("change", () => this.form.requestSubmit()));
+    ["category_name", "status", "floor", "sort"].forEach((name) => this.form.elements[name].addEventListener("change", () => {
+      this.skipSearchTracking = true;
+      this.form.requestSubmit();
+    }));
     this.showAllBooksButton.addEventListener("click", () => {
       const visible = !this.allBooksPanel.hidden;
       this.setAllBooksVisible(!visible);

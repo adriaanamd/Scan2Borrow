@@ -36,6 +36,27 @@ final class SchemaContractTest extends TestCase
         }
     }
 
+    public function testSearchRecommendationMigrationCreatesNormalizedIndexes(): void
+    {
+        $migration = $this->readSql('upgrade_search_recommendations.sql');
+        foreach ([
+            'CREATE TABLE IF NOT EXISTS `search_history`',
+            'KEY `idx_search_history_user_created` (`user_id`, `created_at`, `id`)',
+            'CREATE TABLE IF NOT EXISTS `keywords`',
+            'CREATE TABLE IF NOT EXISTS `book_title_keywords`',
+            'UNIQUE KEY `uq_book_title_keyword` (`title_id`, `keyword_id`)',
+            'KEY `idx_book_title_keywords_keyword_title` (`keyword_id`, `title_id`)',
+            'FULLTEXT KEY `ft_book_titles_title` (`title`)',
+            'FULLTEXT KEY `ft_book_titles_category` (`category_name`)',
+            'FULLTEXT KEY `ft_book_titles_author` (`author`)',
+            'FULLTEXT KEY `ft_book_titles_publisher_description` (`publisher`, `description`)',
+            'KEY `idx_copies_status_deleted_title` (`status`, `deleted_at`, `title_id`)',
+            'KEY `idx_transactions_user_return_id` (`user_id`, `return_date`, `id`)',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $migration, "Recommendation migration missing marker: {$marker}");
+        }
+    }
+
     public function testUpgradeSqlRetainsGuestAndSecurityExtensions(): void
     {
         $sql = $this->readSql('upgrade.sql');
@@ -57,7 +78,7 @@ final class SchemaContractTest extends TestCase
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
             'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
-            'upgrade_profile_change_requests.sql', 'upgrade_approval_status_sync.sql',
+            'upgrade_profile_change_requests.sql', 'upgrade_approval_status_sync.sql', 'upgrade_search_recommendations.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
             self::assertFileExists($path, "Missing SQL migration or seed file: {$filename}");

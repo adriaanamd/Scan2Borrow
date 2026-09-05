@@ -134,11 +134,9 @@
   border-radius: 18px;
 }
 
-.student-search-page .student-search-recommendations__footer {
-  border-top: 1px solid var(--border);
-  margin-top: 1rem;
-  padding-top: 1rem;
-  text-align: center;
+.student-search-page .student-search-catalog-controls {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .student-search-page .student-search-results__header {
@@ -171,7 +169,7 @@
     flex-direction: column;
   }
 
-  .student-search-page .student-search-recommendations__footer .btn {
+  .student-search-page .student-search-catalog-controls .btn {
     width: 100%;
   }
 

@@ -227,11 +227,9 @@
   border-radius: 4px;
 }
 
-.teacher-search-page .teacher-search-recommendations__footer {
-  border-top: 1px solid #D4E0E8;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  text-align: center;
+.teacher-search-page .teacher-search-catalog-controls {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .teacher-search-page .teacher-search-results__header {
@@ -264,7 +262,7 @@
     flex-direction: column;
   }
 
-  .teacher-search-page .teacher-search-recommendations__footer .btn {
+  .teacher-search-page .teacher-search-catalog-controls .btn {
     width: 100%;
   }
 

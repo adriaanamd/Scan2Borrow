@@ -31,6 +31,9 @@
             </div>
             <div class="teacher-search-masthead__mark" aria-hidden="true">FAC</div>
           </div>
+          <div class="teacher-search-catalog-controls mb-4">
+            <button type="button" id="show-all-books" class="btn btn-primary" aria-controls="all-books-panel" aria-expanded="false">Show all books</button>
+          </div>
           <section id="recommendation-panel" class="teacher-library-panel teacher-search-recommendations mb-4">
             <div class="teacher-library-panel__header teacher-search-recommendations__header">
               <div>
@@ -40,9 +43,6 @@
               </div>
             </div>
             <div id="book-recommendations" class="teacher-search-recommendations__state"></div>
-            <div class="teacher-search-recommendations__footer">
-              <button type="button" id="show-all-books" class="btn btn-primary" aria-controls="all-books-panel" aria-expanded="false">Show all books</button>
-            </div>
           </section>
           <div class="teacher-library-panel teacher-search-filters mb-4">
             <form method="GET" id="searchForm" action="/scan2borrow/teacher/borrow">

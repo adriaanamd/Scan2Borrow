@@ -10,6 +10,12 @@ interface BorrowerPortalRepositoryInterface
     public function dashboard(int $userId): array;
 
     /** @return list<array<string, mixed>> */
+    public function activity(int $userId): array;
+
+    /** @return list<array<string, mixed>> */
+    public function recentActivity(int $userId): array;
+
+    /** @return list<array<string, mixed>> */
     public function history(int $userId): array;
 
     /** @return array<string, mixed>|null */

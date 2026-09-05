@@ -1,0 +1,34 @@
+.borrower-activity {
+  --activity-ink: #102f52;
+  --activity-muted: #6b7280;
+  --activity-rule: #dbe3ea;
+  background: #f6f8fa;
+  color: var(--activity-ink);
+}
+
+.borrower-activity__content { max-width: 1040px; }
+.borrower-activity__masthead { border-left: 4px solid var(--primary); margin-bottom: 24px; padding-left: 18px; }
+.borrower-activity__masthead h2 { margin: 0 0 6px; }
+.borrower-activity__masthead p { color: var(--activity-muted); margin: 0; }
+.borrower-activity__eyebrow { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.borrower-activity__panel { background: #fff; border: 1px solid var(--activity-rule); border-radius: 12px; box-shadow: 0 8px 24px rgba(16, 47, 82, .06); padding: 8px 24px; }
+.borrower-activity__state { color: var(--activity-muted); margin: 16px 0; }
+.borrower-activity__state--error { color: #b42318; }
+.borrower-activity__list { display: grid; }
+.borrower-activity__item { align-items: start; border-bottom: 1px solid var(--activity-rule); display: flex; gap: 20px; justify-content: space-between; padding: 20px 0; }
+.borrower-activity__item:last-child { border-bottom: 0; }
+.borrower-activity__label { display: block; font-size: 1rem; }
+.borrower-activity__details { color: var(--activity-muted); margin-top: 5px; }
+.borrower-activity__status { background: #eef4f9; border-radius: 999px; color: var(--activity-ink); display: inline-block; font-size: .72rem; margin-top: 10px; padding: 4px 9px; }
+.borrower-activity__time { color: var(--activity-muted); font-size: .78rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.borrower-activity__item:focus-within { outline: 2px solid var(--primary); outline-offset: 4px; }
+
+@media (max-width: 768px) {
+  .borrower-activity__panel { padding: 4px 16px; }
+  .borrower-activity__item { flex-direction: column; gap: 8px; }
+  .borrower-activity__time { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .borrower-activity *, .borrower-activity *::before, .borrower-activity *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

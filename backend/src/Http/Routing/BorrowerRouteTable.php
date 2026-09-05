@@ -15,6 +15,8 @@ final class BorrowerRouteTable
         $routes = [
             Route::create('GET', '/api/student/dashboard', [$controller, 'dashboard']),
             Route::create('GET', '/api/teacher/dashboard', [$controller, 'dashboard']),
+            Route::create('GET', '/api/student/activity', [$controller, 'activity']),
+            Route::create('GET', '/api/teacher/activity', [$controller, 'activity']),
             Route::create('GET', '/api/student/history', [$controller, 'history']),
             Route::create('GET', '/api/teacher/history', [$controller, 'history']),
             Route::create('GET', '/api/receipt', [$controller, 'receipt']),

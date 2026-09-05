@@ -5,6 +5,7 @@ import { ReservationQueueComponent } from "../../../../app/shared/components/res
 import { RenewalService } from "../../../../app/core/services/renewal.service.js";
 import { RenewalModalComponent } from "../../../../app/shared/components/renewal-modal/renewal-modal.component.js";
 import { installTeacherBorrowModal } from "../../components/teacher-borrow-modal.js";
+import { ActivityTimelineComponent } from "../../../../app/shared/components/activity-timeline/activity-timeline.component.js";
 
 export class TeacherDashboardPage {
   constructor() {
@@ -12,6 +13,9 @@ export class TeacherDashboardPage {
     this.borrowForm = document.getElementById("borrowForm");
     this.returnForm = document.getElementById("returnForm");
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
+    this.activityTimeline = new ActivityTimelineComponent(document.getElementById("recent-activity"), {
+      classPrefix: "borrower-activity",
+    });
     this.cart = new BulkBorrowCart();
     this.reservationQueue = new ReservationQueueComponent(document.getElementById("reservationQueue"), {
       service: new ReservationService({
@@ -83,10 +87,18 @@ export class TeacherDashboardPage {
     document.getElementById("on-time-rate").textContent =
       `${Number(stats.on_time_rate ?? 100)}%`;
     this.currentLoans = data.current_loans || [];
+    this.renderRecentActivity(data.recent_activity || []);
     this.renewals = new Map();
     this.renderLoans(this.currentLoans);
     this.loadRenewals();
     this.renderBarcode(user.barcode || "");
+  }
+
+  renderRecentActivity(rows) {
+    this.activityTimeline.render(
+      Array.isArray(rows) ? rows.slice(0, 5) : [],
+      { compact: true },
+    );
   }
 
   async loadRenewals() {

@@ -90,6 +90,7 @@ class AppNavbar {
     if (path.includes("/staff/")) return role === "admin" || role === "librarian";
     if (path.includes("/admin/")) return role === "admin";
     if (path.includes("/student/settings")) return role === "student";
+    if (path.includes("/student/activity")) return role === "student";
     if (path.includes("/student/")) return role === "student" || role === "teacher";
     if (path.includes("/teacher/")) return role === "teacher";
     if (path.includes("/guest/")) return role === "guest";
@@ -123,6 +124,9 @@ class AppNavbar {
       : "/scan2borrow/student/history";
     const catalogLabel = teacher ? "Borrow Books" : "Search Books";
     const historyLabel = teacher ? "Borrowing History" : "My History";
+    const activityPath = teacher
+      ? "/scan2borrow/teacher/activity"
+      : "/scan2borrow/student/activity";
 
     this.root.innerHTML = `
       <div class="sidebar-brand">
@@ -140,6 +144,9 @@ class AppNavbar {
         </a>
         <a href="${historyPath}" data-nav-path="${historyPath}">
           <span class="nav-icon">&#128220;</span>${historyLabel}
+        </a>
+        <a href="${activityPath}" data-nav-path="${activityPath}">
+          <span class="nav-icon" aria-hidden="true"></span>Activity Logs
         </a>
         ${this.logoutLink()}
       </nav>`;

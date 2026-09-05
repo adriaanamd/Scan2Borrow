@@ -39,6 +39,19 @@ final readonly class BorrowerController
         return new JsonResponse(200, ['ok' => true, 'data' => $this->portal->dashboard($identity->userId())]);
     }
 
+    public function activity(ServerRequest $request): JsonResponse
+    {
+        $identity = $this->borrower();
+        if ($identity === null) {
+            return $this->unauthorized();
+        }
+
+        return new JsonResponse(200, [
+            'ok' => true,
+            'data' => ['activity' => $this->portal->activity($identity->userId())],
+        ]);
+    }
+
     public function history(ServerRequest $request): JsonResponse
     {
         $identity = $this->borrower();

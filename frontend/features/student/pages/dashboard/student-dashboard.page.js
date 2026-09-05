@@ -4,12 +4,16 @@ import { ReservationService } from "../../../../app/core/services/reservation.se
 import { ReservationQueueComponent } from "../../../../app/shared/components/reservation-queue/reservation-queue.component.js";
 import { RenewalService } from "../../../../app/core/services/renewal.service.js";
 import { RenewalModalComponent } from "../../../../app/shared/components/renewal-modal/renewal-modal.component.js";
+import { ActivityTimelineComponent } from "../../../../app/shared/components/activity-timeline/activity-timeline.component.js";
 
 export class StudentDashboardPage {
   constructor() {
     this.api = "/scan2borrow/api/student/dashboard";
     this.csrf = document.querySelector('meta[name="csrf"]')?.content || "";
     this.$ = (id) => document.getElementById(id);
+    this.activityTimeline = new ActivityTimelineComponent(this.$("recent-activity"), {
+      classPrefix: "borrower-activity",
+    });
     this.borrowForm = this.$("borrowForm");
     this.returnForm = this.$("returnForm");
     this.cart = new BulkBorrowCart();
@@ -104,11 +108,19 @@ export class StudentDashboardPage {
       data.favorite_category || "",
     );
     this.renderAchievements(data.achievements || this.defaultAchievements());
+    this.renderRecentActivity(data.recent_activity || []);
     this.currentLoans = data.current_loans || [];
     this.renewals = new Map();
     this.renderLoans(this.currentLoans);
     this.loadRenewals();
     this.renderBarcode(user.barcode || "");
+  }
+
+  renderRecentActivity(rows) {
+    this.activityTimeline.render(
+      Array.isArray(rows) ? rows.slice(0, 5) : [],
+      { compact: true },
+    );
   }
 
   async loadRenewals() {

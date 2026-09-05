@@ -77,6 +77,22 @@ test('staff dashboard exposes librarian-approved return review fields and endpoi
   assert.match(template, /Pending Return Verification/);
 });
 
+test('staff dashboard exposes return approvals as a separate action', () => {
+  const template = fs.readFileSync(dashboardTemplate, 'utf8');
+  assert.match(template, /id="return-approvals-trigger"/);
+  assert.match(template, /data-bs-target="#returnApprovalModal"/);
+  assert.match(template, />Return Approvals</);
+  assert.match(template, /id="returnApprovalModal"/);
+  assert.match(template, /id="return-approvals-count"/);
+
+  const borrowModalStart = template.indexOf('id="approvalModal"');
+  const returnModalStart = template.indexOf('id="returnApprovalModal"');
+  assert.ok(borrowModalStart >= 0);
+  assert.ok(returnModalStart > borrowModalStart);
+  const borrowModal = template.slice(borrowModalStart, returnModalStart);
+  assert.doesNotMatch(borrowModal, /return-approval-section|returnApprovalList/);
+});
+
 test('inventory boundaries preserve list, bulk action, drawer, and page contracts', async () => {
   const calls = [];
   const service = new InventoryService({

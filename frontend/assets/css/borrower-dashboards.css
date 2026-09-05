@@ -380,6 +380,17 @@
   gap: 0;
 }
 
+.borrower-dashboard--student .student-dashboard__activity .activity-rec-cover {
+  background: var(--primary);
+  border-radius: 8px 3px 3px 8px;
+  box-shadow: 4px 3px 0 rgba(16, 47, 82, .16);
+}
+
+.borrower-dashboard--teacher .teacher-dashboard__activity .activity-rec-cover {
+  background: #002FA7;
+  border-radius: 4px;
+}
+
 .borrower-dashboard--student .student-dashboard__activity .borrower-activity__item,
 .borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__item {
   align-items: start;
@@ -416,6 +427,13 @@
 .borrower-dashboard--student .student-dashboard__activity .borrower-activity__time,
 .borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__time {
   font-size: .68rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .activity-rec-status,
+.borrower-dashboard--teacher .teacher-dashboard__activity .activity-rec-status {
+  flex: none;
+  font-size: .64rem;
+  white-space: nowrap;
 }
 
 .borrower-dashboard--student .student-dashboard__activity .borrower-activity__state,

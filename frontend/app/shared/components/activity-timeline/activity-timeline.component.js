@@ -14,7 +14,7 @@ export class ActivityTimelineComponent {
       return;
     }
     const list = this.document.createElement("div");
-    list.className = `${this.classPrefix}__list${compact ? " is-compact" : ""}`;
+    list.className = `${this.classPrefix}__list borrower-activity__list${compact ? " is-compact" : ""}`;
     items.forEach((row) => list.appendChild(this.item(row)));
     this.host.appendChild(list);
   }
@@ -26,34 +26,47 @@ export class ActivityTimelineComponent {
 
   item(row = {}) {
     const item = this.document.createElement("article");
-    item.className = `${this.classPrefix}__item`;
+    item.className = `rec ${this.classPrefix}__item borrower-activity__item`;
+
+    const cover = this.document.createElement("div");
+    cover.className = "rec-cover activity-rec-cover";
+    cover.textContent = this.activityMarker(row.type);
+    item.appendChild(cover);
 
     const body = this.document.createElement("div");
-    body.className = `${this.classPrefix}__body`;
+    body.className = `${this.classPrefix}__body flex-grow-1`;
     const label = this.document.createElement("strong");
-    label.className = `${this.classPrefix}__label`;
+    label.className = `rec-t ${this.classPrefix}__label`;
     label.textContent = String(row.label || "Account activity");
     body.appendChild(label);
 
     const details = this.document.createElement("div");
-    details.className = `${this.classPrefix}__details`;
+    details.className = `rec-m ${this.classPrefix}__details`;
     details.textContent = String(row.details || row.title || row.transaction_code || "");
     body.appendChild(details);
 
-    if (row.status) {
-      const status = this.document.createElement("span");
-      status.className = `${this.classPrefix}__status`;
-      status.textContent = String(row.status);
-      body.appendChild(status);
+    if (row.occurred_at) {
+      const time = this.document.createElement("time");
+      time.className = `rec-m ${this.classPrefix}__time activity-rec-time`;
+      time.dateTime = String(row.occurred_at);
+      time.textContent = this.formatDate(row.occurred_at);
+      body.appendChild(time);
     }
     item.appendChild(body);
 
-    const time = this.document.createElement("time");
-    time.className = `${this.classPrefix}__time`;
-    time.dateTime = String(row.occurred_at || "");
-    time.textContent = this.formatDate(row.occurred_at);
-    item.appendChild(time);
+    if (row.status) {
+      const status = this.document.createElement("span");
+      status.className = "badge bg-light text-muted border activity-rec-status";
+      status.textContent = String(row.status);
+      item.appendChild(status);
+    }
+
     return item;
+  }
+
+  activityMarker(type) {
+    const marker = String(type || "A").replace(/[^a-z]/gi, "").slice(0, 1).toUpperCase();
+    return marker || "A";
   }
 
   message(text, error = false) {

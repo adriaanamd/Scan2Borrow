@@ -27,6 +27,13 @@ test('activity renderer exposes safe display and empty-state contracts', () => {
   assert.match(source, /toLocaleString\(['"]en-US['"]/);
 });
 
+test('activity rows reuse the recommended-book presentation pattern', () => {
+  const source = read('app/shared/components/activity-timeline/activity-timeline.component.js');
+  for (const marker of ['className = `rec ', 'rec-cover', 'rec-t', 'rec-m', 'badge']) {
+    assert.match(source, new RegExp(marker));
+  }
+});
+
 test('both dashboards expose recent activity hooks', () => {
   for (const role of ['student', 'teacher']) {
     const html = read('features/' + role + '/pages/dashboard/dashboard.html');

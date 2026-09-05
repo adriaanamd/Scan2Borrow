@@ -82,6 +82,50 @@ test('activity page binds the browser fetch function to its window', async () =>
   assert.deepEqual(payload.data.activity, []);
 });
 
+test('activity tab exposes ten-row paging and complete-history export controls', () => {
+  for (const role of ['student', 'teacher']) {
+    const html = read('features/' + role + '/pages/activity/activity.html');
+    for (const marker of ['activity-pagination', 'activity-range', 'activity-previous', 'activity-next', 'export-activity-pdf']) {
+      assert.match(html, new RegExp(marker));
+    }
+  }
+  const source = read('app/shared/pages/borrower-activity.page.js');
+  for (const marker of ['pageSize = 10', 'goToPage', 'exportPdf', 'window\.print', 'this\.rows']) {
+    assert.match(source, new RegExp(marker));
+  }
+});
+
+test('activity pagination renders ten rows and advances to the complete next page', () => {
+  const page = new BorrowerActivityPage({ document: null, window: {}, fetchImpl: async () => null });
+  const rendered = [];
+  page.timeline = { render: (rows) => rendered.push(rows) };
+  const rows = Array.from({ length: 11 }, (_, id) => ({ id }));
+
+  page.render(rows);
+  assert.equal(rendered.at(-1).length, 10);
+  page.goToPage(2);
+  assert.deepEqual(rendered.at(-1), [{ id: 10 }]);
+});
+
+test('activity PDF export prints the complete history and restores the current page', () => {
+  const rendered = [];
+  let printedRows = null;
+  const rows = Array.from({ length: 11 }, (_, id) => ({ id }));
+  const window = {
+    print() {
+      printedRows = rendered.at(-1);
+    },
+  };
+  const page = new BorrowerActivityPage({ document: null, window, fetchImpl: async () => null });
+  page.timeline = { render: (items) => rendered.push(items) };
+
+  page.render(rows);
+  page.goToPage(2);
+  assert.equal(page.exportPdf(), true);
+  assert.deepEqual(printedRows, rows);
+  assert.deepEqual(rendered.at(-1), [{ id: 10 }]);
+});
+
 test('borrower navbar keeps history and adds role-specific activity paths', () => {
   const source = read('assets/js/core/app-navbar.js');
   assert.match(source, /student\/history/);

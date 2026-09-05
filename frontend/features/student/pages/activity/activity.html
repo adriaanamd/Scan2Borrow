@@ -26,6 +26,16 @@
             <p id="activity-description">Your complete account activity timeline.</p>
           </section>
           <section class="borrower-activity__panel" aria-labelledby="activity-title">
+            <div class="borrower-activity__toolbar no-print">
+              <span class="borrower-activity__range" id="activity-range">0 items</span>
+              <div class="borrower-activity__actions">
+                <div id="activity-pagination" class="borrower-activity__pagination" aria-label="Activity pages" hidden>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" id="activity-previous">Previous</button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm" id="activity-next">Next</button>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="export-activity-pdf" disabled>Export PDF</button>
+              </div>
+            </div>
             <div id="activity-timeline" class="activity-timeline" aria-live="polite">
               <p class="borrower-activity__state">Loading activity...</p>
             </div>

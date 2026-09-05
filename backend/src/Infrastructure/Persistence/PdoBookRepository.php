@@ -129,12 +129,21 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         $countStatement->execute($parameters);
         $total = (int) $countStatement->fetchColumn();
         $offset = ($criteria->page() - 1) * $criteria->perPage();
+        $keywordSelect = '';
+        if ($this->hasTable('keywords') && $this->hasTable('book_title_keywords')) {
+            $keywordAggregate = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                ? "GROUP_CONCAT(keyword.name, ', ')"
+                : "GROUP_CONCAT(DISTINCT keyword.name ORDER BY keyword.name SEPARATOR ', ')";
+            $keywordSelect = ', (SELECT ' . $keywordAggregate . ' FROM book_title_keywords title_keyword '
+                . 'JOIN keywords keyword ON keyword.id = title_keyword.keyword_id '
+                . 'WHERE title_keyword.title_id = t.id) AS keywords';
+        }
         $sort = in_array($criteria->sort(), ['title', 'author', 'publisher', 'category_name', 'created_at'], true)
             ? 't.' . $criteria->sort()
             : 't.created_at';
         $statement = $this->pdo->prepare(
             'SELECT t.id, t.id AS title_id, NULL AS barcode, t.isbn, t.title, t.author, t.publisher, t.category_name, '
-            . 't.cover_file, t.description, t.quantity, '
+            . 't.cover_file, t.description' . $keywordSelect . ', t.quantity, '
             . "SUM(CASE WHEN c.status = 'Available' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS available_quantity, "
             . "SUM(CASE WHEN c.status = 'Reserved' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS reserved_quantity, "
             . "SUM(CASE WHEN c.status = 'Borrowed' AND c.deleted_at IS NULL THEN 1 ELSE 0 END) AS borrowed_quantity, "
@@ -180,6 +189,49 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
         }
 
         return $statement->fetchColumn() !== false;
+    }
+
+    /** @param list<string> $keywords */
+    private function syncTitleKeywords(int $titleId, array $keywords): void
+    {
+        if (!$this->hasTable('keywords') || !$this->hasTable('book_title_keywords')) {
+            return;
+        }
+
+        $normalized = [];
+        foreach ($keywords as $keyword) {
+            $value = trim($keyword);
+            $value = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+            $value = function_exists('mb_substr') ? mb_substr($value, 0, 100, 'UTF-8') : substr($value, 0, 100);
+            if ($value !== '') {
+                $normalized[$value] = true;
+            }
+        }
+
+        $delete = $this->pdo->prepare('DELETE FROM book_title_keywords WHERE title_id = :title_id');
+        $delete->execute(['title_id' => $titleId]);
+        if ($normalized === []) {
+            return;
+        }
+
+        $insertSql = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? 'INSERT OR IGNORE INTO keywords (name) VALUES (:name)'
+            : 'INSERT IGNORE INTO keywords (name) VALUES (:name)';
+        $insertKeyword = $this->pdo->prepare($insertSql);
+        $findKeyword = $this->pdo->prepare('SELECT id FROM keywords WHERE name = :name LIMIT 1');
+        $mappingSql = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? 'INSERT OR IGNORE INTO book_title_keywords (title_id, keyword_id) VALUES (:title_id, :keyword_id)'
+            : 'INSERT IGNORE INTO book_title_keywords (title_id, keyword_id) VALUES (:title_id, :keyword_id)';
+        $insertMapping = $this->pdo->prepare($mappingSql);
+        foreach (array_keys($normalized) as $name) {
+            $insertKeyword->execute(['name' => $name]);
+            $findKeyword->execute(['name' => $name]);
+            $keywordId = $findKeyword->fetchColumn();
+            if ($keywordId === false) {
+                continue;
+            }
+            $insertMapping->execute(['title_id' => $titleId, 'keyword_id' => (int) $keywordId]);
+        }
     }
 
     private function hasColumn(string $table, string $column): bool
@@ -253,6 +305,7 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                     'cover_file' => $request->coverFile, 'category_name' => $request->categoryName, 'quantity' => $request->quantity,
                 ]);
                 $titleId = (int) $this->pdo->lastInsertId();
+                $this->syncTitleKeywords($titleId, $request->keywords);
                 $copyStatement = $this->pdo->prepare(
                     'INSERT INTO book_copies (title_id, barcode, accession_no, floor_no, section_name, shelf_no, row_no, due_date, return_date, status) VALUES (:title_id, :barcode, :accession_no, :floor_no, :section_name, :shelf_no, :row_no, :due_date, :return_date, :status)'
                 );
@@ -381,6 +434,7 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                 'description' => $this->nullable($request->description), 'cover_file' => $this->nullable($request->coverFile),
                 'category_name' => $request->categoryName, 'quantity' => $request->quantity, 'id' => $id,
             ]);
+            $this->syncTitleKeywords($id, $request->keywords);
 
             $quantityAfterRemoval = min($request->quantity, $currentQuantity);
             if ($request->quantity > $quantityAfterRemoval) {

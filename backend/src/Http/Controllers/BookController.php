@@ -194,10 +194,36 @@ final readonly class BookController
             $this->string($body, 'due_date'),
             $this->string($body, 'return_date'),
             $this->string($body, 'status') === '' ? 'Available' : $this->string($body, 'status'),
-            [],
+            $this->keywords($body),
             max(1, $this->positiveInt($body['quantity'] ?? 1)),
             $actorId,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @return list<string>
+     */
+    private function keywords(array $body): array
+    {
+        $value = $body['keywords'] ?? '';
+        if (!is_string($value)) {
+            return [];
+        }
+
+        /** @var list<string> $keywords */
+        $keywords = [];
+        /** @var array<string, true> $seen */
+        $seen = [];
+        foreach (explode(',', $value) as $keyword) {
+            $trimmed = trim($keyword);
+            if ($trimmed !== '' && !isset($seen[$trimmed])) {
+                $seen[$trimmed] = true;
+                $keywords[] = $trimmed;
+            }
+        }
+
+        return $keywords;
     }
 
     /** @param array<string, mixed> $body */

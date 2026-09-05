@@ -68,6 +68,7 @@ test('copy history page template and styles keep the dedicated staff surface con
   assert.match(template, /data-app-page="staff-copy-history"/);
   assert.match(template, /data-scan-target="copy-history-barcode"/);
   assert.match(template, /copy-history-timeline/);
+  assert.match(template, /frontend\/assets\/js\/core\/icons\.js/);
   assert.match(styles, /#002fa7/i);
   assert.match(styles, /copy-history-event/);
 });

@@ -80,7 +80,7 @@ export class StaffDashboardPage {
         node.textContent = values[index] ?? 0;
       });
       this.renderApprovals(data.pending || []);
-    this.renderReturnApprovals(data.return_approvals || []);
+      this.renderReturnApprovals(data.return_approvals || []);
       this.renderOverview(data.overview || {}, data.recent || []);
       window.setInterval(() => this.refreshNotifications(), 5000);
     } catch (error) {

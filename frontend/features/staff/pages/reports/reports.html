@@ -24,6 +24,8 @@
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       defer
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js" defer></script>
   </head>
   <body data-app-page="staff-reports">
     <div class="app">
@@ -38,13 +40,7 @@
           <div class="page-head">
             <div><p>Generate, print, and export library reports.</p></div>
             <div class="d-flex gap-2">
-              <a
-                id="generate-report-link"
-                href="/scan2borrow/staff/reports?print=1"
-                target="_blank"
-                class="btn btn-gradient"
-                >&#128424; Generate Report</a
-              >
+              <button id="download-report-pdf" type="button" class="btn btn-gradient" disabled>Download PDF</button>
               <a
                 id="export-report-link"
                 href="/scan2borrow/staff/reports?export=1"
@@ -129,6 +125,13 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+            <div id="staff-report-pagination" class="report-pagination" hidden aria-label="Report pagination">
+              <span id="staff-report-range" aria-live="polite">0–0 of 0</span>
+              <div class="report-pagination__controls">
+                <button id="staff-report-previous" type="button" class="btn btn-outline-secondary" aria-label="Previous report page" disabled>Previous</button>
+                <button id="staff-report-next" type="button" class="btn btn-outline-secondary" aria-label="Next report page" disabled>Next</button>
               </div>
             </div>
             <footer class="report-document-footer">

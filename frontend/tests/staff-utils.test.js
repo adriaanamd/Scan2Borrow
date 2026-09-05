@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { StaffReportService, StaffNotificationService } from '../features/staff/services/index.js';
 import { StaffOverdueService } from '../features/staff/services/overdue.service.js';
 import { ReportsPage } from '../features/staff/pages/reports/reports.page.js';
@@ -10,6 +13,61 @@ import { GuestRequestsPage } from '../features/staff/pages/guest-requests/guest-
 import { AdminStaffService } from '../features/staff/services/admin-staff.service.js';
 import { AdminStaffPage } from '../features/staff/pages/admin-staff/admin-staff.page.js';
 import { ApiDocsPage } from '../features/staff/pages/api-docs/api-docs.page.js';
+
+function reportsFixture({ rows, query = '?type=overdue', service, jspdf } = {}) {
+  const nodes = new Map();
+  const makeNode = (extra = {}) => {
+    const listeners = new Map();
+    return {
+      children: [],
+      dataset: {},
+      disabled: false,
+      hidden: false,
+      classList: { added: [], add(value) { this.added.push(value); } },
+      addEventListener(type, listener) { listeners.set(type, listener); },
+      click() { listeners.get('click')?.({ preventDefault() {}, target: this, currentTarget: this }); },
+      replaceChildren(...children) { this.children = children; },
+      appendChild(child) { this.children.push(child); },
+      querySelector(selector) { return this.children.find((child) => child.selector === selector) || null; },
+      setAttribute(name, value) { this[name] = value; },
+      ...extra,
+    };
+  };
+  const root = makeNode({ querySelector(selector) { return nodes.get(selector) || null; } });
+  const table = makeNode();
+  table.querySelector = (selector) => selector === 'thead' ? nodes.get('thead') : nodes.get('tbody');
+  nodes.set('#staff-report-table', table);
+  nodes.set('thead', makeNode());
+  nodes.set('tbody', makeNode());
+  for (const selector of [
+    '#staff-report-document', '#staff-report-title', '#staff-report-period', '#staff-report-count',
+    '#staff-report-generated', '#staff-report-status', '#export-report-link', '#generate-report-link',
+    '#download-report-pdf', '#staff-report-pagination', '#staff-report-range',
+    '#staff-report-previous', '#staff-report-next', 'select[name="type"]',
+    'input[name="from"]', 'input[name="to"]',
+  ]) nodes.set(selector, makeNode());
+
+  const created = [];
+  const document = { createElement(tag) { const node = makeNode({ tag, textContent: '', selector: tag }); created.push(node); return node; } };
+  const calls = [];
+  const defaultService = {
+    async load(filters) {
+      calls.push(filters);
+      return { data: { report: { label: 'Overdue Books', headers: ['Title'], data: rows || [] } } };
+    },
+    exportUrl(filters) { return `/export?${filters.type}`; },
+    printUrl(filters) { return `/print?${filters.type}`; },
+  };
+  let printed = false;
+  const window = {
+    location: { search: query },
+    jspdf,
+    requestAnimationFrame(callback) { callback(); },
+    print() { printed = true; },
+  };
+  const page = new ReportsPage(root, { service: service || defaultService, window, document });
+  return { page, nodes, calls, created, window, get printed() { return printed; } };
+}
 
 test('staff utility services preserve report filters, export/print flags, and notification actions', async () => {
   const calls = [];
@@ -99,6 +157,95 @@ test('reports page renders data, preserves links, and prints after report readin
   assert.equal(root.classList.added[0], 'report-print-mode');
   assert.equal(printed, true);
   assert.ok(created.some((node) => node.tag === 'th' && node.textContent === 'Title'));
+});
+
+test('reports page paginates fetched rows and shows the complete result range', async () => {
+  const rows = Array.from({ length: 25 }, (_, index) => [`Book ${index + 1}`]);
+  const fixture = reportsFixture({ rows });
+
+  await fixture.page.start();
+
+  assert.equal(fixture.nodes.get('tbody').children.length, 10);
+  assert.equal(fixture.nodes.get('#staff-report-range').textContent, '1–10 of 25');
+  assert.equal(fixture.nodes.get('#staff-report-previous').disabled, true);
+  assert.equal(fixture.nodes.get('#staff-report-next').disabled, false);
+  assert.equal(fixture.nodes.get('#staff-report-count').textContent, '25 records');
+
+  fixture.nodes.get('#staff-report-next').click();
+  assert.equal(fixture.nodes.get('tbody').children.length, 10);
+  assert.equal(fixture.nodes.get('#staff-report-range').textContent, '11–20 of 25');
+  assert.equal(fixture.calls.length, 1);
+
+  fixture.nodes.get('#staff-report-next').click();
+  assert.equal(fixture.nodes.get('tbody').children.length, 5);
+  assert.equal(fixture.nodes.get('#staff-report-range').textContent, '21–25 of 25');
+  assert.equal(fixture.nodes.get('#staff-report-next').disabled, true);
+});
+
+test('reports page resets pagination when filters load a new dataset', async () => {
+  const firstRows = Array.from({ length: 25 }, (_, index) => [`Book ${index + 1}`]);
+  const secondRows = Array.from({ length: 3 }, (_, index) => [`New book ${index + 1}`]);
+  const calls = [];
+  const responses = [firstRows, secondRows];
+  const fixture = reportsFixture({
+    query: '?type=overdue&from=2026-01-01',
+    service: {
+      async load(filters) {
+        calls.push(filters);
+        return { data: { report: { label: 'Overdue Books', headers: ['Title'], data: responses.shift() } } };
+      },
+      exportUrl(filters) { return `/export?${filters.type}`; },
+      printUrl(filters) { return `/print?${filters.type}`; },
+    },
+  });
+
+  await fixture.page.start();
+  fixture.page.goToPage(2);
+  assert.equal(fixture.nodes.get('#staff-report-range').textContent, '11–20 of 25');
+
+  fixture.window.location.search = '?type=overdue&from=2026-02-01';
+  await fixture.page.load();
+
+  assert.equal(fixture.nodes.get('#staff-report-range').textContent, '1–3 of 3');
+  assert.deepEqual(calls, [
+    { type: 'overdue', from: '2026-01-01', to: '' },
+    { type: 'overdue', from: '2026-02-01', to: '' },
+  ]);
+});
+
+test('reports page exports every fetched row to PDF regardless of screen page', async () => {
+  let pdfTableBody = [];
+  let savedFilename = '';
+  class FakePdf {
+    autoTable(options) { pdfTableBody = options.body; }
+    text() {}
+    save(filename) { savedFilename = filename; }
+  }
+  const rows = Array.from({ length: 25 }, (_, index) => [`Book ${index + 1}`]);
+  const fixture = reportsFixture({ rows, jspdf: { jsPDF: FakePdf } });
+
+  await fixture.page.start();
+  fixture.page.goToPage(2);
+  await fixture.page.downloadPdf();
+
+  assert.equal(pdfTableBody.length, 25);
+  assert.match(savedFilename, /overdue/);
+});
+
+test('reports template exposes direct PDF and accessible pagination controls', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const template = fs.readFileSync(path.join(root, 'features/staff/pages/reports/reports.html'), 'utf8');
+  const styles = fs.readFileSync(path.join(root, 'assets/css/staff-reports.css'), 'utf8');
+
+  assert.match(template, /id="download-report-pdf"/);
+  assert.match(template, /id="staff-report-pagination"/);
+  assert.match(template, /id="staff-report-previous"/);
+  assert.match(template, /id="staff-report-next"/);
+  assert.match(template, /aria-live="polite"/);
+  assert.match(template, /jspdf@2\.5\.2/);
+  assert.match(template, /jspdf-autotable@3\.8\.4/);
+  assert.match(styles, /\.report-pagination/);
+  assert.match(styles, /\.report-pagination\s*\{[^}]*display:\s*none\s*!important/s);
 });
 
 test('staff notification and guest review boundaries preserve action payloads', async () => {

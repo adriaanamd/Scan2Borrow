@@ -133,3 +133,10 @@ test('borrower navbar keeps history and adds role-specific activity paths', () =
   assert.match(source, /student\/activity/);
   assert.match(source, /teacher\/activity/);
 });
+
+test('activity pages load the animated Bootstrap modal runtime for logout confirmation', () => {
+  for (const role of ['student', 'teacher']) {
+    const html = read('features/' + role + '/pages/activity/activity.html');
+    assert.match(html, /bootstrap\.bundle\.min\.js/);
+  }
+});

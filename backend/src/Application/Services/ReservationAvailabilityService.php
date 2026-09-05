@@ -8,6 +8,7 @@ use App\Domain\Reservation\HoldRecord;
 use App\Infrastructure\Persistence\CirculationNotificationRepositoryInterface;
 use App\Infrastructure\Persistence\HoldRepositoryInterface;
 use DateTimeImmutable;
+use RuntimeException;
 
 final readonly class ReservationAvailabilityService implements ReservationAvailabilityInterface
 {
@@ -26,7 +27,7 @@ final readonly class ReservationAvailabilityService implements ReservationAvaila
 
         $expiresAt = $now->modify('+24 hours');
         if (!$this->holds->offer($queued->id(), $copyId, $now, $expiresAt)) {
-            return null;
+            throw new RuntimeException('Reservation availability could not be advanced.');
         }
 
         $offered = $this->holds->find($queued->id()) ?? $queued;

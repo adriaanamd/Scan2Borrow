@@ -79,6 +79,20 @@ final class PdoHoldRepositoryReservationTest extends TestCase
         self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = 11")->fetchColumn());
     }
 
+    public function testOfferParticipatesInAnExistingApprovalTransaction(): void
+    {
+        $this->pdo->exec("INSERT INTO reservations (user_id, title_id, queue_sequence, status, created_at) VALUES (7, 4, 10, 'queued', CURRENT_TIMESTAMP)");
+        $repository = new PdoHoldRepository($this->pdo);
+
+        $this->pdo->beginTransaction();
+        self::assertTrue($repository->offer(1, 11, new DateTimeImmutable('2026-08-30 10:00:00'), new DateTimeImmutable('2026-08-31 10:00:00')));
+        self::assertTrue($this->pdo->inTransaction());
+        $this->pdo->rollBack();
+
+        self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = 11")->fetchColumn());
+        self::assertSame('queued', $this->pdo->query("SELECT status FROM reservations WHERE id = 1")->fetchColumn());
+    }
+
     public function testStaffQueueIncludesBorrowerName(): void
     {
         $this->pdo->exec("INSERT INTO reservations (user_id, title_id, queue_sequence, status, created_at) VALUES (7, 4, 10, 'offered', CURRENT_TIMESTAMP)");

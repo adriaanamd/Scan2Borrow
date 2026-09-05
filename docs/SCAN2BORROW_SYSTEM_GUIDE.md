@@ -767,6 +767,8 @@ GET  /api/receipt
 
 ~~~text
 GET  /api/staff/dashboard
+GET  /api/staff/return-approvals
+POST /api/staff/return-action
 GET  /api/staff/borrowers
 GET  /api/staff/borrower
 GET  /api/books

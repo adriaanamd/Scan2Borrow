@@ -179,6 +179,7 @@ export class TeacherDashboardPage {
   submit(form, action) {
     const body = new FormData(form);
     body.append("action", action);
+    body.append("csrf", this.csrf);
     fetch("/scan2borrow/api/teacher/dashboard", { method: "POST", body })
       .then((response) => response.json())
       .then((response) => {

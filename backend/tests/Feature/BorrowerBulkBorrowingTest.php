@@ -95,7 +95,6 @@ final class BulkBorrowingControllerRepository implements BorrowingRepositoryInte
     public function activeByTransaction(int $userId, string $transactionCode): array { return []; }
     public function findBookByBarcode(string $barcode): ?array { return null; }
     public function activeByBook(int $userId, int $bookId): ?\App\Domain\Borrowing\LoanRecord { return null; }
-    public function completeReturn(int $loanId, int $bookId, float $fine): void {}
     public function requestReturn(int $loanId): bool { return true; }
     public function titleIdForBook(int $bookId): ?int { return null; }
 }

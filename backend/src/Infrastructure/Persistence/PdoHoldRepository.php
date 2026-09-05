@@ -142,14 +142,19 @@ final class PdoHoldRepository implements HoldRepositoryInterface
 
     public function offer(int $holdId, int $copyId, DateTimeImmutable $offeredAt, DateTimeImmutable $expiresAt): bool
     {
-        $this->pdo->beginTransaction();
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
         try {
             $copy = $this->pdo->prepare(
                 "UPDATE book_copies SET status = 'Reserved' WHERE id = :copy_id AND status = 'Available' AND deleted_at IS NULL",
             );
             $copy->execute(['copy_id' => $copyId]);
             if ($copy->rowCount() !== 1) {
-                $this->pdo->rollBack();
+                if ($ownsTransaction) {
+                    $this->pdo->rollBack();
+                }
                 return false;
             }
 
@@ -165,14 +170,18 @@ final class PdoHoldRepository implements HoldRepositoryInterface
                 'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
             ]);
             if ($statement->rowCount() !== 1) {
-                $this->pdo->rollBack();
+                if ($ownsTransaction) {
+                    $this->pdo->rollBack();
+                }
                 return false;
             }
 
-            $this->pdo->commit();
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
             return true;
         } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $exception;

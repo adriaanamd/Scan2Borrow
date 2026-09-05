@@ -36,7 +36,7 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
             $counts['total'] += $count;
             if ($status === 'Returned') {
                 $counts['returned'] += $count;
-            } elseif ($status === 'Released') {
+            } elseif (in_array($status, ['Released', 'Return Verification Pending'], true)) {
                 $counts['active'] += $count;
             }
         }
@@ -132,7 +132,9 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
     {
         $where = ['vb.visitor_id = :visitor_id'];
         $parameters = ['visitor_id' => $visitorId];
-        if ($status !== '' && $status !== 'all') {
+        if ($status === 'active') {
+            $where[] = "vb.request_status IN ('Released', 'Return Verification Pending')";
+        } elseif ($status !== '' && $status !== 'all') {
             $where[] = 'vb.request_status = :status';
             $parameters['status'] = $status;
         }

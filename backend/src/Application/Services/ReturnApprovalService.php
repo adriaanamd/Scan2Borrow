@@ -41,13 +41,16 @@ final class ReturnApprovalService
         }
 
         $fine = $action === 'approve' && $type !== 'guest' ? $this->fine($pending) : 0.0;
-        if (!$this->repository->decide($type, $id, $action, $staffId, $fine, trim($note))) {
+        $afterApprove = $action === 'approve' && $type !== 'guest'
+            ? function () use ($pending): void {
+                $this->advanceAvailability($pending);
+            }
+            : null;
+        if (!$this->repository->decide($type, $id, $action, $staffId, $fine, trim($note), $afterApprove)) {
             return ReturnResult::failure('Return request is no longer pending.');
         }
 
         if ($action === 'approve') {
-            $this->advanceAvailability($pending);
-
             return ReturnResult::success('Return approved. The book is now available.');
         }
 

@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditEventType;
 use DateTimeImmutable;
+use Closure;
 use PDO;
 use RuntimeException;
 
@@ -101,7 +102,7 @@ final class PdoReturnApprovalRepository implements ReturnApprovalRepositoryInter
         return null;
     }
 
-    public function decide(string $type, int $id, string $action, int $staffId, float $fine, string $note): bool
+    public function decide(string $type, int $id, string $action, int $staffId, float $fine, string $note, ?Closure $afterApprove = null): bool
     {
         $this->pdo->beginTransaction();
         try {
@@ -111,6 +112,9 @@ final class PdoReturnApprovalRepository implements ReturnApprovalRepositoryInter
                 'guest' => $this->decideGuest($id, $action, $staffId, $note),
                 default => false,
             };
+            if ($changed && $action === 'approve' && $afterApprove !== null) {
+                $afterApprove();
+            }
             $this->pdo->commit();
 
             return $changed;
@@ -264,7 +268,7 @@ final class PdoReturnApprovalRepository implements ReturnApprovalRepositoryInter
         }
         if ($approved) {
             $context['audit_source'] = 'guest_borrowing';
-            $this->pdo->prepare("UPDATE books SET status = 'Available', return_date = CURRENT_DATE WHERE id = :id")
+            $this->pdo->prepare("UPDATE books SET status = 'Available', due_date = NULL, return_date = CURRENT_DATE WHERE id = :id")
                 ->execute(['id' => $this->integer($context['copy_id'] ?? null)]);
             $this->recordAudit($context, $staffId);
         }

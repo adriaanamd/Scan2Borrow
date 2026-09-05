@@ -286,6 +286,11 @@ test('borrower dashboards wire shared stats and activity presentation hooks', ()
   assert.match(teacher, /activity-view-all/);
 });
 
+test('teacher return submissions include the CSRF token required by the API', () => {
+  const source = read('features/teacher/pages/dashboard/teacher-dashboard.page.js');
+  assert.match(source, /body\.append\("csrf", this\.csrf\)/);
+});
+
 test('borrower return surfaces explain that the librarian must verify the book', () => {
   for (const relative of [
     'features/student/pages/dashboard/dashboard.html',

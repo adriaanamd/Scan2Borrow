@@ -90,7 +90,6 @@ final class ActivityActionRepository implements BorrowingRepositoryInterface, Re
     public function findBookByBarcode(string $barcode): ?array { return null; }
     public function activeByBook(int $userId, int $bookId): ?LoanRecord { return null; }
     public function titleIdForBook(int $bookId): ?int { return null; }
-    public function completeReturn(int $loanId, int $bookId, float $fine): void {}
     public function requestReturn(int $loanId): bool { return true; }
 }
 

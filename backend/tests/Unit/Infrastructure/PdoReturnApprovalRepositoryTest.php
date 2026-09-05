@@ -20,14 +20,14 @@ final class PdoReturnApprovalRepositoryTest extends TestCase
     {
         $this->pdo = new PDO('sqlite::memory:');
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode VARCHAR(50), title VARCHAR(200), author VARCHAR(150), status VARCHAR(20), return_date DATE)');
+        $this->pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode VARCHAR(50), title VARCHAR(200), author VARCHAR(150), status VARCHAR(20), due_date DATE, return_date DATE)');
         $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title VARCHAR(200))');
         $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode VARCHAR(50), status VARCHAR(20), due_date DATE, return_date DATE, deleted_at DATETIME)');
         $this->pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code VARCHAR(40), user_id INTEGER, approval_status VARCHAR(20), borrow_date DATETIME, due_date DATE, return_date DATETIME, return_status VARCHAR(20), return_requested_at DATETIME, return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500), status VARCHAR(20), fine_amount DECIMAL(8,2))');
         $this->pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date DATETIME, return_status VARCHAR(20), return_requested_at DATETIME, return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500), status VARCHAR(20), fine_amount DECIMAL(8,2))');
         $this->pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY, transaction_code VARCHAR(40), user_id INTEGER, book_id INTEGER, approval_status VARCHAR(20), borrow_date DATETIME, due_date DATE, return_date DATETIME, return_status VARCHAR(20), return_requested_at DATETIME, return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500), status VARCHAR(20), fine_amount DECIMAL(8,2))');
         $this->pdo->exec('CREATE TABLE visitor_borrowing (id INTEGER PRIMARY KEY, visitor_id INTEGER, book_id INTEGER, due_date DATE, return_date DATE, request_status VARCHAR(40), return_verification_photo TEXT, return_requested_at DATETIME, return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500))');
-        $this->pdo->exec("INSERT INTO books (id, barcode, title, author, status) VALUES (1, 'BK-1', 'Clean Code', 'Robert Martin', 'Borrowed'), (2, 'BK-2', 'Algorithms', 'Cormen', 'Borrowed')");
+        $this->pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date) VALUES (1, 'BK-1', 'Clean Code', 'Robert Martin', 'Borrowed', '2026-08-25'), (2, 'BK-2', 'Algorithms', 'Cormen', 'Borrowed', '2026-08-28')");
         $this->pdo->exec("INSERT INTO book_titles (id, title) VALUES (1, 'Clean Code')");
         $this->pdo->exec("INSERT INTO book_copies (id, title_id, barcode, status, due_date) VALUES (1, 1, 'COPY-1', 'Borrowed', '2026-08-25')");
         $this->pdo->exec("INSERT INTO borrowing_transactions (id, transaction_code, user_id, approval_status, borrow_date, due_date, return_status, return_requested_at, status, fine_amount) VALUES (1, 'TX-1', 7, 'approved', '2026-08-20', '2026-08-25', 'none', '2026-08-28 09:00:00', 'Borrowed', 0)");
@@ -118,8 +118,31 @@ final class PdoReturnApprovalRepositoryTest extends TestCase
         self::assertSame('Returned', $request['request_status']);
         self::assertEquals(19, $request['return_decided_by']);
         self::assertSame('Received at desk.', $request['return_decision_note']);
-        $bookStatement = $this->pdo->query('SELECT status FROM books WHERE id = 1');
+        $bookStatement = $this->pdo->query('SELECT status, due_date FROM books WHERE id = 1');
         self::assertNotFalse($bookStatement);
-        self::assertSame('Available', $bookStatement->fetchColumn());
+        $book = $bookStatement->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($book);
+        self::assertSame('Available', $book['status']);
+        self::assertNull($book['due_date']);
+    }
+
+    public function testApprovalCallbackFailureRollsBackTheReturnDecision(): void
+    {
+        $repository = new PdoReturnApprovalRepository($this->pdo);
+
+        $this->expectException(\RuntimeException::class);
+        try {
+            $repository->decide('borrower_item', 1, 'approve', 19, 10.0, '', static function (): void {
+                throw new \RuntimeException('Reservation offer failed.');
+            });
+        } finally {
+            $itemStatement = $this->pdo->query('SELECT return_date, return_status, status FROM borrowing_items WHERE id = 1');
+            self::assertNotFalse($itemStatement);
+            $item = $itemStatement->fetch(PDO::FETCH_ASSOC);
+            self::assertIsArray($item);
+            self::assertNull($item['return_date']);
+            self::assertSame('pending', $item['return_status']);
+            self::assertSame('Borrowed', $item['status']);
+        }
     }
 }

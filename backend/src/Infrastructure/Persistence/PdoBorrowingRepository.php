@@ -304,35 +304,6 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         return $value === false ? null : (int) $value;
     }
 
-    public function completeReturn(int $loanId, int $bookId, float $fine): void
-    {
-        $this->pdo->beginTransaction();
-        try {
-            if ($this->hasTable('borrowing_items') && $this->itemExists($loanId)) {
-                $context = $this->returnContext($loanId, $bookId);
-                $this->pdo->prepare(
-                    "UPDATE borrowing_items SET return_date = CURRENT_TIMESTAMP, status = 'Returned', fine_amount = :fine WHERE id = :id"
-                )->execute(['fine' => $fine, 'id' => $loanId]);
-                $this->pdo->prepare("UPDATE book_copies SET status = 'Available', return_date = CURRENT_DATE WHERE id = :id")
-                    ->execute(['id' => $bookId]);
-                $this->recordReturnAudit($context, $loanId);
-            } else {
-                $statement = $this->pdo->prepare(
-                    'UPDATE borrowing SET return_date = CURRENT_TIMESTAMP, status = \'Returned\', fine_amount = :fine WHERE id = :id'
-                );
-                $statement->execute(['fine' => $fine, 'id' => $loanId]);
-                $this->pdo->prepare(
-                    'UPDATE books SET status = \'Available\', return_date = CURRENT_DATE WHERE id = :id'
-                )->execute(['id' => $bookId]);
-                $this->recordReturnAudit(['id' => $bookId, 'barcode' => '', 'title' => '', 'from_status' => 'Borrowed'], null);
-            }
-            $this->pdo->commit();
-        } catch (\Throwable $exception) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            throw $exception;
-        }
-    }
-
     public function requestReturn(int $loanId): bool
     {
         if ($this->hasTable('borrowing_items') && $this->itemExists($loanId)) {
@@ -404,30 +375,6 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         ));
     }
 
-    /** @param array<string, mixed> $context */
-    private function recordReturnAudit(array $context, ?int $itemId): void
-    {
-        if ($this->audit === null || $this->integerValue($context['id'] ?? null) < 1) {
-            return;
-        }
-        $this->audit->record(new AuditEvent(
-            $this->integerValue($context['id']),
-            $this->integerValue($context['actor_user_id'] ?? null) ?: null,
-            AuditEventType::RETURNED,
-            $this->stringValue($context['from_status'] ?? null) ?: 'Borrowed',
-            'Available',
-            null,
-            $this->integerValue($context['transaction_id'] ?? null) ?: null,
-            $itemId,
-            null,
-            [
-                'barcode' => $this->stringValue($context['barcode'] ?? null),
-                'title' => $this->stringValue($context['title'] ?? null),
-            ],
-            new DateTimeImmutable(),
-        ));
-    }
-
     /** @param array<string, mixed> $row @return array<string, mixed> */
     private function copyContext(array $row): array
     {
@@ -439,22 +386,6 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
             'title' => $this->stringValue($row['title'] ?? null),
             'author' => $this->stringValue($row['author'] ?? null),
         ];
-    }
-
-    /** @return array<string, mixed> */
-    private function returnContext(int $itemId, int $copyId): array
-    {
-        $statement = $this->pdo->prepare(
-            'SELECT c.id, c.barcode, t.title, c.status AS from_status, bi.transaction_id, bt.user_id AS actor_user_id FROM borrowing_items bi '
-            . 'JOIN borrowing_transactions bt ON bt.id = bi.transaction_id '
-            . 'JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id '
-            . 'WHERE bi.id = :item_id AND c.id = :copy_id LIMIT 1'
-        );
-        $statement->execute(['item_id' => $itemId, 'copy_id' => $copyId]);
-        /** @var array<string, mixed>|false $context */
-        $context = $statement->fetch(PDO::FETCH_ASSOC);
-
-        return $context === false ? ['id' => $copyId] : $context;
     }
 
     private function setBookStatus(int $bookId, string $status): void

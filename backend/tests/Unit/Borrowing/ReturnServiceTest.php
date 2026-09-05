@@ -31,9 +31,6 @@ final class ReturnServiceTest extends TestCase
         self::assertTrue($result->successful());
         self::assertSame('Return request submitted. Please hand the book to the librarian for verification.', $result->message());
         self::assertSame([8], $repository->requestedLoanIds);
-        self::assertNull($repository->completedLoanId);
-        self::assertNull($repository->availableBookId);
-        self::assertNull($repository->fine);
     }
 
     public function testTransactionReturnQueuesEveryActiveLoanForReview(): void
@@ -50,7 +47,6 @@ final class ReturnServiceTest extends TestCase
         self::assertTrue($result->successful());
         self::assertSame('Return request submitted. Please hand the book to the librarian for verification.', $result->message());
         self::assertSame([8, 9], $repository->requestedLoanIds);
-        self::assertNull($repository->fine);
     }
 
     public function testReturnReportsWhenReviewIsAlreadyPending(): void
@@ -78,12 +74,6 @@ final class FakeReturnRepository implements ReturnRepositoryInterface
     public ?array $book = null;
 
     public ?LoanRecord $loan = null;
-
-    public ?int $completedLoanId = null;
-
-    public ?int $availableBookId = null;
-
-    public ?float $fine = null;
 
     /** @var list<LoanRecord> */
     public array $transactionLoans = [];
@@ -113,13 +103,6 @@ final class FakeReturnRepository implements ReturnRepositoryInterface
     public function titleIdForBook(int $bookId): ?int
     {
         return null;
-    }
-
-    public function completeReturn(int $loanId, int $bookId, float $fine): void
-    {
-        $this->completedLoanId = $loanId;
-        $this->availableBookId = $bookId;
-        $this->fine = $fine;
     }
 
     public function requestReturn(int $loanId): bool

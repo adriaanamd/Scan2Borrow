@@ -22,7 +22,5 @@ interface ReturnRepositoryInterface
 
     public function titleIdForBook(int $bookId): ?int;
 
-    public function completeReturn(int $loanId, int $bookId, float $fine): void;
-
     public function requestReturn(int $loanId): bool;
 }

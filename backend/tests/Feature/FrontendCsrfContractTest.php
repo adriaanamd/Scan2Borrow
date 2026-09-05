@@ -35,6 +35,7 @@ final class FrontendCsrfContractTest extends TestCase
             ['frontend/features/guest/pages/profile/guest-profile.page.js'],
             ['frontend/app/shared/pages/borrower-search.page.js'],
             ['frontend/features/student/pages/dashboard/student-dashboard.page.js'],
+            ['frontend/features/teacher/pages/dashboard/teacher-dashboard.page.js'],
         ];
     }
 

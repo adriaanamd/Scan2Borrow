@@ -86,6 +86,8 @@ final class SchemaContractTest extends TestCase
         self::assertStringContainsString('return_decided_by', $guestSchema);
         self::assertStringContainsString('return_decision_note', $guestSchema);
         self::assertStringContainsString('upgrade_return_approval.sql', $this->readRoot('README.md'));
+        self::assertStringContainsString('information_schema.tables', $migration);
+        self::assertStringContainsString('visitor_borrowing_exists', $migration);
     }
 
     private function readRoot(string $filename): string

@@ -85,7 +85,7 @@ final readonly class GuestBorrowingController
         }
 
         return new JsonResponse(200, ['ok' => true, 'data' => [
-            'books' => $this->portal->history($visitor->id(), 'Released', '', ''),
+            'books' => $this->portal->history($visitor->id(), 'active', '', ''),
         ]]);
     }
 

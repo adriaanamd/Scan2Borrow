@@ -50,4 +50,19 @@ final class ReservationAvailabilityServiceTest extends TestCase
 
         self::assertNull((new ReservationAvailabilityService($holds, $notifications))->advance(4, 11, new DateTimeImmutable('2026-08-30 10:00:00')));
     }
+
+    public function testAdvanceReportsWhenQueuedOfferCannotBePersisted(): void
+    {
+        $holds = $this->createMock(HoldRepositoryInterface::class);
+        $notifications = $this->createMock(CirculationNotificationRepositoryInterface::class);
+        $record = HoldRecord::fromRow([
+            'id' => 12, 'user_id' => 7, 'title_id' => 4, 'title' => 'Clean Code', 'status' => 'queued', 'queue_position' => 1,
+        ]);
+        $holds->expects(self::once())->method('nextEligibleQueued')->with(4)->willReturn($record);
+        $holds->expects(self::once())->method('offer')->willReturn(false);
+        $notifications->expects(self::never())->method('notifyBorrower');
+
+        $this->expectException(\RuntimeException::class);
+        (new ReservationAvailabilityService($holds, $notifications))->advance(4, 11, new DateTimeImmutable('2026-08-30 10:00:00'));
+    }
 }

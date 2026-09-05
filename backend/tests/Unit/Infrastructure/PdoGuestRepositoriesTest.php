@@ -89,4 +89,16 @@ final class PdoGuestRepositoriesTest extends TestCase
         self::assertEquals(19, $rows[0]['return_decided_by']);
         self::assertSame('Book was not received.', $rows[0]['return_decision_note']);
     }
+
+    public function testGuestPendingReturnRemainsActiveAndIsIncludedInBorrowedHistory(): void
+    {
+        $this->pdo->exec("INSERT INTO visitor_borrowing (visitor_id, book_id, borrow_date, due_date, request_status, return_requested_at) VALUES (7, 12, '2026-08-20', '2026-08-27', 'Return Verification Pending', '2026-08-28 10:00:00')");
+
+        $summary = (new PdoGuestPortalRepository($this->pdo))->dashboardSummary(7);
+        $active = (new PdoGuestPortalRepository($this->pdo))->history(7, 'active', '', '');
+
+        self::assertSame(1, $summary['active']);
+        self::assertCount(1, $active);
+        self::assertSame('Return Verification Pending', $active[0]['request_status']);
+    }
 }

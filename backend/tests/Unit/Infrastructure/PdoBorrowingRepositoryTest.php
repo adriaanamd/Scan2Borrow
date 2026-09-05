@@ -8,6 +8,7 @@ use App\Application\DTO\BulkBorrowItem;
 use App\Application\DTO\BulkBorrowRequest;
 use App\Domain\Auth\Role;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
+use App\Infrastructure\Persistence\PdoReturnApprovalRepository;
 use DateTimeImmutable;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -91,7 +92,7 @@ final class PdoBorrowingRepositoryTest extends TestCase
         self::assertSame('Borrowed', $book);
     }
 
-    public function testCompleteReturnPreservesFineAndMakesBookAvailable(): void
+    public function testReturnApprovalPreservesFineAndMakesBookAvailable(): void
     {
         $repository = new PdoBorrowingRepository($this->pdo);
         $id = $repository->createLoan(
@@ -103,7 +104,8 @@ final class PdoBorrowingRepositoryTest extends TestCase
             'approved',
         );
 
-        $repository->completeReturn($id, 1, 40.0);
+        self::assertTrue($repository->requestReturn($id));
+        self::assertTrue((new PdoReturnApprovalRepository($this->pdo))->decide('legacy_borrowing', $id, 'approve', 19, 40.0, 'Received at desk.'));
 
         $statement = $this->pdo->prepare('SELECT * FROM borrowing WHERE id = :id');
         $statement->execute(['id' => $id]);
@@ -280,7 +282,8 @@ final class PdoBorrowingRepositoryTest extends TestCase
 
         $loans = $repository->activeByTransaction(7, 'S2B-20260828-RETURNB');
         self::assertCount(2, $loans);
-        $repository->completeReturn($loans[0]->id(), $loans[0]->bookId(), 0.0);
+        self::assertTrue($repository->requestReturn($loans[0]->id()));
+        self::assertTrue((new PdoReturnApprovalRepository($this->pdo))->decide('borrower_item', $loans[0]->id(), 'approve', 19, 0.0, 'Received at desk.'));
         self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE id = {$loans[0]->bookId()}")->fetchColumn());
         self::assertCount(1, $repository->activeByTransaction(7, 'S2B-20260828-RETURNB'));
     }

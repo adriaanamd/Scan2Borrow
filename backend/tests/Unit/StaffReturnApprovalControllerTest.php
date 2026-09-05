@@ -17,6 +17,7 @@ use App\Infrastructure\Persistence\ReturnApprovalRepositoryInterface;
 use App\Infrastructure\Persistence\StaffRepositoryInterface;
 use App\Infrastructure\Session\SessionStoreInterface;
 use DateTimeImmutable;
+use Closure;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -44,7 +45,9 @@ final class StaffReturnApprovalControllerTest extends TestCase
         ];
         $returns->expects(self::once())->method('pending')->willReturn([$pending]);
         $returns->expects(self::once())->method('findPending')->with('borrower_item', 7)->willReturn($pending);
-        $returns->expects(self::once())->method('decide')->with('borrower_item', 7, 'approve', 19, 0.0, '')->willReturn(true);
+        $returns->expects(self::once())->method('decide')->with(
+            'borrower_item', 7, 'approve', 19, 0.0, '', self::isInstanceOf(Closure::class),
+        )->willReturn(true);
 
         $controller = $this->controller($store, $returns);
 

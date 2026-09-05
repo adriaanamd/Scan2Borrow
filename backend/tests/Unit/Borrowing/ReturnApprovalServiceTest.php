@@ -9,6 +9,7 @@ use App\Application\Services\ReservationAvailabilityInterface;
 use App\Application\Services\ReturnApprovalService;
 use App\Infrastructure\Persistence\ReturnApprovalRepositoryInterface;
 use DateTimeImmutable;
+use Closure;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -36,7 +37,17 @@ final class ReturnApprovalServiceTest extends TestCase
             'due_date' => '2026-08-25',
         ];
         $this->repository->expects(self::once())->method('findPending')->with('borrower_item', 8)->willReturn($pending);
-        $this->repository->expects(self::once())->method('decide')->with('borrower_item', 8, 'approve', 19, 10.0, '')->willReturn(true);
+        $this->repository->expects(self::once())->method('decide')->with(
+            'borrower_item', 8, 'approve', 19, 10.0, '', self::isInstanceOf(Closure::class),
+        )->willReturnCallback(
+            static function (string $type, int $id, string $action, int $staffId, float $fine, string $note, ?Closure $afterApprove): bool {
+                if ($afterApprove !== null) {
+                    $afterApprove();
+                }
+
+                return true;
+            },
+        );
         $this->availability->expects(self::once())->method('advance')->with(3, 4, new DateTimeImmutable('2026-08-28 10:00:00'));
 
         $result = $this->service()->decide('borrower_item', 8, 'approve', 19, '');
@@ -60,7 +71,9 @@ final class ReturnApprovalServiceTest extends TestCase
         $this->repository->expects(self::exactly(2))->method('findPending')->willReturnOnConsecutiveCalls(null, [
             'type' => 'legacy_borrowing', 'id' => 10, 'due_date' => '2026-08-28',
         ]);
-        $this->repository->expects(self::once())->method('decide')->with('legacy_borrowing', 10, 'approve', 19, 0.0, '')->willReturn(false);
+        $this->repository->expects(self::once())->method('decide')->with(
+            'legacy_borrowing', 10, 'approve', 19, 0.0, '', self::isInstanceOf(Closure::class),
+        )->willReturn(false);
 
         $unknown = $this->service()->decide('borrower_item', 8, 'approve', 19, '');
         $stale = $this->service()->decide('legacy_borrowing', 10, 'approve', 19, '');
@@ -74,7 +87,7 @@ final class ReturnApprovalServiceTest extends TestCase
         $this->repository->expects(self::once())->method('findPending')->with('guest', 22)->willReturn([
             'type' => 'guest', 'id' => 22, 'due_date' => '2026-08-01',
         ]);
-        $this->repository->expects(self::once())->method('decide')->with('guest', 22, 'approve', 19, 0.0, '')->willReturn(true);
+        $this->repository->expects(self::once())->method('decide')->with('guest', 22, 'approve', 19, 0.0, '', null)->willReturn(true);
         $this->availability->expects(self::never())->method('advance');
 
         $result = $this->service()->decide('guest', 22, 'approve', 19, '');

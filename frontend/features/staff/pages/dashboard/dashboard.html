@@ -43,16 +43,28 @@
               <h2>Dashboard</h2>
               <p>Monitor the library and review borrower requests.</p>
             </div>
-            <button
-              id="pending-approvals-trigger"
-              type="button"
-              class="btn btn-warning"
-              data-bs-toggle="modal"
-              data-bs-target="#approvalModal"
-            >
-              &#128203; <span>Pending Approvals</span>
-              <span id="pending-approvals-count" class="badge bg-danger ms-2">0</span>
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+              <button
+                id="pending-approvals-trigger"
+                type="button"
+                class="btn btn-warning"
+                data-bs-toggle="modal"
+                data-bs-target="#approvalModal"
+              >
+                &#128203; <span>Pending Approvals</span>
+                <span id="pending-approvals-count" class="badge bg-danger ms-2">0</span>
+              </button>
+              <button
+                id="return-approvals-trigger"
+                type="button"
+                class="btn btn-outline-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#returnApprovalModal"
+              >
+                Return Approvals
+                <span id="return-approvals-count" class="badge bg-danger ms-2">0</span>
+              </button>
+            </div>
           </div>
           <div class="row g-3 mb-4">
             <div class="col-md-3 col-6">
@@ -829,12 +841,65 @@
                       </div>
                     </div>
                   </div>
-                  <section class="return-approval-section" aria-labelledby="return-approvals-title">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                      <h5 id="return-approvals-title" class="mb-0">Pending Return Verification</h5>
-                      <span id="return-approvals-count" class="badge bg-warning text-dark">0</span>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="modal fade"
+            id="returnApprovalModal"
+            tabindex="-1"
+            aria-labelledby="returnApprovalModalLabel"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="returnApprovalModalLabel">
+                    Return Approvals
+                  </h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div
+                  class="modal-body"
+                  style="max-height: 70vh; overflow-y: auto"
+                >
+                  <section
+                    class="return-approval-section"
+                    aria-labelledby="return-approvals-title"
+                  >
+                    <div
+                      class="d-flex justify-content-between align-items-center mb-3"
+                    >
+                      <div>
+                        <h5 id="return-approvals-title" class="mb-1">
+                          Returns awaiting verification
+                        </h5>
+                        <p class="small text-muted mb-0">
+                          Confirm the physical book is at the desk before approving.
+                        </p>
+                      </div>
+                      <span
+                        id="return-approvals-modal-count"
+                        class="badge bg-warning text-dark"
+                        >0</span
+                      >
                     </div>
-                    <p class="small text-muted">Approve a return only after the physical book has been received and checked by staff.</p>
                     <div id="returnApprovalList"></div>
                   </section>
                 </div>

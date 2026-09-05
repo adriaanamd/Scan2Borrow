@@ -80,7 +80,7 @@ export class StaffDashboardPage {
         node.textContent = values[index] ?? 0;
       });
       this.renderApprovals(data.pending || []);
-      this.renderReturnApprovals(data.return_approvals || []);
+    this.renderReturnApprovals(data.return_approvals || []);
       this.renderOverview(data.overview || {}, data.recent || []);
       window.setInterval(() => this.refreshNotifications(), 5000);
     } catch (error) {
@@ -621,11 +621,6 @@ export class StaffDashboardPage {
         </div>`;
     this.borrowApprovalCount = pendingRows.length;
     this.updateApprovalCounts();
-    this.root.querySelectorAll("#approvalModal .badge").forEach((badge) => {
-      if (badge.id !== "return-approvals-count") {
-        badge.textContent = String(this.borrowApprovalCount);
-      }
-    });
     this.root
       .querySelectorAll(
         '[data-staff-action="approve"], [data-staff-action="reject"]',
@@ -679,11 +674,12 @@ export class StaffDashboardPage {
   }
 
   updateApprovalCounts() {
-    const total = this.borrowApprovalCount + this.returnApprovalCount;
-    const countNode = document.getElementById("pending-approvals-count");
-    if (countNode) countNode.textContent = String(total);
-    const returnCount = document.getElementById("return-approvals-count");
-    if (returnCount) returnCount.textContent = String(this.returnApprovalCount);
+    const borrowCount = document.getElementById("pending-approvals-count");
+    if (borrowCount) borrowCount.textContent = String(this.borrowApprovalCount);
+    const countNode = document.getElementById("return-approvals-count");
+    if (countNode) countNode.textContent = String(this.returnApprovalCount);
+    const modalReturnCount = document.getElementById("return-approvals-modal-count");
+    if (modalReturnCount) modalReturnCount.textContent = String(this.returnApprovalCount);
   }
 
   approvalCard(row) {

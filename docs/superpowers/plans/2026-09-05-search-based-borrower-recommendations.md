@@ -20,6 +20,31 @@
 
 ---
 
+## Required 15-commit sequence
+
+The five task sections below describe the implementation work; use these exact
+15 commits instead of aggregating the sections:
+
+1. `test: define recommendation migration contract` — add the schema contract test and migration filename assertion; verify it fails.
+2. `feat: add recommendation schema migration` — add the idempotent recommendation tables and indexes; verify Task 1 tests pass.
+3. `docs: document recommendation migration` — add the migration to both README setup sequences; rerun schema tests.
+4. `test: define weighted search profile contract` — add failing SearchProfile tests.
+5. `feat: add weighted search profile` — add SearchProfile, RecommendationResult, and both persistence interfaces; verify profile tests pass.
+6. `test: define recommendation service contract` — add failing SearchHistoryService and RecommendationService tests.
+7. `feat: add bounded recommendation services` — implement both services and verify their unit tests plus PHPStan.
+8. `test: define recommendation persistence contract` — add failing PDO history/ranking/keyword synchronization tests.
+9. `feat: persist bounded search history` — implement PdoSearchHistoryRepository and verify its tests.
+10. `feat: rank normalized catalog recommendations` — implement PdoRecommendationRepository, full-text scoring, fallback, eligibility, and loan exclusion; verify persistence tests.
+11. `feat: persist normalized title keywords` — synchronize keywords during normalized book create/update and return them in catalog rows; verify book repository tests.
+12. `test: define recommendation API contract` — add failing role, CSRF, route, and response-envelope tests.
+13. `feat: expose recommendation APIs` — implement controllers, routes, factory wiring, and API documentation; run the backend gate.
+14. `test: define borrower recommendation UI contract` — add failing frontend endpoint, tracking, copy, and template contracts.
+15. `feat: personalize borrower catalog shelves` — implement shared tracking/rendering and student/teacher endpoint/template wiring; run the complete frontend gate.
+
+Each commit must contain only its listed slice. The commit commands in the task
+sections are descriptive checkpoints; the numbered sequence is the source of
+truth for staging and commit boundaries.
+
 ### Task 1: Add the local recommendation schema and contract
 
 **Files:**
@@ -76,12 +101,9 @@ Create `search_history`, `keywords`, and `book_title_keywords` with `CREATE TABL
 
 Run the Step 2 command. Expected: PASS.
 
-- [ ] **Step 5: Commit Task 1**
+- [ ] **Step 5: Checkpoint Task 1**
 
-```powershell
-git add README.md sql/upgrade_search_recommendations.sql backend/tests/Feature/SchemaContractTest.php
-git commit -m "feat: add search recommendation schema"
-```
+Do not create an aggregate task commit here. Follow commits 1–3 in the numbered sequence, staging only the files named by each commit.
 
 ### Task 2: Build a test-first bounded profile and service layer
 
@@ -152,12 +174,9 @@ C:\xampp\php\php.exe backend\vendor\bin\phpstan analyse --configuration=backend/
 
 Expected: both commands exit 0.
 
-- [ ] **Step 5: Commit Task 2**
+- [ ] **Step 5: Checkpoint Task 2**
 
-```powershell
-git add backend/src/Application/DTO backend/src/Application/Services backend/src/Infrastructure/Persistence backend/tests/Unit/Recommendation
-git commit -m "feat: add bounded recommendation services"
-```
+Do not create an aggregate task commit here. Follow commits 4–7 in the numbered sequence, keeping each test-first and implementation slice separate.
 
 
 ### Task 3: Implement prepared PDO ranking and normalized keyword persistence
@@ -210,12 +229,9 @@ C:\xampp\php\php.exe backend\vendor\bin\phpstan analyse --configuration=backend/
 
 Expected: all commands exit 0.
 
-- [ ] **Step 5: Commit Task 3**
+- [ ] **Step 5: Checkpoint Task 3**
 
-~~~powershell
-git add backend/src/Infrastructure/Persistence backend/src/Http/Controllers/BookController.php backend/tests/Unit/Infrastructure
-git commit -m "feat: rank recommendations from search history"
-~~~
+Do not create an aggregate task commit here. Follow commits 8–11 in the numbered sequence so history, ranking, and keyword persistence remain independently reviewable.
 
 ### Task 4: Expose authorized history and recommendation endpoints
 
@@ -262,12 +278,9 @@ C:\xampp\php\php.exe backend\vendor\bin\phpstan analyse --configuration=backend/
 
 Expected: all commands exit 0.
 
-- [ ] **Step 5: Commit Task 4**
+- [ ] **Step 5: Checkpoint Task 4**
 
-~~~powershell
-git add backend/src/Bootstrap/ApplicationFactory.php backend/src/Http backend/tests/Feature
-git commit -m "feat: expose borrower recommendation APIs"
-~~~
+Do not create an aggregate task commit here. Follow commits 12–13 in the numbered sequence.
 
 
 ### Task 5: Render endpoint-backed recommendations in both borrower catalogs
@@ -345,12 +358,9 @@ npm test
 
 Expected: all tests pass with no focused or skipped test added.
 
-- [ ] **Step 5: Commit Task 5**
+- [ ] **Step 5: Checkpoint Task 5**
 
-~~~powershell
-git add frontend/app/shared/pages/borrower-search.page.js frontend/features/student/pages/search frontend/features/teacher/pages/borrow frontend/tests
-git commit -m "feat: personalize borrower book recommendations"
-~~~
+Do not create an aggregate task commit here. Follow commits 14–15 in the numbered sequence.
 
 ### Task 6: Run the complete CI-equivalent verification gate
 

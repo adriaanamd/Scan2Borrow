@@ -102,6 +102,8 @@ final class BulkBorrowingControllerRepository implements BorrowingRepositoryInte
 final class BulkBorrowingPortalRepository implements BorrowerPortalRepositoryInterface
 {
     public function dashboard(int $userId): array { return []; }
+    public function activity(int $userId): array { return []; }
+    public function recentActivity(int $userId): array { return []; }
     public function history(int $userId): array { return []; }
     public function receipt(int $userId, string $transactionCode): ?array { return null; }
 }

@@ -55,8 +55,8 @@ final class RoleNavbarContractTest extends TestCase
             'guest-browse', 'guest-dashboard', 'guest-profile', 'staff-books',
             'staff-borrower', 'staff-dashboard', 'staff-guest-requests', 'staff-notify',
             'staff-overdue', 'staff-reports', 'staff-students', 'student-dashboard',
-            'student-history', 'student-search', 'student-settings', 'teacher-dashboard',
-            'teacher-settings',
+            'student-history', 'student-activity', 'student-search', 'student-settings', 'teacher-dashboard',
+            'teacher-activity', 'teacher-settings',
         ];
     }
 

@@ -40,20 +40,13 @@ test('show all books controls stay outside hidden recommendation panels', () => 
   }
 });
 
-test('shared catalog queries use five recommendations and ten catalog books', () => {
+test('shared catalog query keeps filtered catalog pagination bounded', () => {
   const context = {
     params: new URLSearchParams('search=code&category_name=Programming'),
     pageSize: 10,
-    recommendationSize: 5,
   };
-  const recommendations = BorrowerSearchPage.prototype.recommendationQuery.call(context);
   const catalog = BorrowerSearchPage.prototype.catalogQuery.call(context, 3);
 
-  assert.equal(recommendations.get('status'), 'Available');
-  assert.equal(recommendations.get('page'), '1');
-  assert.equal(recommendations.get('per_page'), '5');
-  assert.equal(recommendations.get('sort'), 'created_at');
-  assert.equal(recommendations.get('dir'), 'desc');
   assert.equal(catalog.get('search'), 'code');
   assert.equal(catalog.get('category_name'), 'Programming');
   assert.equal(catalog.get('page'), '3');

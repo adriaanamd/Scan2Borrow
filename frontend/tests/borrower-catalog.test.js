@@ -23,6 +23,23 @@ test('borrower catalog templates expose recommendations and an all-books pager',
   }
 });
 
+test('show all books controls stay outside hidden recommendation panels', () => {
+  for (const [template, controlsClass] of [
+    ['features/student/pages/search/search.html', 'student-search-catalog-controls'],
+    ['features/teacher/pages/borrow/borrow.html', 'teacher-search-catalog-controls'],
+  ]) {
+    const source = read(template);
+    const controlsStart = source.indexOf(`class="${controlsClass}`);
+    const buttonStart = source.indexOf('id="show-all-books"');
+    const recommendationStart = source.indexOf('id="recommendation-panel"');
+    const recommendationEnd = source.indexOf('</section>', recommendationStart);
+
+    assert.ok(controlsStart >= 0, `${template} should expose persistent catalog controls`);
+    assert.ok(buttonStart > controlsStart, `${template} should place the toggle in the controls row`);
+    assert.ok(buttonStart < recommendationStart || buttonStart > recommendationEnd, `${template} should keep the toggle outside recommendations`);
+  }
+});
+
 test('shared catalog queries use five recommendations and ten catalog books', () => {
   const context = {
     params: new URLSearchParams('search=code&category_name=Programming'),

@@ -120,8 +120,9 @@ presentation remain role-owned.
 ## Performance and concurrency constraints
 
 Each recommendation request does bounded work: one indexed read of at most 20
-history rows and one indexed, limited ranking/fallback query returning at most
-five titles. Full-text indexes select matching catalog candidates before the
+history rows, one indexed ranking query returning at most five titles, and only
+when a partial personalized result must be completed, one additional indexed
+fallback query for the remaining positions. Full-text indexes select matching catalog candidates before the
 availability and loan-exclusion checks; keyword joins begin from the indexed
 keyword-to-title mapping. Queries are prepared, use a fixed result limit, and
 do not use offset pagination, N+1 reads, table-wide history aggregation, or

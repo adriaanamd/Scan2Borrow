@@ -353,8 +353,74 @@
   box-shadow: 4px 3px 0 rgba(16, 47, 82, .16);
 }
 
-.borrower-dashboard--student .student-dashboard__achievement-grid {
-  grid-template-columns: 1fr;
+.borrower-dashboard--student .student-dashboard__activity .section-title,
+.borrower-dashboard--teacher .teacher-dashboard__activity .section-title {
+  align-items: center;
+  display: flex;
+  gap: .5rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .activity-view-all,
+.borrower-dashboard--teacher .teacher-dashboard__activity .activity-view-all {
+  color: var(--primary);
+  font-size: .72rem;
+  font-weight: 700;
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .activity-view-all:hover,
+.borrower-dashboard--teacher .teacher-dashboard__activity .activity-view-all:hover {
+  text-decoration: underline;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__list,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__list {
+  display: grid;
+  gap: 0;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__item,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__item {
+  align-items: start;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: .75rem;
+  justify-content: space-between;
+  padding: .75rem .1rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__item:last-child,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__item:last-child {
+  border-bottom: 0;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__label,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__label {
+  font-size: .78rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__details,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__details {
+  font-size: .74rem;
+  margin-top: .2rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__status,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__status {
+  font-size: .64rem;
+  margin-top: .4rem;
+  padding: .2rem .45rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__time,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__time {
+  font-size: .68rem;
+}
+
+.borrower-dashboard--student .student-dashboard__activity .borrower-activity__state,
+.borrower-dashboard--teacher .teacher-dashboard__activity .borrower-activity__state {
+  font-size: .78rem;
 }
 
 .borrower-dashboard--teacher .teacher-dashboard__analytics-grid {
@@ -399,16 +465,6 @@
   border: 1px solid #d4e0e8;
   border-top: 3px solid #002FA7;
   margin-bottom: 1rem;
-}
-
-.borrower-dashboard--teacher .teacher-dashboard__insights-list {
-  padding-left: 0;
-  list-style: none;
-}
-
-.borrower-dashboard--teacher .teacher-dashboard__insights-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #d4e0e8;
 }
 
 .borrower-dashboard--student .student-dashboard__loans {

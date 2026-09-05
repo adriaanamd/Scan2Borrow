@@ -107,7 +107,6 @@ export class StudentDashboardPage {
       data.recommended || [],
       data.favorite_category || "",
     );
-    this.renderAchievements(data.achievements || this.defaultAchievements());
     this.renderRecentActivity(data.recent_activity || []);
     this.currentLoans = data.current_loans || [];
     this.renewals = new Map();
@@ -215,31 +214,6 @@ export class StudentDashboardPage {
     catalog.className = "btn btn-outline-primary btn-sm w-100 mt-3";
     catalog.textContent = "Browse full catalog";
     host.appendChild(catalog);
-  }
-
-  defaultAchievements() {
-    return [
-      ["First Chapter", "Borrowed your first book", "&#128075;", false],
-      ["Bookworm", "Borrowed 5 or more books", "&#128027;", false],
-      ["Explorer", "Read across 3+ categories", "&#129517;", false],
-      ["On-Time Pro", "Returned books, never late", "&#9201;", false],
-      ["Marathon Reader", "Returned 10 or more books", "&#127942;", false],
-      ["Spotless", "Zero outstanding fines", "&#10024;", false],
-    ];
-  }
-
-  renderAchievements(items) {
-    const host = this.$("achievements");
-    const unlocked = items.filter((item) => item[3]).length;
-    this.$("achievement-count").textContent = `${unlocked}/${items.length}`;
-    host.replaceChildren();
-    items.forEach((item) => {
-      const achievement = document.createElement("div");
-      achievement.className = `ach ${item[3] ? "" : "locked"}`;
-      achievement.title = item[1];
-      achievement.innerHTML = `<div class="ach-ic">${item[3] ? item[2] : "&#128274;"}</div><div><div class="ach-t">${this.escapeHtml(item[0])}</div><div class="ach-d">${this.escapeHtml(item[1])}</div></div>`;
-      host.appendChild(achievement);
-    });
   }
 
   renderLoans(loans) {

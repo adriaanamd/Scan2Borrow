@@ -125,12 +125,12 @@ test('teacher statistics expose the Swiss stat hooks without changing their data
   }
 });
 
-test('student work area exposes capacity, shelf, and achievement composition hooks', () => {
+test('student work area exposes capacity, shelf, and activity composition hooks', () => {
   const source = read('features/student/pages/dashboard/dashboard.html');
-  for (const selector of ['student-dashboard__work-grid', 'student-dashboard__panel', 'student-dashboard__shelf', 'student-dashboard__achievement-grid']) {
+  for (const selector of ['student-dashboard__work-grid', 'student-dashboard__panel', 'student-dashboard__shelf', 'student-dashboard__activity']) {
     assert.match(source, new RegExp(selector));
   }
-  for (const id of ['capacity-ring', 'due-soon', 'recommendations', 'achievements']) {
+  for (const id of ['capacity-ring', 'due-soon', 'recommendations', 'recent-activity']) {
     assert.match(source, new RegExp(`id="${id}"`));
   }
 });
@@ -140,7 +140,7 @@ test('teacher work area exposes desk, activity, and panel composition hooks', ()
   for (const selector of ['teacher-dashboard__work-grid', 'teacher-dashboard__panel', 'teacher-dashboard__desk-rail', 'teacher-dashboard__activity']) {
     assert.match(source, new RegExp(selector));
   }
-  for (const id of ['capacity-ring', 'due-soon', 'books-per-month', 'risk-level', 'smart-insights', 'current-loans']) {
+  for (const id of ['capacity-ring', 'due-soon', 'books-per-month', 'risk-level', 'recent-activity', 'current-loans']) {
     assert.match(source, new RegExp(`id="${id}"`));
   }
 });
@@ -282,6 +282,6 @@ test('borrower dashboards wire shared stats and activity presentation hooks', ()
   assert.match(student, /class="row g-3 mb-4 borrower-dashboard__stats"/);
   assert.match(teacher, /class="row g-3 mb-4 borrower-dashboard__stats"/);
   assert.doesNotMatch(teacher, /class="[^\"]*teacher-dashboard__activity[^\"]*"\s+style=/);
-  assert.match(teacher, /teacher-dashboard__insights-list/);
-  assert.match(teacher, /teacher-dashboard__insights-item/);
+  assert.match(teacher, /teacher-dashboard__activity/);
+  assert.match(teacher, /activity-view-all/);
 });

@@ -346,26 +346,14 @@
           </div>
           <div class="soft-card borrower-dashboard__panel teacher-dashboard__activity">
             <div class="section-title">
-              <span class="dot"></span> &#128161; Smart Insights
+              <span class="dot"></span>
+              <span>Recent Activity</span>
+              <a class="activity-view-all" href="/scan2borrow/teacher/activity">View all</a>
             </div>
-            <div class="text-muted small">
-              <ul
-                class="mb-0 mt-2 teacher-dashboard__insights-list"
-                id="smart-insights"
-              >
-                <li class="teacher-dashboard__insights-item">
-                  &#128202; Start borrowing books to see personalized insights.
-                </li>
-              </ul>
+            <div id="recent-activity" class="activity-timeline" aria-live="polite">
+              <p class="text-muted small mb-0">No account activity yet.</p>
             </div>
           </div>
-          <section class="soft-card borrower-dashboard__panel borrower-dashboard__recent-activity mb-4" aria-labelledby="recent-activity-title">
-            <div class="section-title" id="recent-activity-title"><span class="dot"></span> Recent Activity</div>
-            <div id="recent-activity" class="activity-timeline" aria-live="polite">
-              <p class="text-muted mb-0">No account activity yet.</p>
-            </div>
-            <a class="btn btn-link btn-sm px-0" href="/scan2borrow/teacher/activity">View all activity</a>
-          </section>
           <div id="reservationQueue" class="mb-4 reservation-queue-mount"></div>
 
           <div class="table-card borrower-dashboard__table teacher-dashboard__loans">

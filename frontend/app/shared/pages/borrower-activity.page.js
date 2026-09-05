@@ -1,14 +1,15 @@
 import { ActivityTimelineComponent } from "../components/activity-timeline/activity-timeline.component.js";
 
 export class BorrowerActivityPage {
-  constructor({ api, role, title, description, classPrefix, document = globalThis.document, fetchImpl = globalThis.fetch } = {}) {
+  constructor({ api, role, title, description, classPrefix, document = globalThis.document, window = globalThis.window || globalThis, fetchImpl } = {}) {
     this.api = api;
     this.role = role;
     this.title = title;
     this.description = description;
     this.classPrefix = classPrefix || "borrower-activity";
     this.document = document;
-    this.fetchImpl = fetchImpl;
+    this.window = window;
+    this.fetchImpl = fetchImpl || this.window?.fetch?.bind(this.window);
     this.timeline = new ActivityTimelineComponent(
       this.document?.getElementById("activity-timeline"),
       { document: this.document, classPrefix: this.classPrefix },

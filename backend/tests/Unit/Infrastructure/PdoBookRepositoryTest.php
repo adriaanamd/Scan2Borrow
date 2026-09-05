@@ -243,4 +243,33 @@ final class PdoBookRepositoryTest extends TestCase
             new \App\Application\DTO\BookCopyMutationRequest(11, 'COPY-1', status: 'Borrowed'),
         );
     }
+
+    public function testNormalizedTitleCreateAndUpdateSynchronizeKeywords(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL, created_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), due_date DATE, return_date DATE, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE keywords (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(100) NOT NULL UNIQUE)');
+        $this->pdo->exec('CREATE TABLE book_title_keywords (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, keyword_id INTEGER NOT NULL, UNIQUE (title_id, keyword_id))');
+        $repository = new PdoBookRepository($this->pdo);
+
+        $titleId = $repository->create(new BookMutationRequest(
+            title: 'PHP Testing',
+            categoryName: 'Programming',
+            status: 'Available',
+            keywords: ['php', 'testing', 'PHP'],
+        ));
+
+        self::assertSame(2, (int) $this->pdo->query('SELECT COUNT(*) FROM book_title_keywords')->fetchColumn());
+
+        $repository->update($titleId, new BookMutationRequest(
+            title: 'PHP Testing',
+            categoryName: 'Programming',
+            status: 'Available',
+            quantity: 1,
+            keywords: ['security'],
+        ));
+
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM book_title_keywords')->fetchColumn());
+        self::assertSame('security', $this->pdo->query('SELECT name FROM keywords WHERE id = (SELECT keyword_id FROM book_title_keywords)')->fetchColumn());
+    }
 }

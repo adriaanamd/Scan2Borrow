@@ -50,6 +50,12 @@ final class ApiDocumentationControllerTest extends TestCase
         self::assertSame(200, $response->statusCode());
         self::assertTrue($payload['ok']);
         self::assertCount(62, $payload['data']['endpoints']);
+        $paths = array_map(
+            static fn (array $endpoint): string => $endpoint['method'] . ' ' . $endpoint['path'],
+            $payload['data']['endpoints'],
+        );
+        self::assertContains('GET /api/student/activity', $paths);
+        self::assertContains('GET /api/teacher/activity', $paths);
     }
 
     private function controller(ApiDocumentationSessionStore $store): ApiDocumentationController

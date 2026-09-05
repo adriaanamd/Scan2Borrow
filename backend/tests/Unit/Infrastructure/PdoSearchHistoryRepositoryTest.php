@@ -17,7 +17,7 @@ final class PdoSearchHistoryRepositoryTest extends TestCase
         $this->pdo = new PDO('sqlite::memory:');
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->exec(
-            'CREATE TABLE search_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, search_query VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL)'
+            'CREATE TABLE search_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, search_query VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)'
         );
     }
 

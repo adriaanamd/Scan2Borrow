@@ -285,3 +285,16 @@ test('borrower dashboards wire shared stats and activity presentation hooks', ()
   assert.match(teacher, /teacher-dashboard__activity/);
   assert.match(teacher, /activity-view-all/);
 });
+
+test('borrower return surfaces explain that the librarian must verify the book', () => {
+  for (const relative of [
+    'features/student/pages/dashboard/dashboard.html',
+    'features/teacher/pages/dashboard/dashboard.html',
+    'features/student/pages/dashboard/student-dashboard.page.js',
+    'features/teacher/pages/dashboard/teacher-dashboard.page.js',
+  ]) {
+    assert.match(read(relative), /librarian/i, relative);
+  }
+  assert.match(read('features/student/pages/dashboard/student-dashboard.page.js'), /Return Verification Pending/);
+  assert.match(read('features/teacher/pages/dashboard/teacher-dashboard.page.js'), /Return Verification Pending/);
+});

@@ -22,6 +22,7 @@ use App\Application\Services\RegistrationCompletionService;
 use App\Application\Services\RegistrationService;
 use App\Application\Services\SmtpEmailSender;
 use App\Application\Services\ReturnService;
+use App\Application\Services\ReturnApprovalService;
 use App\Application\Services\ReservationAvailabilityService;
 use App\Application\Services\ReservationService;
 use App\Application\Services\SystemClock;
@@ -70,6 +71,7 @@ use App\Infrastructure\Persistence\PdoBarcodePrintRepository;
 use App\Infrastructure\Persistence\PdoAuditEventRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
+use App\Infrastructure\Persistence\PdoReturnApprovalRepository;
 use App\Infrastructure\Persistence\PdoGuestIdentityRepository;
 use App\Infrastructure\Persistence\PdoGuestPortalRepository;
 use App\Infrastructure\Persistence\PdoGuestBorrowingRepository;
@@ -130,6 +132,12 @@ final class ApplicationFactory
             $holds,
             new \App\Infrastructure\Persistence\PdoCirculationNotificationRepository($pdo),
         );
+        $returnApprovalService = new ReturnApprovalService(
+            new PdoReturnApprovalRepository($pdo, $auditRepository),
+            new SystemClock(),
+            20.0,
+            $reservationAvailability,
+        );
         $reservationService = new ReservationService($holds);
         $renewalRepository = new \App\Infrastructure\Persistence\PdoRenewalRepository($pdo);
         $renewalService = new \App\Application\Services\RenewalService(
@@ -149,7 +157,7 @@ final class ApplicationFactory
             $sessions,
             $csrf,
             new BorrowingService($borrowings, new BorrowingPolicy(3, 7, 30, true), new SystemClock()),
-            new ReturnService($borrowings, new SystemClock(), 20.0, $reservationAvailability),
+            new ReturnService($borrowings),
             new PdoBorrowerPortalRepository($pdo),
         );
         $profileChangeService = new \App\Application\Services\ProfileChangeRequestService(
@@ -205,6 +213,7 @@ final class ApplicationFactory
                 new SmtpEmailSender(),
             ),
             $profileChangeService,
+            $returnApprovalService,
         );
         $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());
         $apiRouter = new Router(array_merge(

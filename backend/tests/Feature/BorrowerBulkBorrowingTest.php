@@ -47,7 +47,7 @@ final class BorrowerBulkBorrowingTest extends TestCase
             new SessionService($store),
             new CsrfService($store),
             new BorrowingService(new BulkBorrowingControllerRepository(), new BorrowingPolicy(5, 7, 30, true), new BulkBorrowingControllerClock()),
-            new ReturnService(new BulkBorrowingControllerRepository(), new BulkBorrowingControllerClock(), 20.0),
+            new ReturnService(new BulkBorrowingControllerRepository()),
             new BulkBorrowingPortalRepository(),
         );
 
@@ -96,6 +96,7 @@ final class BulkBorrowingControllerRepository implements BorrowingRepositoryInte
     public function findBookByBarcode(string $barcode): ?array { return null; }
     public function activeByBook(int $userId, int $bookId): ?\App\Domain\Borrowing\LoanRecord { return null; }
     public function completeReturn(int $loanId, int $bookId, float $fine): void {}
+    public function requestReturn(int $loanId): bool { return true; }
     public function titleIdForBook(int $bookId): ?int { return null; }
 }
 

@@ -9,6 +9,7 @@ use App\Application\Services\GuestApprovalService;
 use App\Application\Services\BorrowerNotificationService;
 use App\Application\Services\PhotoStorageInterface;
 use App\Application\Services\ProfileChangeRequestService;
+use App\Application\Services\ReturnApprovalService;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Role;
 use App\Http\Requests\ServerRequest;
@@ -27,12 +28,67 @@ final readonly class StaffController
         private ?PhotoStorageInterface $photoStorage = null,
         private ?BorrowerNotificationService $notifications = null,
         private ?ProfileChangeRequestService $profileChanges = null,
+        private ?ReturnApprovalService $returnApprovals = null,
     ) {
     }
 
     public function dashboard(ServerRequest $request): JsonResponse
     {
-        return $this->staffDataResponse(fn (): array => $this->staff->dashboard());
+        return $this->staffDataResponse(function (): array {
+            $data = $this->staff->dashboard();
+            if ($this->returnApprovals !== null) {
+                $data['return_approvals'] = $this->returnApprovals->pending();
+            }
+
+            return $data;
+        });
+    }
+
+    public function returnApprovals(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff() || $this->returnApprovals === null) {
+            return $this->unauthorized();
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => [
+            'returns' => $this->returnApprovals->pending(),
+        ]]);
+    }
+
+    public function returnAction(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff() || $this->returnApprovals === null) {
+            return $this->unauthorized();
+        }
+        $csrfFailure = $this->csrfFailure($request);
+        if ($csrfFailure !== null) {
+            return $csrfFailure;
+        }
+
+        $identity = $this->sessions->current();
+        $id = $this->positiveInt($request->body()['id'] ?? null);
+        $type = $this->bodyString($request, 'type');
+        $action = $this->bodyString($request, 'action');
+        if ($identity === null || $id < 1 || $type === '' || $action === '') {
+            return new JsonResponse(422, ['ok' => false, 'message' => 'Invalid return decision.']);
+        }
+
+        try {
+            $result = $this->returnApprovals->decide(
+                $type,
+                $id,
+                $action,
+                $identity->userId(),
+                $this->bodyString($request, 'note'),
+            );
+        } catch (InvalidArgumentException|\RuntimeException $exception) {
+            return new JsonResponse(422, ['ok' => false, 'message' => $exception->getMessage()]);
+        }
+        if (!$result->successful()) {
+            return new JsonResponse(422, ['ok' => false, 'message' => $result->message()]);
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'message' => $result->message()]);
     }
 
     public function borrowers(ServerRequest $request): JsonResponse

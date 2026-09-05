@@ -5,7 +5,7 @@ Scan2Borrow is a library management and borrowing system for Binalbagan Catholic
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql`, `sql/upgrade_approval_status_sync.sql`, `sql/upgrade_barcode_printing.sql`, `sql/upgrade_copy_audit_trail.sql`, and `sql/upgrade_profile_change_requests.sql` to backfill the seeded legacy rows, repair normalized approval item statuses, and enable barcode export history, the physical-copy audit trail, and administrator-approved borrower profile changes. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_approval_status_sync.sql`, `upgrade_barcode_printing.sql`, `upgrade_copy_audit_trail.sql`, then `upgrade_profile_change_requests.sql`. The bulk-borrowing, approval-status repair, barcode-printing, copy-audit, and profile-change migrations are required in both cases.
+2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql`, `sql/upgrade_approval_status_sync.sql`, `sql/upgrade_return_approval.sql`, `sql/upgrade_barcode_printing.sql`, `sql/upgrade_copy_audit_trail.sql`, and `sql/upgrade_profile_change_requests.sql` to backfill the seeded legacy rows, repair normalized approval item statuses, enable librarian-approved returns, barcode export history, the physical-copy audit trail, and administrator-approved borrower profile changes. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_approval_status_sync.sql`, `upgrade_return_approval.sql`, `upgrade_barcode_printing.sql`, `upgrade_copy_audit_trail.sql`, then `upgrade_profile_change_requests.sql`. The bulk-borrowing, approval-status repair, return-approval, barcode-printing, copy-audit, and profile-change migrations are required in both cases.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
@@ -37,6 +37,10 @@ uploads/                 Runtime photo storage
 ### Bulk borrowing database model
 
 Bulk borrowing uses `book_titles` for one catalog title and its total `quantity`, `book_copies` for individually barcoded physical copies, `borrowing_transactions` for one checkout session, and `borrowing_items` for each copy in that session. Available, reserved, and borrowed quantities are calculated from non-archived copy statuses. Run `sql/upgrade_bulk_borrowing.sql` whenever an existing or freshly imported legacy schema is being prepared for the bulk-borrowing application, followed by `sql/upgrade_approval_status_sync.sql` to repair older approved requests whose item row still says `Pending`.
+
+### Librarian-approved returns
+
+Students, teachers, and guests can submit return requests, but submission only places the loan in the staff review queue. A librarian or administrator must approve the request before the loan gets a return date, the physical copy becomes available, or any reservation is advanced. Rejected requests remain active and require the book to be handed to staff again before resubmission.
 
 ### Inventory management
 

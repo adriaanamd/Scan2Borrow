@@ -144,8 +144,11 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
             $where[] = 'vb.borrow_date <= :to_date';
             $parameters['to_date'] = $to;
         }
+        $decisionColumns = $this->hasColumn('visitor_borrowing', 'return_decided_at')
+            ? 'vb.return_decided_at, vb.return_decided_by, vb.return_decision_note, '
+            : 'NULL AS return_decided_at, NULL AS return_decided_by, NULL AS return_decision_note, ';
         $statement = $this->pdo->prepare(
-            'SELECT vb.id, vb.borrow_date, vb.due_date, vb.return_date, vb.request_status, vb.review_notes, b.title, b.author, b.cover_file '
+            'SELECT vb.id, vb.borrow_date, vb.due_date, vb.return_date, vb.request_status, vb.review_notes, ' . $decisionColumns . 'b.title, b.author, b.cover_file '
             . 'FROM visitor_borrowing vb JOIN books b ON b.id = vb.book_id WHERE ' . implode(' AND ', $where) . ' ORDER BY vb.id DESC'
         );
         $statement->execute($parameters);
@@ -212,5 +215,29 @@ final class PdoGuestPortalRepository implements GuestPortalRepositoryInterface
     private function string(mixed $value): string
     {
         return is_string($value) ? $value : '';
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->query('PRAGMA table_info(' . $table . ')');
+            if ($statement === false) {
+                return false;
+            }
+            while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
+                if (is_array($row) && is_string($row['name'] ?? null) && $row['name'] === $column) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = :table AND column_name = :column LIMIT 1'
+        );
+        $statement->execute(['table' => $table, 'column' => $column]);
+
+        return $statement->fetchColumn() !== false;
     }
 }

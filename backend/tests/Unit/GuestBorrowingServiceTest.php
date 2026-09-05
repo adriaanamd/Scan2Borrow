@@ -95,7 +95,7 @@ final class GuestBorrowingServiceTest extends TestCase
         $result = $service->submitReturnVerification($this->visitor, new GuestReturnVerificationRequest('BK-12', 'return-photo'));
         self::assertTrue($result->isSuccessful());
         self::assertSame(GuestBorrowingStatus::RETURN_VERIFICATION_PENDING, $result->status());
-        self::assertSame('Return verification submitted. Please hand the book to the librarian for completion.', $result->message());
+        self::assertSame('Return verification submitted. Please hand the book to the librarian; staff must verify and approve it before it is marked returned.', $result->message());
     }
 
     public function testReturnVerificationRejectsUnknownOwnedLoan(): void

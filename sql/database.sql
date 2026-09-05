@@ -93,6 +93,11 @@ CREATE TABLE `borrowing` (
     `borrow_date`      DATETIME NOT NULL,
     `due_date`         DATE NOT NULL,
     `return_date`      DATETIME DEFAULT NULL,
+    `return_status`    ENUM('none','pending','rejected') NOT NULL DEFAULT 'none',
+    `return_requested_at` DATETIME DEFAULT NULL,
+    `return_decided_at` DATETIME DEFAULT NULL,
+    `return_decided_by` INT DEFAULT NULL,
+    `return_decision_note` VARCHAR(500) DEFAULT NULL,
     `status`           ENUM('Pending','Borrowed','Returned','Overdue') NOT NULL DEFAULT 'Borrowed',
     `fine_amount`      DECIMAL(8,2) NOT NULL DEFAULT 0.00,
     `requested_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -103,6 +108,8 @@ CREATE TABLE `borrowing` (
     CONSTRAINT `fk_borrow_book` FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_borrow_staff` FOREIGN KEY (`processed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
     ,CONSTRAINT `fk_borrow_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+    ,CONSTRAINT `fk_borrow_return_decided_by` FOREIGN KEY (`return_decided_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+    ,KEY `idx_borrow_return_status` (`return_status`, `return_requested_at`)
 ) ENGINE=InnoDB;
 
 -- ---- Bulk borrowing catalog and transaction model ------------------------
@@ -152,6 +159,11 @@ CREATE TABLE `borrowing_transactions` (
     `borrow_date`      DATETIME NOT NULL,
     `due_date`         DATE NOT NULL,
     `return_date`      DATETIME DEFAULT NULL,
+    `return_status`    ENUM('none','pending','rejected') NOT NULL DEFAULT 'none',
+    `return_requested_at` DATETIME DEFAULT NULL,
+    `return_decided_at` DATETIME DEFAULT NULL,
+    `return_decided_by` INT DEFAULT NULL,
+    `return_decision_note` VARCHAR(500) DEFAULT NULL,
     `status`           ENUM('Pending','Borrowed','Returned','Overdue') NOT NULL DEFAULT 'Borrowed',
     `fine_amount`      DECIMAL(8,2) NOT NULL DEFAULT 0.00,
     `requested_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -161,6 +173,7 @@ CREATE TABLE `borrowing_transactions` (
     CONSTRAINT `fk_transaction_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_transaction_processed_by` FOREIGN KEY (`processed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
     CONSTRAINT `fk_transaction_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_transaction_return_decided_by` FOREIGN KEY (`return_decided_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
     KEY `idx_transactions_user_status` (`user_id`, `status`, `return_date`),
     KEY `idx_transactions_approval` (`approval_status`, `requested_at`)
 ) ENGINE=InnoDB;
@@ -170,11 +183,17 @@ CREATE TABLE `borrowing_items` (
     `transaction_id` INT NOT NULL,
     `copy_id`        INT NOT NULL,
     `return_date`    DATETIME DEFAULT NULL,
+    `return_status`  ENUM('none','pending','rejected') NOT NULL DEFAULT 'none',
+    `return_requested_at` DATETIME DEFAULT NULL,
+    `return_decided_at` DATETIME DEFAULT NULL,
+    `return_decided_by` INT DEFAULT NULL,
+    `return_decision_note` VARCHAR(500) DEFAULT NULL,
     `status`         ENUM('Pending','Borrowed','Returned','Overdue') NOT NULL DEFAULT 'Borrowed',
     `fine_amount`    DECIMAL(8,2) NOT NULL DEFAULT 0.00,
     `created_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_item_transaction` FOREIGN KEY (`transaction_id`) REFERENCES `borrowing_transactions`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_item_copy` FOREIGN KEY (`copy_id`) REFERENCES `book_copies`(`id`) ON DELETE RESTRICT,
+    CONSTRAINT `fk_item_return_decided_by` FOREIGN KEY (`return_decided_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
     UNIQUE KEY `uq_transaction_copy` (`transaction_id`, `copy_id`),
     KEY `idx_items_copy_active` (`copy_id`, `return_date`)
 ) ENGINE=InnoDB;

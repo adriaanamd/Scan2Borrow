@@ -149,6 +149,7 @@ $mysql = 'C:\xampp\mysql\bin\mysql.exe'
 $upgradeFiles = @(
     'sql\upgrade_bulk_borrowing.sql',
     'sql\upgrade_approval_status_sync.sql',
+    'sql\upgrade_return_approval.sql',
     'sql\upgrade_barcode_printing.sql',
     'sql\upgrade_copy_audit_trail.sql',
     'sql\upgrade_renewals.sql',
@@ -389,10 +390,12 @@ Use a title with at least one Available physical copy. Do not exceed the three-b
 1. Sign in as the borrower who has an active loan.
 2. Use the return control.
 3. Scan or enter the copy barcode, or use the transaction/receipt route.
-4. Submit the return.
-5. Confirm the borrowing item becomes Returned.
-6. Confirm the physical copy becomes available again.
-7. Confirm the borrower's history and staff notifications update.
+4. Submit the return request.
+5. Confirm the loan remains active and the request is awaiting librarian verification.
+6. Sign in as a librarian or admin and open the pending return review.
+7. Approve the return only after receiving the physical book.
+8. Confirm the borrowing item becomes Returned and the physical copy becomes available.
+9. Confirm the borrower's history, fine, reservation queue, and staff audit trail update.
 
 ### Reservations
 

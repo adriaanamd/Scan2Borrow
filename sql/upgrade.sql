@@ -160,7 +160,10 @@ ALTER TABLE `visitor_borrowing`
     ADD COLUMN IF NOT EXISTS `requested_at` DATETIME DEFAULT NULL AFTER `return_verification_photo`,
     ADD COLUMN IF NOT EXISTS `released_at` DATETIME DEFAULT NULL AFTER `requested_at`,
     ADD COLUMN IF NOT EXISTS `return_requested_at` DATETIME DEFAULT NULL AFTER `released_at`,
-    ADD COLUMN IF NOT EXISTS `review_notes` VARCHAR(255) DEFAULT NULL AFTER `return_requested_at`;
+    ADD COLUMN IF NOT EXISTS `review_notes` VARCHAR(255) DEFAULT NULL AFTER `return_requested_at`,
+    ADD COLUMN IF NOT EXISTS `return_decided_at` DATETIME DEFAULT NULL AFTER `return_requested_at`,
+    ADD COLUMN IF NOT EXISTS `return_decided_by` INT DEFAULT NULL AFTER `return_decided_at`,
+    ADD COLUMN IF NOT EXISTS `return_decision_note` VARCHAR(500) DEFAULT NULL AFTER `return_decided_by`;
 
 
 CREATE TABLE IF NOT EXISTS `visitor_visit_history` (

@@ -66,7 +66,7 @@ final class BorrowerActivityContractTest extends TestCase
             new SessionService($store),
             new CsrfService($store),
             new BorrowingService(new ActivityActionRepository(), new BorrowingPolicy(3, 7, 30, true), new ActivityClock()),
-            new ReturnService(new ActivityActionRepository(), new ActivityClock(), 20.0),
+            new ReturnService(new ActivityActionRepository()),
             $portal,
         );
     }
@@ -91,6 +91,7 @@ final class ActivityActionRepository implements BorrowingRepositoryInterface, Re
     public function activeByBook(int $userId, int $bookId): ?LoanRecord { return null; }
     public function titleIdForBook(int $bookId): ?int { return null; }
     public function completeReturn(int $loanId, int $bookId, float $fine): void {}
+    public function requestReturn(int $loanId): bool { return true; }
 }
 
 final class ActivitySessionStore implements SessionStoreInterface

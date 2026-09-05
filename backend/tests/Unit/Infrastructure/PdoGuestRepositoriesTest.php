@@ -75,4 +75,18 @@ final class PdoGuestRepositoriesTest extends TestCase
         self::assertCount(1, $summary['visit_history']);
         self::assertSame('login', $summary['security_log'][0]['activity']);
     }
+
+    public function testGuestHistoryExposesReturnDecisionMetadataWhenPresent(): void
+    {
+        $this->pdo->exec('ALTER TABLE visitor_borrowing ADD COLUMN return_decided_at TEXT');
+        $this->pdo->exec('ALTER TABLE visitor_borrowing ADD COLUMN return_decided_by INTEGER');
+        $this->pdo->exec('ALTER TABLE visitor_borrowing ADD COLUMN return_decision_note TEXT');
+        $this->pdo->exec("INSERT INTO visitor_borrowing (visitor_id, book_id, borrow_date, due_date, request_status, return_decided_at, return_decided_by, return_decision_note) VALUES (7, 12, '2026-08-20', '2026-08-27', 'Released', '2026-08-28 10:00:00', 19, 'Book was not received.')");
+
+        $rows = (new PdoGuestPortalRepository($this->pdo))->history(7, 'all', '', '');
+
+        self::assertSame('2026-08-28 10:00:00', $rows[0]['return_decided_at']);
+        self::assertEquals(19, $rows[0]['return_decided_by']);
+        self::assertSame('Book was not received.', $rows[0]['return_decision_note']);
+    }
 }

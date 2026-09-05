@@ -708,6 +708,41 @@
                       gap: 0.75rem;
                       margin-top: 0.75rem;
                     }
+                    .return-approval-section {
+                      border-top: 1px solid rgba(148, 163, 184, 0.25);
+                      margin-top: 1.5rem;
+                      padding-top: 1.25rem;
+                    }
+                    .return-approval-card {
+                      border: 1px solid rgba(148, 163, 184, 0.25);
+                      border-radius: 0.75rem;
+                      padding: 1rem;
+                      background: #f8fafc;
+                    }
+                    .return-evidence {
+                      min-width: 8rem;
+                      min-height: 4rem;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    }
+                    .return-evidence-photo {
+                      width: 8rem;
+                      height: 6rem;
+                      border-radius: 0.5rem;
+                      object-fit: cover;
+                    }
+                    .return-approval-actions {
+                      display: grid;
+                      grid-template-columns: minmax(10rem, 1fr) auto auto;
+                      gap: 0.5rem;
+                      margin-top: 1rem;
+                    }
+                    @media (max-width: 575px) {
+                      .return-approval-actions {
+                        grid-template-columns: 1fr;
+                      }
+                    }
                   </style>
 
                   <div id="approvalList">
@@ -794,6 +829,14 @@
                       </div>
                     </div>
                   </div>
+                  <section class="return-approval-section" aria-labelledby="return-approvals-title">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h5 id="return-approvals-title" class="mb-0">Pending Return Verification</h5>
+                      <span id="return-approvals-count" class="badge bg-warning text-dark">0</span>
+                    </div>
+                    <p class="small text-muted">Approve a return only after the physical book has been received and checked by staff.</p>
+                    <div id="returnApprovalList"></div>
+                  </section>
                 </div>
                 <div class="modal-footer">
                   <button

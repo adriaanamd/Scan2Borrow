@@ -7,6 +7,7 @@ export function normalizeLoan(value = {}) {
     borrow_date: text(value.borrow_date),
     due_date: text(value.due_date),
     status: text(value.status),
+    return_status: text(value.return_status) || 'none',
     transaction_code: text(value.transaction_code),
   };
 }

@@ -66,7 +66,7 @@ final class GuestBorrowingService
         return GuestBorrowingResult::success(
             $borrowingId,
             GuestBorrowingStatus::RETURN_VERIFICATION_PENDING,
-            'Return verification submitted. Please hand the book to the librarian for completion.',
+            'Return verification submitted. Please hand the book to the librarian; staff must verify and approve it before it is marked returned.',
         );
     }
 }

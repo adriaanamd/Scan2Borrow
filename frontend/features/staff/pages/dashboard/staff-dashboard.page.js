@@ -35,6 +35,8 @@ export class StaffDashboardPage {
   constructor(root) {
     this.root = root;
     this.api = new StaffDashboardApi();
+    this.borrowApprovalCount = 0;
+    this.returnApprovalCount = 0;
   }
 
   start() {
@@ -78,6 +80,7 @@ export class StaffDashboardPage {
         node.textContent = values[index] ?? 0;
       });
       this.renderApprovals(data.pending || []);
+      this.renderReturnApprovals(data.return_approvals || []);
       this.renderOverview(data.overview || {}, data.recent || []);
       window.setInterval(() => this.refreshNotifications(), 5000);
     } catch (error) {
@@ -616,11 +619,12 @@ export class StaffDashboardPage {
           <div style="font-size: 48px">&#9989;</div>
           <p class="mt-3">No pending approval requests at this time.</p>
         </div>`;
-    const count = pendingRows.length;
-    const countNode = document.getElementById("pending-approvals-count");
-    if (countNode) countNode.textContent = String(count);
+    this.borrowApprovalCount = pendingRows.length;
+    this.updateApprovalCounts();
     this.root.querySelectorAll("#approvalModal .badge").forEach((badge) => {
-      badge.textContent = String(count);
+      if (badge.id !== "return-approvals-count") {
+        badge.textContent = String(this.borrowApprovalCount);
+      }
     });
     this.root
       .querySelectorAll(
@@ -629,6 +633,57 @@ export class StaffDashboardPage {
       .forEach((form) => {
         form.addEventListener("submit", (event) => this.submitBorrowing(event));
       });
+  }
+
+  renderReturnApprovals(rows) {
+    const list = document.getElementById("returnApprovalList");
+    if (!list) return;
+    const pendingRows = Array.isArray(rows) ? rows : [];
+    list.innerHTML = pendingRows.length
+      ? pendingRows.map((row) => this.returnApprovalCard(row)).join("")
+      : `<div class="text-center text-muted py-4">
+          <p class="mb-0">No return requests are waiting for verification.</p>
+        </div>`;
+    this.returnApprovalCount = pendingRows.length;
+    this.updateApprovalCounts();
+    list.querySelectorAll("[data-return-action]").forEach((form) => {
+      form.addEventListener("submit", (event) => this.submitReturn(event));
+    });
+  }
+
+  returnApprovalCard(row) {
+    const evidence = this.media(row.evidence_photo || "");
+    const evidenceMarkup = evidence
+      ? `<img src="${this.escape(evidence)}" alt="Return evidence photo" class="return-evidence-photo" />`
+      : '<span class="text-muted">No photo supplied</span>';
+    return `<article class="return-approval-card mb-3">
+      <div class="d-flex justify-content-between gap-3 flex-wrap">
+        <div>
+          <h6 class="mb-1">${this.escape(row.title || "Book")}</h6>
+          <p class="small text-muted mb-2">${this.escape(row.borrower || "Borrower")} · Barcode: ${this.escape(row.book_barcode || "—")}</p>
+          <p class="small mb-1"><strong>Due:</strong> ${this.escape(this.date(row.due_date) || "—")}</p>
+          <p class="small mb-2"><strong>Requested:</strong> ${this.escape(row.requested_at || "—")}</p>
+          <span class="badge bg-warning text-dark">${this.escape(row.return_status || "pending") === "pending" ? "Return Verification Pending" : this.escape(row.return_status)}</span>
+        </div>
+        <div class="return-evidence">${evidenceMarkup}</div>
+      </div>
+      <form method="POST" class="return-approval-actions" data-return-action>
+        <input type="hidden" name="type" value="${this.escape(row.type)}" />
+        <input type="hidden" name="id" value="${this.escape(row.id)}" />
+        <label class="visually-hidden" for="return-note-${this.escape(row.type)}-${this.escape(row.id)}">Decision note</label>
+        <input id="return-note-${this.escape(row.type)}-${this.escape(row.id)}" name="note" class="form-control form-control-sm" placeholder="Reason required when rejecting" maxlength="500" />
+        <button type="submit" class="btn btn-success btn-sm" data-return-decision="approve">Approve return</button>
+        <button type="submit" class="btn btn-outline-danger btn-sm" data-return-decision="reject">Reject</button>
+      </form>
+    </article>`;
+  }
+
+  updateApprovalCounts() {
+    const total = this.borrowApprovalCount + this.returnApprovalCount;
+    const countNode = document.getElementById("pending-approvals-count");
+    if (countNode) countNode.textContent = String(total);
+    const returnCount = document.getElementById("return-approvals-count");
+    if (returnCount) returnCount.textContent = String(this.returnApprovalCount);
   }
 
   approvalCard(row) {
@@ -669,6 +724,51 @@ export class StaffDashboardPage {
       this.renderApprovals(response.notifications || []);
     } catch {
       // Polling is best effort; the dashboard remains usable if it misses a tick.
+    }
+    try {
+      const response = await this.api.get(
+        "/scan2borrow/api/staff/return-approvals",
+      );
+      this.renderReturnApprovals(response.data?.returns || []);
+    } catch {
+      // Return polling is independent from borrowing approval polling.
+    }
+  }
+
+  async submitReturn(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submitter = event.submitter;
+    const action = submitter?.dataset?.returnDecision || "";
+    const note = String(form.elements.note?.value || "").trim();
+    if (action === "reject" && !note) {
+      this.toast("Enter a reason before rejecting the return.", "danger");
+      return;
+    }
+    const confirmed = await window.Scan2BorrowConfirmation.confirm({
+      title: action === "approve" ? "Approve book return" : "Reject book return",
+      message: action === "approve"
+        ? "Confirm that the physical book has been received and approve this return?"
+        : "Reject this return and keep the loan active?",
+      confirmLabel: action === "approve" ? "Approve return" : "Reject return",
+      confirmClass: action === "approve" ? "btn-success" : "btn-danger",
+      trigger: submitter,
+    });
+    if (!confirmed) return;
+    try {
+      const response = await this.api.post(
+        "/scan2borrow/api/staff/return-action",
+        {
+          type: form.elements.type.value,
+          id: form.elements.id.value,
+          action,
+          note,
+        },
+      );
+      this.toast(response.message || "Return decision saved.", "success");
+      await this.dashboard();
+    } catch (error) {
+      this.toast(error.message, "danger");
     }
   }
 

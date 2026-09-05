@@ -60,9 +60,21 @@ test('overview chart component exposes all staff dashboard visualization boundar
 
 test('staff dashboard exposes a feature-owned controller with approval and overview boundaries', () => {
   assert.equal(StaffDashboardPage.name, 'StaffDashboardPage');
-  for (const method of ['dashboard', 'renderOverview', 'renderApprovals', 'submitBorrowing']) {
+  for (const method of ['dashboard', 'renderOverview', 'renderApprovals', 'renderReturnApprovals', 'submitBorrowing', 'submitReturn']) {
     assert.equal(typeof StaffDashboardPage.prototype[method], 'function', method);
   }
+});
+
+test('staff dashboard exposes librarian-approved return review fields and endpoint', () => {
+  const source = fs.readFileSync(staffDashboardSource, 'utf8');
+  const template = fs.readFileSync(dashboardTemplate, 'utf8');
+  assert.match(source, /return_approvals/);
+  assert.match(source, /\/scan2borrow\/api\/staff\/return-action/);
+  assert.match(source, /\/scan2borrow\/api\/staff\/return-approvals/);
+  assert.match(source, /return_status/);
+  assert.match(source, /api\/staff\/return-approvals/);
+  assert.match(template, /returnApprovalList/);
+  assert.match(template, /Pending Return Verification/);
 });
 
 test('inventory boundaries preserve list, bulk action, drawer, and page contracts', async () => {

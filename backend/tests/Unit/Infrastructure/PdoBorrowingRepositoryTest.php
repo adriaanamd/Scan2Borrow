@@ -29,7 +29,9 @@ final class PdoBorrowingRepositoryTest extends TestCase
             'CREATE TABLE borrowing (' .
             'id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code VARCHAR(40) NOT NULL, user_id INTEGER NOT NULL, ' .
             'book_id INTEGER NOT NULL, processed_by INTEGER, approval_status VARCHAR(20) NOT NULL, borrow_date DATETIME, ' .
-            'due_date DATE NOT NULL, return_date DATETIME, status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0)'
+            'due_date DATE NOT NULL, return_date DATETIME, return_status VARCHAR(20) NOT NULL DEFAULT \'none\', '
+            . 'return_requested_at DATETIME, return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500), '
+            . 'status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0)'
         );
         $this->pdo->exec(
             'CREATE TABLE book_titles (' .
@@ -44,13 +46,15 @@ final class PdoBorrowingRepositoryTest extends TestCase
             'CREATE TABLE borrowing_transactions (' .
             'id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code VARCHAR(40) NOT NULL UNIQUE, user_id INTEGER NOT NULL, ' .
             'processed_by INTEGER, approval_status VARCHAR(20) NOT NULL, borrow_date DATETIME NOT NULL, due_date DATE NOT NULL, ' .
-            'return_date DATETIME, status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0, requested_at DATETIME, ' .
+            'return_date DATETIME, return_status VARCHAR(20) NOT NULL DEFAULT \'none\', return_requested_at DATETIME, '
+            . 'return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500), status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0, requested_at DATETIME, ' .
             'approved_at DATETIME, approved_by INTEGER)'
         );
         $this->pdo->exec(
             'CREATE TABLE borrowing_items (' .
             'id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_id INTEGER NOT NULL, copy_id INTEGER NOT NULL, ' .
-            'return_date DATETIME, status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0)'
+            'return_date DATETIME, return_status VARCHAR(20) NOT NULL DEFAULT \'none\', return_requested_at DATETIME, '
+            . 'return_decided_at DATETIME, return_decided_by INTEGER, return_decision_note VARCHAR(500), status VARCHAR(20) NOT NULL, fine_amount DECIMAL(8,2) NOT NULL DEFAULT 0)'
         );
         $this->pdo->exec(
             "INSERT INTO books (barcode, title, author, status) VALUES ('BK-1', 'Clean Code', 'Robert Martin', 'Available')"
@@ -115,6 +119,33 @@ final class PdoBorrowingRepositoryTest extends TestCase
         self::assertIsArray($book);
         self::assertSame('Available', $book['status']);
         self::assertNotNull($book['return_date']);
+    }
+
+    public function testRequestReturnMarksOnlyTheLoanAsPending(): void
+    {
+        $repository = new PdoBorrowingRepository($this->pdo);
+        $id = $repository->createLoan(
+            7,
+            1,
+            'S2B-20260828-PENDING',
+            new DateTimeImmutable('2026-09-04'),
+            'Borrowed',
+            'approved',
+        );
+
+        self::assertTrue($repository->requestReturn($id));
+        self::assertFalse($repository->requestReturn($id));
+
+        $loanStatement = $this->pdo->query("SELECT return_date, return_status, status FROM borrowing WHERE id = {$id}");
+        self::assertNotFalse($loanStatement);
+        $loan = $loanStatement->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($loan);
+        self::assertNull($loan['return_date']);
+        self::assertSame('pending', $loan['return_status']);
+        self::assertSame('Borrowed', $loan['status']);
+        $bookStatement = $this->pdo->query('SELECT status FROM books WHERE id = 1');
+        self::assertNotFalse($bookStatement);
+        self::assertSame('Borrowed', $bookStatement->fetchColumn());
     }
 
     public function testActiveBorrowingCountIncludesPendingRequestsThatConsumeCapacity(): void

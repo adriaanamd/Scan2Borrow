@@ -108,9 +108,16 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     public function receipt(int $userId, string $transactionCode): ?array
     {
         if ($this->hasTable('borrowing_items')) {
+            $hasReturnStatus = $this->hasColumn('borrowing_items', 'return_status');
+            $pendingReturnCondition = $hasReturnStatus ? "bi.return_status = 'pending'" : '0 = 1';
+            $returnStatusSelect = $hasReturnStatus
+                ? "MAX(CASE WHEN bi.return_status IN ('pending', 'rejected') THEN bi.return_status ELSE 'none' END) AS return_status,"
+                : "'none' AS return_status,";
             $statement = $this->pdo->prepare(
                 "SELECT bt.transaction_code, bt.borrow_date, bt.due_date, MAX(bi.return_date) AS return_date,
-                        CASE WHEN SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) > 0 THEN bt.status ELSE 'Returned' END AS status,
+                        CASE WHEN SUM(CASE WHEN bi.return_date IS NULL AND (" . $pendingReturnCondition . ") THEN 1 ELSE 0 END) > 0 THEN 'Return Verification Pending'
+                             WHEN SUM(CASE WHEN bi.return_date IS NULL THEN 1 ELSE 0 END) > 0 THEN bt.status ELSE 'Returned' END AS status,
+                        " . $returnStatusSelect . "
                         SUM(bi.fine_amount) AS fine_amount, t.title, t.author, COUNT(bi.id) AS quantity,
                         GROUP_CONCAT(c.barcode) AS barcode
                  FROM borrowing_transactions bt JOIN borrowing_items bi ON bi.transaction_id = bt.id
@@ -124,8 +131,14 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
             if ($rows === []) return null;
             return ['transaction_code' => (string) $rows[0]['transaction_code'], 'books' => $rows];
         }
+        $hasReturnStatus = $this->hasColumn('borrowing', 'return_status');
+        $statusSelect = $hasReturnStatus
+            ? "CASE WHEN br.return_status = 'pending' THEN 'Return Verification Pending'
+                    WHEN br.return_status = 'rejected' THEN 'Return Rejected'
+                    ELSE br.status END AS status, br.return_status,"
+            : "br.status, 'none' AS return_status,";
         $statement = $this->pdo->prepare(
-            'SELECT br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount, b.title, b.author, b.barcode '
+            'SELECT br.transaction_code, br.borrow_date, br.due_date, br.return_date, ' . $statusSelect . ' br.fine_amount, b.title, b.author, b.barcode '
             . 'FROM borrowing br JOIN books b ON b.id = br.book_id WHERE br.user_id = :user_id AND br.transaction_code = :code ORDER BY br.id'
         );
         $statement->execute(['user_id' => $userId, 'code' => trim($transactionCode)]);
@@ -166,10 +179,16 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     /** @return list<array<string, mixed>> */
     private function normalizedBorrowingActivity(int $userId): array
     {
+        $hasReturnStatus = $this->hasColumn('borrowing_items', 'return_status');
+        $hasReturnDecidedAt = $this->hasColumn('borrowing_items', 'return_decided_at');
+        $returnMetadataSelect = $hasReturnStatus
+            ? "bi.return_status, bi.return_requested_at,
+                    " . ($hasReturnDecidedAt ? 'bi.return_decided_at' : 'NULL') . " AS return_decided_at,"
+            : "'none' AS return_status, NULL AS return_requested_at, NULL AS return_decided_at,";
         $statement = $this->pdo->prepare(
             "SELECT bi.id AS item_id, bt.id AS transaction_id, bt.transaction_code, bt.borrow_date,
                     bt.approval_status, bt.status AS transaction_status, bi.status AS item_status,
-                    bi.return_date, t.title
+                    bi.return_date, " . $returnMetadataSelect . " t.title
              FROM borrowing_items bi
              JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
              JOIN book_copies c ON c.id = bi.copy_id
@@ -212,6 +231,34 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
                     $returnDate,
                 );
             }
+            $returnStatus = $this->stringValue($row['return_status'] ?? null);
+            $returnRequestedAt = $this->stringValue($row['return_requested_at'] ?? null);
+            if ($returnStatus === 'pending' && $returnRequestedAt !== '') {
+                $rows[] = $this->activityEntry(
+                    'borrowing:' . $this->stringValue($row['item_id'] ?? null) . ':return-requested',
+                    'return_requested',
+                    'Return request submitted',
+                    'Return request for ' . $title . ' is awaiting librarian verification.',
+                    $title,
+                    $transactionCode,
+                    'Return Verification Pending',
+                    $returnRequestedAt,
+                );
+            } elseif ($returnStatus === 'rejected') {
+                $returnDecidedAt = $this->stringValue($row['return_decided_at'] ?? null);
+                if ($returnDecidedAt !== '') {
+                    $rows[] = $this->activityEntry(
+                        'borrowing:' . $this->stringValue($row['item_id'] ?? null) . ':return-rejected',
+                        'return_rejected',
+                        'Return request rejected',
+                        'Return request for ' . $title . ' was rejected; the loan remains active.',
+                        $title,
+                        $transactionCode,
+                        'Return Rejected',
+                        $returnDecidedAt,
+                    );
+                }
+            }
         }
 
         return $rows;
@@ -224,8 +271,13 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
             return [];
         }
 
+        $hasReturnStatus = $this->hasColumn('borrowing', 'return_status');
+        $hasReturnDecidedAt = $this->hasColumn('borrowing', 'return_decided_at');
+        $returnMetadataSelect = $hasReturnStatus
+            ? "br.return_status, br.return_requested_at, " . ($hasReturnDecidedAt ? 'br.return_decided_at' : 'NULL') . " AS return_decided_at,"
+            : "'none' AS return_status, NULL AS return_requested_at, NULL AS return_decided_at,";
         $statement = $this->pdo->prepare(
-            'SELECT br.id, br.transaction_code, br.borrow_date, br.return_date, br.status, b.title '
+            'SELECT br.id, br.transaction_code, br.borrow_date, br.return_date, br.status, ' . $returnMetadataSelect . ' b.title '
             . 'FROM borrowing br JOIN books b ON b.id = br.book_id '
             . 'WHERE br.user_id = :user_id ORDER BY br.borrow_date DESC, br.id DESC'
         );
@@ -260,6 +312,34 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
                     'Returned',
                     $returnDate,
                 );
+            }
+            $returnStatus = $this->stringValue($row['return_status'] ?? null);
+            $returnRequestedAt = $this->stringValue($row['return_requested_at'] ?? null);
+            if ($returnStatus === 'pending' && $returnRequestedAt !== '') {
+                $rows[] = $this->activityEntry(
+                    'borrowing:' . $id . ':return-requested',
+                    'return_requested',
+                    'Return request submitted',
+                    'Return request for ' . $title . ' is awaiting librarian verification.',
+                    $title,
+                    $transactionCode,
+                    'Return Verification Pending',
+                    $returnRequestedAt,
+                );
+            } elseif ($returnStatus === 'rejected') {
+                $returnDecidedAt = $this->stringValue($row['return_decided_at'] ?? null);
+                if ($returnDecidedAt !== '') {
+                    $rows[] = $this->activityEntry(
+                        'borrowing:' . $id . ':return-rejected',
+                        'return_rejected',
+                        'Return request rejected',
+                        'Return request for ' . $title . ' was rejected; the loan remains active.',
+                        $title,
+                        $transactionCode,
+                        'Return Rejected',
+                        $returnDecidedAt,
+                    );
+                }
             }
         }
 
@@ -475,9 +555,23 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
     {
         if ($this->hasTable('borrowing_items')) {
             $statusClause = $includeReturned ? '' : ' AND bi.return_date IS NULL';
+            $hasReturnStatus = $this->hasColumn('borrowing_items', 'return_status');
+            $pendingReturnCondition = $hasReturnStatus ? "bi.return_status = 'pending'" : '0 = 1';
+            $rejectedReturnCondition = $hasReturnStatus ? "bi.return_status = 'rejected'" : '0 = 1';
+            $returnStatusSelect = $hasReturnStatus
+                ? "MAX(CASE WHEN bi.return_status IN ('pending', 'rejected') THEN bi.return_status ELSE 'none' END) AS return_status,
+                        MAX(bi.return_requested_at) AS return_requested_at,"
+                : "'none' AS return_status, NULL AS return_requested_at,";
             $statement = $this->pdo->prepare(
                 "SELECT MIN(bi.id) AS id, bt.transaction_code, bt.borrow_date, bt.due_date, MAX(bi.return_date) AS return_date,
+                        " . $returnStatusSelect . "
                         CASE
+                            WHEN SUM(CASE WHEN bi.return_date IS NULL
+                                           AND (" . $pendingReturnCondition . ")
+                                          THEN 1 ELSE 0 END) > 0 THEN 'Return Verification Pending'
+                            WHEN SUM(CASE WHEN bi.return_date IS NULL
+                                           AND (" . $rejectedReturnCondition . ")
+                                          THEN 1 ELSE 0 END) > 0 THEN 'Return Rejected'
                             WHEN SUM(CASE WHEN bi.return_date IS NULL
                                            AND (bi.status = 'Pending' OR bt.approval_status = 'pending')
                                           THEN 1 ELSE 0 END) > 0 THEN 'Pending'
@@ -496,8 +590,15 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
             return $statement->fetchAll(PDO::FETCH_ASSOC);
         }
         $statusClause = $includeReturned ? '' : " AND br.return_date IS NULL";
+        $hasReturnStatus = $this->hasColumn('borrowing', 'return_status');
+        $returnStatusSelect = $hasReturnStatus
+            ? "CASE WHEN br.return_status = 'pending' THEN 'Return Verification Pending'
+                    WHEN br.return_status = 'rejected' THEN 'Return Rejected'
+                    ELSE br.status END AS status,
+               br.return_status, br.return_requested_at,"
+            : 'br.status, \'none\' AS return_status, NULL AS return_requested_at,';
         $statement = $this->pdo->prepare(
-            'SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.return_date, br.status, br.fine_amount, b.title, b.author, b.barcode '
+            'SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.return_date, ' . $returnStatusSelect . ' br.fine_amount, b.title, b.author, b.barcode '
             . 'FROM borrowing br JOIN books b ON b.id = br.book_id WHERE br.user_id = :user_id' . $statusClause . ' ORDER BY br.borrow_date DESC, br.id DESC'
         );
         $statement->execute(['user_id' => $userId]);

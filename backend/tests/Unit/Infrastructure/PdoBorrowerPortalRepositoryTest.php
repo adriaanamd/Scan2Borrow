@@ -125,4 +125,35 @@ final class PdoBorrowerPortalRepositoryTest extends TestCase
 
         self::assertSame('Pending', $dashboard['current_loans'][0]['status']);
     }
+
+    public function testDashboardKeepsPendingReturnActiveAndLabelsItForBorrower(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT, author TEXT, category_name TEXT, created_at TEXT)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode TEXT, floor_no TEXT, status TEXT, deleted_at TEXT)');
+        $this->pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, borrow_date TEXT, due_date TEXT, return_date TEXT, return_status TEXT, return_requested_at TEXT, status TEXT, approval_status TEXT, fine_amount NUMERIC)');
+        $this->pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date TEXT, return_status TEXT, return_requested_at TEXT, status TEXT, fine_amount NUMERIC)');
+        $this->pdo->exec("INSERT INTO book_titles VALUES (1, 'Return Review Book', 'Author', 'Computer Science', '2026-08-01')");
+        $this->pdo->exec("INSERT INTO book_copies VALUES (1, 1, 'COPY-RETURN', '2', 'Borrowed', NULL)");
+        $this->pdo->exec("INSERT INTO borrowing_transactions VALUES (1, 'TX-RETURN', 1, '2026-08-10', '2026-09-10', NULL, 'pending', '2026-08-28 09:00:00', 'Borrowed', 'approved', 0)");
+        $this->pdo->exec("INSERT INTO borrowing_items VALUES (1, 1, 1, NULL, 'pending', '2026-08-28 09:00:00', 'Borrowed', 0)");
+
+        /** @var array{stats: array{active: int}, current_loans: list<array{status: string, return_status: string}>} $dashboard */
+        $dashboard = (new PdoBorrowerPortalRepository($this->pdo))->dashboard(1);
+
+        self::assertSame(1, $dashboard['stats']['active']);
+        self::assertSame('Return Verification Pending', $dashboard['current_loans'][0]['status']);
+        self::assertSame('pending', $dashboard['current_loans'][0]['return_status']);
+        $repository = new PdoBorrowerPortalRepository($this->pdo);
+        $receipt = $repository->receipt(1, 'TX-RETURN');
+        self::assertIsArray($receipt);
+        $books = $receipt['books'] ?? [];
+        self::assertIsArray($books);
+        self::assertNotEmpty($books);
+        $book = $books[0] ?? [];
+        self::assertIsArray($book);
+        self::assertSame('Return Verification Pending', $book['status'] ?? null);
+        $returnRequests = array_values(array_filter($repository->activity(1), static fn (array $row): bool => $row['type'] === 'return_requested'));
+        self::assertCount(1, $returnRequests);
+        self::assertSame('Return Verification Pending', $returnRequests[0]['status']);
+    }
 }

@@ -35,8 +35,9 @@ test('student models normalize books, loans, and user role fallback', () => {
     cover_file: '', cover_image: '', already_borrowed: false,
   });
   assert.deepEqual(normalizeLoan({ title: 'Title', status: 'Overdue' }), {
-    title: 'Title', author: '', borrow_date: '', due_date: '', status: 'Overdue', transaction_code: '',
+    title: 'Title', author: '', borrow_date: '', due_date: '', status: 'Overdue', return_status: 'none', transaction_code: '',
   });
+  assert.equal(normalizeLoan({ status: 'Return Verification Pending', return_status: 'pending' }).return_status, 'pending');
 });
 
 test('student services preserve endpoint paths, query names, and action fields', async () => {

@@ -126,7 +126,7 @@ final readonly class BorrowerController
         }
 
         if ($action === 'return_unified') {
-            $result = $this->returns->return($identity->userId(), $this->value($request->body(), 'return_input'));
+            $result = $this->returns->request($identity->userId(), $this->value($request->body(), 'return_input'));
             return $result->successful()
                 ? new JsonResponse(200, ['ok' => true, 'data' => ['message' => $result->message()]])
                 : new JsonResponse(422, ['ok' => false, 'errors' => [$result->message()]]);

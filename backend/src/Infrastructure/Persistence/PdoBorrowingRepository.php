@@ -333,6 +333,27 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         }
     }
 
+    public function requestReturn(int $loanId): bool
+    {
+        if ($this->hasTable('borrowing_items') && $this->itemExists($loanId)) {
+            $statement = $this->pdo->prepare(
+                "UPDATE borrowing_items SET return_status = 'pending', return_requested_at = CURRENT_TIMESTAMP
+                 WHERE id = :id AND return_date IS NULL AND return_status IN ('none', 'rejected')"
+            );
+            $statement->execute(['id' => $loanId]);
+
+            return $statement->rowCount() === 1;
+        }
+
+        $statement = $this->pdo->prepare(
+            "UPDATE borrowing SET return_status = 'pending', return_requested_at = CURRENT_TIMESTAMP
+             WHERE id = :id AND return_date IS NULL AND return_status IN ('none', 'rejected')"
+        );
+        $statement->execute(['id' => $loanId]);
+
+        return $statement->rowCount() === 1;
+    }
+
     /** @param array<string, mixed> $copy */
     private function recordLoanAudit(array $copy, int $borrowerId, ?int $transactionId, ?int $itemId, string $fromStatus, string $toStatus): void
     {

@@ -65,6 +65,39 @@ final class SchemaContractTest extends TestCase
         }
     }
 
+    public function testReturnApprovalMigrationDefinesPendingAndDecisionMetadata(): void
+    {
+        $base = $this->readSql('database.sql');
+        $migration = $this->readSql('upgrade_return_approval.sql');
+
+        foreach ([
+            '`return_status`', "ENUM('none','pending','rejected')",
+            '`return_requested_at`', '`return_decided_at`', '`return_decided_by`', '`return_decision_note`',
+        ] as $marker) {
+            self::assertStringContainsString($marker, $base, 'Fresh schema missing return approval marker: ' . $marker);
+            self::assertStringContainsString($marker, $migration, 'Return approval migration missing marker: ' . $marker);
+        }
+
+        self::assertStringContainsString('Return Verification Pending', $migration);
+        self::assertStringContainsString('ADD COLUMN IF NOT EXISTS', $migration);
+        self::assertStringContainsString('upgrade_bulk_borrowing.sql', $migration);
+        $guestSchema = $this->readSql('upgrade.sql');
+        self::assertStringContainsString('return_decided_at', $guestSchema);
+        self::assertStringContainsString('return_decided_by', $guestSchema);
+        self::assertStringContainsString('return_decision_note', $guestSchema);
+        self::assertStringContainsString('upgrade_return_approval.sql', $this->readRoot('README.md'));
+    }
+
+    private function readRoot(string $filename): string
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . $filename;
+        self::assertFileExists($path);
+        $contents = file_get_contents($path);
+        self::assertIsString($contents);
+
+        return $contents;
+    }
+
     public function testApprovalStatusRepairMigrationIsAvailableAndIdempotentByPredicate(): void
     {
         $migration = str_replace(["\r\n", "\r"], "\n", $this->readSql('upgrade_approval_status_sync.sql'));

@@ -145,6 +145,12 @@ export class TeacherDashboardPage {
     if (status === "pending") {
       return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Awaiting approval</span>';
     }
+    if (status === "return verification pending") {
+      return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Awaiting librarian verification</span>';
+    }
+    if (status === "return rejected") {
+      return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Return rejected — resubmit after checking</span>';
+    }
     if (status === "overdue") {
       return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Resolve overdue balance</span>';
     }
@@ -156,6 +162,8 @@ export class TeacherDashboardPage {
         Borrowed: "primary",
         Overdue: "danger",
         Pending: "warning text-dark",
+        "Return Verification Pending": "warning text-dark",
+        "Return Rejected": "danger",
         Returned: "success",
       }[status] || "secondary";
     return `<span class="badge bg-${type} borrower-dashboard__status">${this.escapeHtml(status)}</span>`;

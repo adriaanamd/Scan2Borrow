@@ -247,6 +247,12 @@ export class StudentDashboardPage {
     if (status === "pending") {
       return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Awaiting approval</span>';
     }
+    if (status === "return verification pending") {
+      return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Awaiting librarian verification</span>';
+    }
+    if (status === "return rejected") {
+      return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Return rejected — resubmit after checking</span>';
+    }
     if (status === "overdue") {
       return '<span class="borrower-dashboard__renewal-status borrower-dashboard__renewal-status--muted">Resolve overdue balance</span>';
     }
@@ -271,6 +277,8 @@ export class StudentDashboardPage {
         Borrowed: "primary",
         Overdue: "danger",
         Pending: "warning text-dark",
+        "Return Verification Pending": "warning text-dark",
+        "Return Rejected": "danger",
         Returned: "success",
       }[status] || "secondary";
     return `<span class="badge bg-${type} borrower-dashboard__status">${this.escapeHtml(status)}</span>`;
@@ -340,7 +348,7 @@ export class StudentDashboardPage {
         (data) => {
           this.$("return-message").hidden = false;
           this.$("return-message").textContent =
-            data.message || "Book returned successfully.";
+            data.message || "Return request submitted. Please hand the book to the librarian for verification.";
         },
       );
     });

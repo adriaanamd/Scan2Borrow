@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
-use App\Domain\Borrowing\LoanRecord;
 use App\Infrastructure\Persistence\ReturnRepositoryInterface;
 
 final class ReturnService
 {
     public function __construct(
         private readonly ReturnRepositoryInterface $repository,
-        private readonly ClockInterface $clock,
-        private readonly float $finePerDay,
-        private readonly ?ReservationAvailabilityInterface $availability = null,
     ) {
     }
 
+    /**
+     * Compatibility alias for callers that used the former direct-return API.
+     * It now follows the safe request-for-review workflow.
+     */
     public function return(int $userId, string $input): ReturnResult
+    {
+        return $this->request($userId, $input);
+    }
+
+    public function request(int $userId, string $input): ReturnResult
     {
         $input = trim($input);
         if ($input === '') {
@@ -26,7 +31,13 @@ final class ReturnService
 
         $transactionLoans = $this->repository->activeByTransaction($userId, $input);
         if ($transactionLoans !== []) {
-            return $this->completeTransaction($transactionLoans);
+            foreach ($transactionLoans as $loan) {
+                if (!$this->repository->requestReturn($loan->id())) {
+                    return ReturnResult::failure('This return is already awaiting librarian verification.');
+                }
+            }
+
+            return ReturnResult::success('Return request submitted. Please hand the book to the librarian for verification.');
         }
 
         $book = $this->repository->findBookByBarcode($input);
@@ -40,62 +51,11 @@ final class ReturnService
             return ReturnResult::failure('You have no active borrowed for this book.');
         }
 
-        $fine = $this->fine($loan);
-        $this->repository->completeReturn($loan->id(), $bookId, $fine);
-        $this->advanceAvailability($bookId);
-        $title = is_string($book['title'] ?? null) ? $book['title'] : '';
-        $message = 'You returned "' . $title . '".';
-        if ($fine > 0) {
-            $message .= ' It was ' . $this->overdueDays($loan) . ' day(s) overdue. Fine: ₱' . number_format($fine, 2) . '.';
+        if (!$this->repository->requestReturn($loan->id())) {
+            return ReturnResult::failure('This return is already awaiting librarian verification.');
         }
 
-        return ReturnResult::success($message);
-    }
-
-    /**
-     * @param list<LoanRecord> $loans
-     */
-    private function completeTransaction(array $loans): ReturnResult
-    {
-        $totalFine = 0.0;
-        foreach ($loans as $loan) {
-            $fine = $this->fine($loan);
-            $totalFine += $fine;
-            $this->repository->completeReturn($loan->id(), $loan->bookId(), $fine);
-            $this->advanceAvailability($loan->bookId());
-        }
-
-        $message = 'Successfully returned ' . count($loans) . ' book(s) using transaction code.';
-        if ($totalFine > 0) {
-            $message .= ' Total fine: ₱' . number_format($totalFine, 2) . '.';
-        }
-
-        return ReturnResult::success($message);
-    }
-
-    private function fine(LoanRecord $loan): float
-    {
-        return round($this->overdueDays($loan) * $this->finePerDay, 2);
-    }
-
-    private function overdueDays(LoanRecord $loan): int
-    {
-        $due = $loan->dueDate()->setTime(23, 59, 59);
-        $delta = $this->clock->now()->getTimestamp() - $due->getTimestamp();
-
-        return $delta > 0 ? (int) floor($delta / 86400) : 0;
-    }
-
-    private function advanceAvailability(int $bookId): void
-    {
-        if ($this->availability === null) {
-            return;
-        }
-
-        $titleId = $this->repository->titleIdForBook($bookId);
-        if ($titleId !== null) {
-            $this->availability->advance($titleId, $bookId, $this->clock->now());
-        }
+        return ReturnResult::success('Return request submitted. Please hand the book to the librarian for verification.');
     }
 
     private function bookId(mixed $value): int

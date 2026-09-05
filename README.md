@@ -54,6 +54,12 @@ From a title's `View copies` panel, staff can export all active copies whose bar
 
 Students and teachers can request changes to their name, contact details, academic or faculty information, and profile photo from Settings. Requests remain pending until an administrator reviews the before/after values in Admin > Staff. Barcode, role, status, password, and other security fields remain administrator-only. The request record retains the submitted values and final decision for business audit history.
 
+### Search-based borrower recommendations
+
+Student and teacher catalog shelves use a local content-based ranking over each borrower's latest 20 deliberate text searches. Terms are matched against normalized inventory keywords plus title, category, author, publisher, and description. Results are capped at five available titles, exclude the borrower's current loans, and fall back to newest available titles for a cold start. Search tracking is CSRF-protected and non-blocking; empty searches and filter-only changes are not stored.
+
+The recommendation schema is **not** applied automatically when the application starts. Run `sql/upgrade_search_recommendations.sql` last, after `sql/upgrade_bulk_borrowing.sql`, on every fresh or existing database. The migration is idempotent and adds the bounded history, keyword-mapping, full-text, availability, and current-loan indexes needed for concurrent local use. The complete second-checkout procedure, verification SQL, endpoint contract, and troubleshooting notes are in [`docs/SEARCH_RECOMMENDATIONS_SETUP.md`](docs/SEARCH_RECOMMENDATIONS_SETUP.md).
+
 ## Quality checks
 
 ```text

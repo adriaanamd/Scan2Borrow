@@ -154,7 +154,8 @@ $upgradeFiles = @(
     'sql\upgrade_copy_audit_trail.sql',
     'sql\upgrade_renewals.sql',
     'sql\upgrade_reservations.sql',
-    'sql\upgrade_profile_change_requests.sql'
+    'sql\upgrade_profile_change_requests.sql',
+    'sql\upgrade_search_recommendations.sql'
 )
 
 foreach ($file in $upgradeFiles) {
@@ -227,6 +228,24 @@ visitor_borrowing
 visitor_notifications
 visitor_visit_history
 visitor_security_logs
+~~~
+
+### 6.4 Search-based recommendation schema
+
+The student and teacher recommendation shelves require the normalized catalog
+and copy tables from `upgrade_bulk_borrowing.sql`. Apply
+`sql\upgrade_search_recommendations.sql` after the other feature migrations;
+it is safe to rerun and is not applied by the PHP application automatically.
+The migration creates the bounded search-history and title-keyword mapping
+tables, then adds the full-text and availability indexes used by the prepared
+recommendation query. A complete second-checkout runbook is available at
+`docs\SEARCH_RECOMMENDATIONS_SETUP.md`.
+
+For a quick read-only verification on the default XAMPP database:
+
+~~~powershell
+& 'C:\xampp\mysql\bin\mysql.exe' --protocol=tcp -h localhost -P 3306 -u root `
+    --database='scan2borrow_2.0' -e "SHOW TABLES LIKE 'book_title_keywords'; SHOW INDEX FROM book_titles WHERE Index_type = 'FULLTEXT';"
 ~~~
 
 ## 7. Open the application
@@ -384,6 +403,28 @@ The normal borrower capacity is three active books.
 11. Return to the borrower and confirm the status and notification.
 
 Use a title with at least one Available physical copy. Do not exceed the three-book limit during a demo.
+
+### Search-based recommendations
+
+On the student Search Books or teacher Borrow Books page, submit a deliberate
+non-empty text search. The page records that search before navigating to the
+existing filtered catalog URL, then loads the separate recommendation endpoint
+on the next unfiltered visit. Two or more searches should produce the
+`Based on your searches.` supporting copy when matching available titles exist.
+An empty history, no matching title, or a tracking failure should leave the
+catalog usable and show `Newly added available books.` instead. Filter changes,
+automatic page loads, and recommendation loads do not create history rows.
+
+The role-scoped endpoints are:
+
+| Method | Student | Teacher |
+| --- | --- | --- |
+| GET recommendations | `/api/student/recommendations` | `/api/teacher/recommendations` |
+| POST search history | `/api/student/search-history` | `/api/teacher/search-history` |
+
+The POST body is form-encoded (`search`, `csrf`); both endpoints require the
+matching authenticated borrower role. Responses expose only book cards and the
+`personalized` flag, never the borrower's raw history or profile terms.
 
 ### Return
 
@@ -714,6 +755,9 @@ backend/src/Http/Controllers/StaffController.php
 | audit_events | Physical-copy business audit timeline. |
 | audit_log | Security/application activity records. |
 | profile_change_requests | Student/teacher before-and-after approval records. |
+| search_history | Deliberate borrower text searches used to build recommendation profiles. |
+| keywords | Normalized staff-managed catalog keywords. |
+| book_title_keywords | Title-to-keyword mappings for normalized catalog ranking. |
 | notifications | Staff circulation and workflow notifications. |
 | visitors | Guest identity and registration data. |
 | visitor_borrowing | Guest loan and return records. |
@@ -730,6 +774,7 @@ sql/upgrade_copy_audit_trail.sql         Copy statuses and audit backfill
 sql/upgrade_renewals.sql                  Renewal request table
 sql/upgrade_reservations.sql              Reservation queue and holds
 sql/upgrade_profile_change_requests.sql  Profile approval table
+sql/upgrade_search_recommendations.sql   Search history, title keywords, and ranking indexes
 ~~~
 
 ## 16. API groups for technical checking
@@ -753,9 +798,13 @@ POST /api/auth/logout
 
 ~~~text
 GET  /api/student/books
+GET  /api/student/recommendations
+POST /api/student/search-history
 POST /api/student/borrow
 POST /api/student/return
 GET  /api/student/history
+GET  /api/teacher/recommendations
+POST /api/teacher/search-history
 GET  /api/student/settings
 POST /api/student/settings
 GET  /api/teacher/settings

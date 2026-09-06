@@ -438,7 +438,7 @@ CREATE TABLE `return_notifications` (
     CONSTRAINT `fk_return_notif_borrowing` FOREIGN KEY (`borrowing_id`) REFERENCES `borrowing`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_return_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_return_notif_book` FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON DELETE CASCADE,
-    INDEX `idx_viewed` (`is_viewed`, `created_at DESC`)
+    INDEX `idx_viewed` (`is_viewed`, `created_at`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `audit_log` (

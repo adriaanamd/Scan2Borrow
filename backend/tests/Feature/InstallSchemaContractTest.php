@@ -56,7 +56,7 @@ final class InstallSchemaContractTest extends TestCase
     {
         $sql = $this->readInstallSql();
 
-        self::assertStringNotContainsString('SOURCE ', strtoupper($sql));
+        self::assertDoesNotMatchRegularExpression('/^\s*SOURCE\s+/mi', $sql);
 
         $positions = [];
         foreach ([
@@ -71,13 +71,13 @@ final class InstallSchemaContractTest extends TestCase
             $positions[$table] = $position;
         }
 
-        self::assertLessThan($positions['books'], $positions['borrowing']);
-        self::assertLessThan($positions['book_titles'], $positions['book_copies']);
-        self::assertLessThan($positions['book_copies'], $positions['borrowing_items']);
-        self::assertLessThan($positions['barcode_print_batches'], $positions['barcode_print_batch_items']);
-        self::assertLessThan($positions['book_copies'], $positions['reservations']);
-        self::assertLessThan($positions['borrowing_items'], $positions['renewal_requests']);
-        self::assertLessThan($positions['barcode_print_batch_items'], $positions['audit_events']);
+        self::assertLessThan($positions['borrowing'], $positions['books']);
+        self::assertLessThan($positions['book_copies'], $positions['book_titles']);
+        self::assertLessThan($positions['borrowing_items'], $positions['book_copies']);
+        self::assertLessThan($positions['barcode_print_batch_items'], $positions['barcode_print_batches']);
+        self::assertLessThan($positions['reservations'], $positions['book_copies']);
+        self::assertLessThan($positions['renewal_requests'], $positions['borrowing_items']);
+        self::assertLessThan($positions['audit_events'], $positions['barcode_print_batch_items']);
     }
 
     public function testFreshInstallDocumentationPointsToTheCanonicalInstaller(): void

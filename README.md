@@ -5,7 +5,7 @@ Scan2Borrow is a library management and borrowing system for Binalbagan Catholic
 ## Run locally
 
 1. Put the project in `C:\xampp\htdocs\scan2borrow`.
-2. For a fresh install, import `sql/database.sql`, then run `sql/upgrade_bulk_borrowing.sql`, `sql/upgrade_approval_status_sync.sql`, `sql/upgrade_return_approval.sql`, `sql/upgrade_barcode_printing.sql`, `sql/upgrade_copy_audit_trail.sql`, `sql/upgrade_profile_change_requests.sql`, and `sql/upgrade_search_recommendations.sql` to backfill the seeded legacy rows, repair normalized approval item statuses, enable librarian-approved returns, barcode export history, the physical-copy audit trail, administrator-approved borrower profile changes, and search-based borrower recommendations. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_approval_status_sync.sql`, `upgrade_return_approval.sql`, `upgrade_barcode_printing.sql`, `upgrade_copy_audit_trail.sql`, `upgrade_profile_change_requests.sql`, then `upgrade_search_recommendations.sql`. The bulk-borrowing, approval-status repair, return-approval, barcode-printing, copy-audit, profile-change, and search-recommendation migrations are required in both cases.
+2. For a fresh or disposable reset, import `sql/install.sql` once. It creates the complete current schema, seeds the default/sample records, and backfills the normalized borrowing model. This installer recreates Scan2Borrow-owned tables, so do not use it on a database whose data must be preserved. For an existing database, run the applicable upgrade scripts in this order: `upgrade.sql`, `upgrade_add_teacher_fields.sql`, `upgrade_approval_system.sql`, `upgrade_borrowing_control.sql`, `upgrade_notification_system.sql`, `upgrade_pending_status.sql`, `upgrade_security.sql`, `upgrade_bulk_borrowing.sql`, `upgrade_approval_status_sync.sql`, `upgrade_return_approval.sql`, `upgrade_barcode_printing.sql`, `upgrade_copy_audit_trail.sql`, `upgrade_profile_change_requests.sql`, then `upgrade_search_recommendations.sql`. Apply `upgrade_reservations.sql` after `upgrade_approval_system.sql` and `upgrade_bulk_borrowing.sql`, and apply `upgrade_renewals.sql` after `upgrade_bulk_borrowing.sql`, when those features are needed. Never run the fresh installer against an existing database that must be preserved.
 3. Set `SCAN2BORROW_DB_HOST`, `SCAN2BORROW_DB_PORT`, `SCAN2BORROW_DB_NAME`, `SCAN2BORROW_DB_USER`, and `SCAN2BORROW_DB_PASSWORD` when the defaults are not suitable.
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
@@ -30,13 +30,13 @@ backend/
   public/index.php       Thin Apache entry point
   src/                   OOP application, domain, HTTP, and PDO modules
   tests/                 PHPUnit contract and unit tests
-sql/                     Preserved schema, seed, dump, and upgrade scripts
+sql/                     Canonical installer, schema, seed, dump, and upgrade scripts
 uploads/                 Runtime photo storage
 ```
 
 ### Bulk borrowing database model
 
-Bulk borrowing uses `book_titles` for one catalog title and its total `quantity`, `book_copies` for individually barcoded physical copies, `borrowing_transactions` for one checkout session, and `borrowing_items` for each copy in that session. Available, reserved, and borrowed quantities are calculated from non-archived copy statuses. Run `sql/upgrade_bulk_borrowing.sql` whenever an existing or freshly imported legacy schema is being prepared for the bulk-borrowing application, followed by `sql/upgrade_approval_status_sync.sql` to repair older approved requests whose item row still says `Pending`.
+Bulk borrowing uses `book_titles` for one catalog title and its total `quantity`, `book_copies` for individually barcoded physical copies, `borrowing_transactions` for one checkout session, and `borrowing_items` for each copy in that session. Available, reserved, and borrowed quantities are calculated from non-archived copy statuses. Fresh installs already contain this normalized schema and its seeded legacy-row backfill through `sql/install.sql`. Existing databases must run `sql/upgrade_bulk_borrowing.sql`, followed by `sql/upgrade_approval_status_sync.sql` to repair older approved requests whose item row still says `Pending`.
 
 ### Librarian-approved returns
 
@@ -58,7 +58,7 @@ Students and teachers can request changes to their name, contact details, academ
 
 Student and teacher catalog shelves use a local content-based ranking over each borrower's latest 20 deliberate text searches. Terms are matched against normalized inventory keywords plus title, category, author, publisher, and description. Results are capped at five available titles, exclude the borrower's current loans, and fall back to newest available titles for a cold start. Search tracking is CSRF-protected and non-blocking; empty searches and filter-only changes are not stored.
 
-The recommendation schema is **not** applied automatically when the application starts. Run `sql/upgrade_search_recommendations.sql` last, after `sql/upgrade_bulk_borrowing.sql`, on every fresh or existing database. The migration is idempotent and adds the bounded history, keyword-mapping, full-text, availability, and current-loan indexes needed for concurrent local use. The complete second-checkout procedure, verification SQL, endpoint contract, and troubleshooting notes are in [`docs/SEARCH_RECOMMENDATIONS_SETUP.md`](docs/SEARCH_RECOMMENDATIONS_SETUP.md).
+The recommendation schema is **not** applied automatically when the application starts. Fresh installs already include it through `sql/install.sql`. Existing databases must run `sql/upgrade_search_recommendations.sql` last, after `sql/upgrade_bulk_borrowing.sql`. The migration is idempotent and adds the bounded history, keyword-mapping, full-text, availability, and current-loan indexes needed for concurrent local use. The complete second-checkout procedure, verification SQL, endpoint contract, and troubleshooting notes are in [`docs/SEARCH_RECOMMENDATIONS_SETUP.md`](docs/SEARCH_RECOMMENDATIONS_SETUP.md).
 
 ## Quality checks
 

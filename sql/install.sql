@@ -153,9 +153,8 @@ CREATE TABLE `borrowing` (
 ) ENGINE=InnoDB;
 
 -- ---- Bulk borrowing catalog and transaction model ------------------------
--- `books` and `borrowing` remain in this base schema for upgrade compatibility.
--- Run sql/upgrade_bulk_borrowing.sql after importing this file to backfill the
--- normalized tables and activate the bulk-borrowing application model.
+-- `books` and `borrowing` remain for legacy compatibility. The normalized
+-- tables and their seed backfills are included in this installer below.
 CREATE TABLE `book_titles` (
     `id`          INT AUTO_INCREMENT PRIMARY KEY,
     `isbn`        VARCHAR(30) DEFAULT NULL,

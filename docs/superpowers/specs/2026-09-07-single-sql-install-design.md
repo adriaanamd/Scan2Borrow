@@ -40,4 +40,3 @@ Verification will include:
 - Static checks that the install file is self-contained, ordered, and contains every final application table.
 - A disposable MariaDB/MySQL import when a local server is available, followed by schema and seed-data smoke queries.
 - The relevant repository quality checks: frontend tests, PHPUnit, and PHPStan when their local dependencies/tools are available.
-

@@ -57,6 +57,11 @@ export class BorrowerHistoryPage {
   }
 
   statusClass(status) {
-    return `${this.classPrefix}-status--${String(status || "default").toLowerCase()}`;
+    const normalizedStatus = String(status || "default")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "default";
+    return `${this.classPrefix}-status--${normalizedStatus}`;
   }
 }

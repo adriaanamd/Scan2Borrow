@@ -10,14 +10,14 @@ final class Runtime
 {
     public static function minimumPhpVersion(): string
     {
-        return '8.3.0';
+        return '8.2.0';
     }
 
     public static function assertSupported(string $version): void
     {
         if (version_compare($version, self::minimumPhpVersion(), '<')) {
             throw new RuntimeException(
-                'PHP 8.3+ is required; detected ' . $version . '.',
+                'PHP 8.2+ is required; detected ' . $version . '.',
             );
         }
     }

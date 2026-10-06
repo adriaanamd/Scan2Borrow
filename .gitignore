@@ -3,6 +3,7 @@
 PHPMailer/
 *.log
 .worktrees/
+problem-css/
 backend/vendor/
 backend/composer.phar
 backend/var/

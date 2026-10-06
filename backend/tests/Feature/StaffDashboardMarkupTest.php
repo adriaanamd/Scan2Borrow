@@ -67,7 +67,15 @@ final class StaffDashboardMarkupTest extends TestCase
         self::assertIsString($html);
         self::assertStringContainsString('data-app-page="staff-admin-staff"', $html);
         self::assertStringContainsString('frontend/features/staff/pages/admin-staff/entry.js', $html);
-        foreach (['promoteModal', 'pwModal', 'Staff Accounts'] as $marker) self::assertStringContainsString($marker, $html);
+        foreach ([
+            'promoteModal',
+            'pwModal',
+            'Staff Accounts',
+            'staff-management.css',
+            'staff-management__section',
+            'class="alert alert-success d-none staff-management__feedback',
+            'class="alert alert-danger d-none staff-management__feedback',
+        ] as $marker) self::assertStringContainsString($marker, $html);
         $page = file_get_contents(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR . 'staff' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'admin-staff' . DIRECTORY_SEPARATOR . 'admin-staff.page.js');
         self::assertIsString($page);
         self::assertStringContainsString('data-promote-user', $page);

@@ -13,7 +13,7 @@ export class GuestRequestsPage {
     const body = this.root.querySelector?.('table tbody');
     if (!body) return;
     const media = (value) => globalThis.Scan2BorrowMedia?.resolve(value || '') || value || '';
-    const badge = this.root.querySelector?.('.section-title .badge');
+    const badge = this.root.querySelector?.('.guest-requests__count');
     if (badge) badge.textContent = String(rows.length);
     body.innerHTML = rows.length ? rows.map((row) => {
       const visitorPhoto = media(row.visitor_photo);
@@ -68,27 +68,31 @@ export class GuestRequestsPage {
     if (form && !form.dataset.bound) {
       form.dataset.bound = 'true';
       form.addEventListener('submit', async (event) => {
+        const confirmationAction = event.submitter?.dataset?.confirmAction || form.dataset.confirmAction;
+        if (confirmationAction && form.dataset.confirmBypass !== 'true') return;
         event.preventDefault();
         const notes = this.root.querySelector?.('#review-notes')?.value || '';
+        const action = event.submitter?.value || 'approve';
         try {
-          await this.service?.review(form.elements.id.value, event.submitter?.value || 'approve', notes);
+          await this.service?.review(form.elements.id.value, action, notes);
           globalThis.bootstrap?.Modal?.getInstance(this.root.querySelector?.('#reviewModal'))?.hide();
           await this.load();
+          this.showFeedback('success', action === 'approve' ? 'Guest request approved and released.' : 'Guest request rejected.');
         } catch (error) {
-          this.showError(error);
+          this.showFeedback('error', error?.message || 'Could not save guest request decision.');
         }
       });
     }
   }
 
-  showError(error) {
-    const container = this.root.querySelector?.('.content');
-    if (!container) return;
-    const node = this.root.createElement?.('div') || globalThis.document?.createElement?.('div');
-    if (!node) return;
-    node.className = 'alert alert-danger mt-3';
-    node.textContent = error?.message || 'Could not load guest requests.';
-    container.prepend?.(node);
+  showFeedback(kind, message) {
+    const success = this.root.querySelector?.('.alert.alert-success');
+    const error = this.root.querySelector?.('.alert.alert-danger');
+    [success, error].forEach((node) => node?.classList.add('d-none'));
+    const target = kind === 'success' ? success : error;
+    if (!target) return;
+    target.textContent = message;
+    target.classList.remove('d-none');
   }
 
   escape(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }

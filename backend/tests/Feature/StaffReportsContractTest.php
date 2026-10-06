@@ -70,7 +70,7 @@ final class StaffReportsContractTest extends TestCase
     {
         foreach ([
             ['notify/notify.html', 'staff-notify', 'notify/entry.js', ['notify-email', 'notify-contact', 'send-email']],
-            ['guest-requests/guest-requests.html', 'staff-guest-requests', 'guest-requests/entry.js', ['reviewModal', 'review-notes']],
+            ['guest-requests/guest-requests.html', 'staff-guest-requests', 'guest-requests/entry.js', ['reviewModal', 'review-notes', 'guest-requests.css', 'guest-requests__feedback', 'Loading guest requests']],
         ] as [$relativePath, $pageName, $entry, $markers]) {
             $html = $this->read('frontend/features/staff/pages/' . $relativePath);
             self::assertStringContainsString('data-app-page="' . $pageName . '"', $html);

@@ -13,8 +13,7 @@ export class AdminStaffPage {
         this.profileChanges = profileResponse?.data?.requests || [];
         this.renderProfileChangeRequests(this.profileChanges);
       } catch (error) {
-        const node = this.root.querySelector?.('.alert.alert-danger');
-        if (node) { node.textContent = error.message || 'Could not load profile change requests.'; node.classList.remove('d-none'); }
+        this.showFeedback('error', error.message || 'Could not load profile change requests.');
       }
     }
     return response;
@@ -29,11 +28,14 @@ export class AdminStaffPage {
   }
 
   staffRows(rows) {
-    return rows.length ? rows.map((row) => `<tr><td>${this.escape(row.barcode)}</td><td>${this.escape(row.name)}</td><td><span class="badge bg-primary">${this.escape(row.role)}</span></td><td class="text-muted small">${this.escape(row.email || '')}</td><td>${this.escape(row.status || '')}</td><td class="text-nowrap"><button class="btn btn-outline-secondary btn-sm" data-reset-user="${this.escape(row.id)}" data-name="${this.escape(row.name)}" data-bs-toggle="modal" data-bs-target="#pwModal">Reset Password</button><button class="btn btn-outline-warning btn-sm" data-toggle-user="${this.escape(row.id)}">Toggle Status</button><button class="btn btn-outline-danger btn-sm" data-demote-user="${this.escape(row.id)}">Demote</button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center text-muted">No staff accounts.</td></tr>';
+    return rows.length ? rows.map((row) => {
+      const status = this.staffStatusClass(row.status);
+      return `<tr><td><code class="staff-management__barcode">${this.escape(row.barcode)}</code></td><td><strong>${this.escape(row.name)}</strong></td><td><span class="staff-management__role">${this.escape(row.role)}</span></td><td class="text-muted small">${this.escape(row.email || '')}</td><td><span class="staff-management__status staff-management__status--${status}">${this.escape(row.status || '')}</span></td><td><div class="staff-management__actions"><button class="btn btn-outline-secondary btn-sm" data-reset-user="${this.escape(row.id)}" data-name="${this.escape(row.name)}" data-bs-toggle="modal" data-bs-target="#pwModal">Reset password</button><button class="btn btn-outline-warning btn-sm" data-toggle-user="${this.escape(row.id)}">${status === 'active' ? 'Disable' : 'Enable'}</button><button class="btn btn-outline-danger btn-sm" data-demote-user="${this.escape(row.id)}">Demote</button></div></td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="text-center text-muted">No staff accounts.</td></tr>';
   }
 
   borrowerRows(rows) {
-    return rows.length ? rows.map((row) => `<tr><td>${this.escape(row.barcode)}</td><td>${this.escape(row.name)}</td><td class="text-muted">${this.escape(row.course || '')}</td><td><button class="btn btn-gradient btn-sm" data-promote-user="${this.escape(row.id)}" data-name="${this.escape(row.name)}" data-bs-toggle="modal" data-bs-target="#promoteModal">&#128081; Promote to Librarian</button></td></tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted">No borrowers found.</td></tr>';
+    return rows.length ? rows.map((row) => `<tr><td><code class="staff-management__barcode">${this.escape(row.barcode)}</code></td><td><strong>${this.escape(row.name)}</strong></td><td class="text-muted">${this.escape(row.course || '')}</td><td><button class="btn btn-primary btn-sm staff-management__promote-action" data-promote-user="${this.escape(row.id)}" data-name="${this.escape(row.name)}" data-bs-toggle="modal" data-bs-target="#promoteModal">Promote to librarian</button></td></tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted">No borrowers found.</td></tr>';
   }
 
   bindAdminActions() {
@@ -65,10 +67,33 @@ export class AdminStaffPage {
     try {
       await this.service?.action(action, userId, values);
       await this.load();
+      this.showFeedback('success', this.actionMessage(action));
     } catch (error) {
-      const node = this.root.querySelector?.('.alert.alert-danger');
-      if (node) { node.textContent = error.message || 'Could not save staff changes.'; node.classList.remove('d-none'); }
+      this.showFeedback('error', error.message || 'Could not save staff changes.');
     }
+  }
+
+  showFeedback(kind, message) {
+    const success = this.root.querySelector?.('.alert.alert-success');
+    const error = this.root.querySelector?.('.alert.alert-danger');
+    [success, error].forEach((node) => node?.classList.add('d-none'));
+    const target = kind === 'success' ? success : error;
+    if (!target) return;
+    target.textContent = message;
+    target.classList.remove('d-none');
+  }
+
+  actionMessage(action) {
+    return {
+      promote: 'Staff role assigned successfully.',
+      reset_password: 'Password updated successfully.',
+      toggle_status: 'Account status updated successfully.',
+      demote: 'Staff account demoted successfully.',
+    }[action] || 'Staff account updated successfully.';
+  }
+
+  staffStatusClass(status) {
+    return String(status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active';
   }
 
   renderProfileChangeRequests(rows = []) {
@@ -114,9 +139,9 @@ export class AdminStaffPage {
     try {
       if (confirmation?.confirm) await confirmation.confirm({ title: action === 'approve' ? 'Approve profile change?' : 'Reject profile change?', message: `This will ${action} the requested account changes.`, confirmLabel: action === 'approve' ? 'Approve' : 'Reject', confirmClass: action === 'approve' ? 'btn-primary' : 'btn-danger', onConfirm: proceed });
       else await proceed();
+      this.showFeedback('success', action === 'approve' ? 'Profile change approved.' : 'Profile change rejected.');
     } catch (error) {
-      const node = this.root.querySelector?.('.alert.alert-danger');
-      if (node) { node.textContent = error.message || 'Could not save profile change decision.'; node.classList.remove('d-none'); }
+      this.showFeedback('error', error.message || 'Could not save profile change decision.');
     }
   }
 

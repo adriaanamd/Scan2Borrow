@@ -261,6 +261,76 @@ test('staff notification and guest review boundaries preserve action payloads', 
   assert.equal(typeof GuestRequestsPage.prototype.bindGuestReview, 'function');
 });
 
+test('guest review waits for the confirmation resubmit before posting', async () => {
+  const listeners = {};
+  const form = {
+    dataset: {},
+    elements: { id: { value: '7' } },
+    addEventListener(type, listener) { listeners[type] = listener; },
+  };
+  const root = {
+    querySelector(selector) { return selector === '#reviewModal form' ? form : null; },
+    querySelectorAll() { return []; },
+  };
+  const calls = [];
+  const page = new GuestRequestsPage(root, {
+    service: { async review(...args) { calls.push(args); } },
+  });
+  page.bindGuestReview();
+
+  await listeners.submit({
+    preventDefault() {},
+    submitter: { value: 'approve', dataset: { confirmAction: 'approve' } },
+  });
+  assert.deepEqual(calls, []);
+
+  form.dataset.confirmBypass = 'true';
+  await listeners.submit({
+    preventDefault() {},
+    submitter: { value: 'approve', dataset: { confirmAction: 'approve' } },
+  });
+  assert.deepEqual(calls, [['7', 'approve', '']]);
+});
+
+test('guest request template has no competing inline modal population handlers', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const template = fs.readFileSync(path.join(root, 'features/staff/pages/guest-requests/guest-requests.html'), 'utf8');
+
+  assert.doesNotMatch(template, /show\.bs\.modal/);
+});
+
+test('guest requests keep feedback hidden and remove the blank placeholder row', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const template = fs.readFileSync(path.join(root, 'features/staff/pages/guest-requests/guest-requests.html'), 'utf8');
+
+  assert.match(template, /class="guest-requests-page"/);
+  assert.match(template, /guest-requests\.css/);
+  assert.match(template, /class="alert alert-success d-none guest-requests__feedback/);
+  assert.match(template, /class="alert alert-danger d-none guest-requests__feedback/);
+  assert.match(template, /guest-requests__section/);
+  assert.match(template, /Loading guest requests/);
+  assert.doesNotMatch(template, /data-id=""/);
+  assert.doesNotMatch(template, /src=""\s+class="rounded-circle/);
+});
+
+test('guest request feedback keeps success and error messages mutually exclusive', () => {
+  const nodes = {
+    success: { classList: { values: new Set(['d-none']), add(value) { this.values.add(value); }, remove(value) { this.values.delete(value); } }, textContent: '' },
+    error: { classList: { values: new Set(['d-none']), add(value) { this.values.add(value); }, remove(value) { this.values.delete(value); } }, textContent: '' },
+  };
+  const page = new GuestRequestsPage({ querySelector(selector) { return selector === '.alert.alert-success' ? nodes.success : selector === '.alert.alert-danger' ? nodes.error : null; } });
+
+  page.showFeedback('error', 'Could not save guest request decision.');
+  assert.equal(nodes.error.textContent, 'Could not save guest request decision.');
+  assert.equal(nodes.error.classList.values.has('d-none'), false);
+  assert.equal(nodes.success.classList.values.has('d-none'), true);
+
+  page.showFeedback('success', 'Guest request approved and released.');
+  assert.equal(nodes.success.textContent, 'Guest request approved and released.');
+  assert.equal(nodes.success.classList.values.has('d-none'), false);
+  assert.equal(nodes.error.classList.values.has('d-none'), true);
+});
+
 test('admin staff service preserves candidate search and role-management fields', async () => {
   const calls = [];
   const api = {
@@ -277,6 +347,60 @@ test('admin staff service preserves candidate search and role-management fields'
   assert.equal(AdminStaffPage.name, 'AdminStaffPage');
   assert.equal(typeof AdminStaffPage.prototype.render, 'function');
   assert.equal(typeof AdminStaffPage.prototype.bindAdminActions, 'function');
+});
+
+test('staff management keeps feedback hidden and gives the workflow scoped presentation hooks', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const template = fs.readFileSync(path.join(root, 'features/staff/pages/admin-staff/admin-staff.html'), 'utf8');
+
+  assert.match(template, /class="alert alert-success d-none staff-management__feedback/);
+  assert.match(template, /class="alert alert-danger d-none staff-management__feedback/);
+  assert.match(template, /staff-management\.css/);
+  assert.match(template, /staff-management__section/);
+  assert.match(template, /staff-management__workflow-note/);
+});
+
+test('staff management rows expose grouped actions and readable status hooks', () => {
+  const page = Object.create(AdminStaffPage.prototype);
+  const staffRow = page.staffRows([{
+    id: 4,
+    barcode: 'ADMIN001',
+    name: 'Library Admin',
+    role: 'admin',
+    email: 'admin@example.test',
+    status: 'active',
+  }]);
+  const borrowerRow = page.borrowerRows([{ id: 9, barcode: '2024001', name: 'Student One', course: 'BSIT' }]);
+
+  assert.match(staffRow, /staff-management__actions/);
+  assert.match(staffRow, /staff-management__status staff-management__status--active/);
+  assert.match(borrowerRow, /staff-management__promote-action/);
+});
+
+test('staff management feedback shows one labeled result at a time', () => {
+  const makeAlert = () => ({
+    textContent: '',
+    classList: {
+      names: new Set(['d-none']),
+      add(name) { this.names.add(name); },
+      remove(name) { this.names.delete(name); },
+      contains(name) { return this.names.has(name); },
+    },
+  });
+  const success = makeAlert();
+  const error = makeAlert();
+  const page = Object.create(AdminStaffPage.prototype);
+  page.root = { querySelector: (selector) => selector.includes('success') ? success : error };
+
+  page.showFeedback('success', 'Saved.');
+  assert.equal(success.textContent, 'Saved.');
+  assert.equal(success.classList.contains('d-none'), false);
+  assert.equal(error.classList.contains('d-none'), true);
+
+  page.showFeedback('error', 'Failed.');
+  assert.equal(error.textContent, 'Failed.');
+  assert.equal(error.classList.contains('d-none'), false);
+  assert.equal(success.classList.contains('d-none'), true);
 });
 
 test('API docs page preserves grouped search/rendering boundaries', () => {

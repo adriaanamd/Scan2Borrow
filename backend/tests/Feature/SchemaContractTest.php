@@ -77,7 +77,7 @@ final class SchemaContractTest extends TestCase
             'upgrade.sql', 'upgrade_add_teacher_fields.sql', 'upgrade_approval_system.sql',
             'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
-            'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
+            'upgrade_return_approval.sql', 'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
             'upgrade_profile_change_requests.sql', 'upgrade_approval_status_sync.sql', 'upgrade_search_recommendations.sql',
         ] as $filename) {
             $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . $filename;
@@ -109,6 +109,14 @@ final class SchemaContractTest extends TestCase
         self::assertStringContainsString('upgrade_return_approval.sql', $this->readRoot('README.md'));
         self::assertStringContainsString('information_schema.tables', $migration);
         self::assertStringContainsString('visitor_borrowing_exists', $migration);
+    }
+
+    public function testReturnApprovalMigrationGuardsOptionalNormalizedTables(): void
+    {
+        $migration = $this->readSql('upgrade_return_approval.sql');
+
+        self::assertStringContainsString('borrowing_transactions_exists', $migration);
+        self::assertStringContainsString('borrowing_items_exists', $migration);
     }
 
     private function readRoot(string $filename): string

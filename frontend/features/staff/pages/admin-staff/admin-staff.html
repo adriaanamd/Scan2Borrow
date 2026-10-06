@@ -17,6 +17,7 @@
       rel="stylesheet"
     />
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/assets/css/staff-management.css" rel="stylesheet" />
     <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
     <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
     <script
@@ -24,7 +25,7 @@
       defer
     ></script>
   </head>
-  <body data-app-page="staff-admin-staff">
+  <body data-app-page="staff-admin-staff" class="staff-management-page">
     <div class="app">
       <aside class="sidebar" data-app-navbar data-navbar-role="session">
       </aside>
@@ -37,25 +38,27 @@
           <div class="page-head">
             <div class="d-flex justify-content-between align-items-center">
               <div>
+                <p class="staff-management__eyebrow mb-2">Administration</p>
                 <h3 class="mb-1">Staff Management</h3>
-                <p class="text-muted mb-0">
-                  Manage librarian / administrator accounts and assign staff
-                  roles.
-                </p>
+                <p class="text-muted mb-0">Manage access, roles, and staff account status.</p>
               </div>
               <div></div>
             </div>
           </div>
 
-          <div class="alert alert-success"></div>
-          <div class="alert alert-danger"></div>
+          <div class="alert alert-success d-none staff-management__feedback" role="status" aria-live="polite"></div>
+          <div class="alert alert-danger d-none staff-management__feedback" role="alert" aria-live="assertive"></div>
 
-          <div class="table-card mb-4">
-            <div class="section-title">
-              <span class="dot"></span> Staff Accounts
+          <div class="table-card mb-4 staff-management__section staff-management__section--accounts">
+            <div class="staff-management__section-heading">
+              <div>
+                <div class="section-title mb-1"><span class="dot"></span> Staff Accounts</div>
+                <p class="staff-management__section-description mb-0">Active administrator and librarian accounts.</p>
+              </div>
+              <span class="staff-management__section-label">Account directory</span>
             </div>
             <div class="table-responsive">
-              <table class="table table-hover align-middle">
+              <table class="table table-hover align-middle staff-management__table">
                 <thead>
                   <tr>
                     <th>ID Barcode</th>
@@ -67,83 +70,23 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td colspan="6" class="text-center text-muted">
-                      No staff accounts.
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td></td>
-                    <td>
-                      <span class="badge bg-light text-muted border">you</span>
-                    </td>
-                    <td><span class="badge bg-"></span></td>
-                    <td class="text-muted small"></td>
-                    <td></td>
-                    <td class="text-nowrap">
-                      <span class="text-muted small">&mdash;</span>
-
-                      <button
-                        class="btn btn-outline-secondary btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#pwModal"
-                        data-uid=""
-                        data-name=""
-                      >
-                        Reset Password
-                      </button>
-                      <form
-                        method="POST"
-                        class="d-inline"
-                        data-confirm-action="toggle_status"
-                        data-confirm-title="Change account status"
-                        data-confirm-message="Change this staff account status?"
-                        data-confirm-label="Change status"
-                        data-confirm-class="btn-warning"
-                      >
-                        <input type="hidden" name="user_id" value="" />
-                        <input
-                          type="hidden"
-                          name="action"
-                          value="toggle_status"
-                        />
-                        <button class="btn btn-outline-warning btn-sm"></button>
-                      </form>
-
-                      <form
-                        method="POST"
-                        class="d-inline"
-                        data-confirm-action="demote"
-                        data-confirm-title="Demote staff account"
-                        data-confirm-message="Change this librarian back to a borrower?"
-                        data-confirm-label="Demote"
-                        data-confirm-class="btn-danger"
-                      >
-                        <input type="hidden" name="user_id" value="" />
-                        <input type="hidden" name="action" value="demote" />
-                        <button class="btn btn-outline-danger btn-sm">
-                          Demote
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
+                  <tr><td colspan="6" class="staff-management__loading text-center text-muted">Loading staff accounts…</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div class="table-card">
-            <div class="section-title">
-              <span class="dot"></span> Assign Staff Role
+          <div class="table-card mb-4 staff-management__section staff-management__section--assign">
+            <div class="staff-management__section-heading">
+              <div>
+                <div class="section-title mb-1"><span class="dot"></span> Assign Staff Role</div>
+                <p class="staff-management__section-description mb-0">Give a registered borrower access to the staff portal.</p>
+              </div>
+              <span class="staff-management__section-label">Role assignment</span>
             </div>
-            <p class="text-muted small">
-              Pick a registered borrower and promote them to Librarian. They
-              will use the <strong>Staff Login</strong> with the password you
-              set.
-            </p>
+            <p class="staff-management__workflow-note">Search for a borrower, choose a role, and set the password they will use on Staff Login.</p>
 
-            <form method="GET" class="mb-3" style="max-width: 380px">
+            <form method="GET" class="staff-management__search mb-3">
               <div class="input-group">
                 <input
                   type="text"
@@ -156,13 +99,12 @@
                 <a
                   href="/scan2borrow/admin/staff"
                   class="btn btn-outline-secondary"
-                  >Clear</a
-                >
+                  >Clear</a>
               </div>
             </form>
 
             <div class="table-responsive">
-              <table class="table table-hover align-middle">
+              <table class="table table-hover align-middle staff-management__table">
                 <thead>
                   <tr>
                     <th>ID Barcode</th>
@@ -172,34 +114,13 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td colspan="4" class="text-center text-muted">
-                      No borrowers found.
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td></td>
-                    <td></td>
-                    <td class="text-muted"></td>
-                    <td>
-                      <button
-                        class="btn btn-gradient btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#promoteModal"
-                        data-uid=""
-                        data-name=""
-                      >
-                        &#128081; Promote to Librarian
-                      </button>
-                    </td>
-                  </tr>
+                  <tr><td colspan="4" class="staff-management__loading text-center text-muted">Search for a borrower to assign a staff role.</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div class="table-card profile-approval-card mb-4">
+          <div class="table-card profile-approval-card mb-4 staff-management__section">
             <div class="section-title"><span class="dot"></span> Profile Change Requests</div>
             <p class="text-muted small">Review student and teacher updates before they become active. Only administrators can approve these requests.</p>
             <div class="table-responsive">
@@ -228,7 +149,7 @@
                     class="modal-header text-white"
                     style="background: var(--primary)"
                   >
-                    <h5 class="modal-title">&#128081; Promote to Staff</h5>
+                    <h5 class="modal-title">Promote to Staff</h5>
                     <button
                       type="button"
                       class="btn-close btn-close-white"

@@ -3,7 +3,7 @@
     "description": "Scan2Borrow framework-free PHP modular monolith backend",
     "type": "project",
     "require": {
-        "php": ">=8.2"
+        "php": ">=8.2.35 <8.3 || >=8.3.36 <8.4 || >=8.4.27 <8.5 || >=8.5.12 <9"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.5",

@@ -1,6 +1,6 @@
 # Scan2Borrow
 
-Scan2Borrow is a library management and borrowing system for Binalbagan Catholic College. It uses a vanilla HTML/CSS/JavaScript frontend with a framework-free PHP 8.2 modular-monolith backend and the existing MySQL schema.
+Scan2Borrow is a library management and borrowing system for Binalbagan Catholic College. It uses a vanilla HTML/CSS/JavaScript frontend with a framework-free modular-monolith backend and the existing MySQL schema. The backend requires a PHP2Shell-patched runtime: PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ on the matching branch.
 
 ## Run locally
 
@@ -10,6 +10,10 @@ Scan2Borrow is a library management and borrowing system for Binalbagan Catholic
 4. Start Apache and MySQL in XAMPP and open `http://localhost/scan2borrow/`.
 
 Apache sends clean page and API routes through `backend/public/index.php`. Page files are feature-owned static HTML under `frontend/features`; they are streamed only after the server-side session and role policy has allowed the request.
+
+### PHP runtime security
+
+PHP2Shell (CVE-2026-109618 and CVE-2026-109619) is fixed in the PHP patch releases listed above. Upgrade the PHP runtime and restart every Apache/PHP worker before serving the application; the backend entrypoint also fails closed when an older or unknown branch is detected.
 
 ### Gmail registration email
 

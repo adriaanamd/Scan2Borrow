@@ -1,0 +1,36 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: PHP quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up patched PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5.12"
+          extensions: mbstring, pdo_mysql, pdo_sqlite, sqlite3
+          tools: composer:v2
+
+      - name: Validate Composer files
+        run: composer validate --no-check-publish
+
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run backend quality gate
+        run: timeout 110s composer run quality

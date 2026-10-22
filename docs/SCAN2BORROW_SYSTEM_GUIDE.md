@@ -22,7 +22,7 @@ The main user groups are:
 | Librarian | Operate daily library workflows: inventory, circulation, approvals, returns, reports, printing, and history. |
 | Admin | Everything a librarian can do, plus staff management, API documentation, and profile-change approval. |
 
-The application has a vanilla HTML/CSS/JavaScript frontend, a framework-free PHP 8.2 backend, and a MySQL/MariaDB database.
+The application has a vanilla HTML/CSS/JavaScript frontend, a framework-free PHP backend, and a MySQL/MariaDB database.
 
 ## 2. Required software
 
@@ -31,7 +31,7 @@ Install or have access to:
 - Windows
 - XAMPP installed at C:\xampp
 - Apache and MySQL enabled in XAMPP
-- PHP 8.2 or newer
+- PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ on the matching branch
 - Node.js and npm
 - A modern browser
 - A camera if testing barcode or photo capture
@@ -41,6 +41,8 @@ All commands in this guide assume the project is here:
 ~~~text
 C:\xampp\htdocs\scan2borrow
 ~~~
+
+PHP2Shell (CVE-2026-109618 and CVE-2026-109619) is fixed in those PHP patch releases. After upgrading PHP, restart Apache and every PHP worker before opening the application.
 
 If the project is in another folder, replace the path in the commands and browser URLs.
 

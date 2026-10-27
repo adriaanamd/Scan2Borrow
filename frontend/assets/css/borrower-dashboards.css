@@ -1051,4 +1051,13 @@
   .borrower-dashboard--teacher .teacher-dashboard__insight-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .borrower-dashboard--student .student-dashboard__hero,
+  .borrower-dashboard--teacher .teacher-dashboard__hero {
+    padding: 1rem;
+  }
+
+  .borrower-dashboard__hero-title {
+    overflow-wrap: anywhere;
+  }
 }

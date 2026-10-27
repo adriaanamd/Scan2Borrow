@@ -88,3 +88,10 @@ test("borrower dashboard grids collapse at 290px", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__stats,[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__work-grid,[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
 });
+
+test("borrower dashboard hero actions stay inside narrow cards", () => {
+  const source = read("frontend/assets/css/borrower-dashboards.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard--student \.student-dashboard__hero,\s*\.borrower-dashboard--teacher \.teacher-dashboard__hero\s*\{[^}]*padding:\s*1rem;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__hero-title\s*\{[^}]*overflow-wrap:\s*anywhere;/s);
+});

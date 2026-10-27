@@ -34,6 +34,26 @@ test("staff report controls stack within a 290px document", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.report-pagination__controls\s*\{[^}]*flex-wrap:\s*wrap;[^}]*width:\s*100%;/s);
 });
 
+test("audited feature styles declare the narrow mobile breakpoint", () => {
+  const featureStyles = [
+    "frontend/assets/css/style.css",
+    "frontend/assets/css/borrower-dashboards.css",
+    "frontend/assets/css/student-history.css",
+    "frontend/assets/css/teacher-history.css",
+    "frontend/assets/css/student-search.css",
+    "frontend/assets/css/teacher-search.css",
+    "frontend/assets/css/teacher-library-surfaces.css",
+    "frontend/assets/css/staff-management.css",
+    "frontend/assets/css/guest-requests.css",
+    "frontend/assets/css/api-docs.css",
+    "frontend/assets/css/staff-reports.css",
+  ];
+
+  for (const stylesheet of featureStyles) {
+    assert.match(read(stylesheet), /@media\s*\(max-width:\s*320px\)/, stylesheet);
+  }
+});
+
 test("shared shell flex children can shrink below their content width", () => {
   const source = read("frontend/assets/css/style.css");
 

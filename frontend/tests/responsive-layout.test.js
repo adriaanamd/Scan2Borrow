@@ -109,3 +109,10 @@ test("student history keeps its wide ledger inside a scroll boundary", () => {
   assert.match(source, /\.student-history-ledger__table\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-history-ledger__header\s*\{[^}]*align-items:\s*flex-start;[^}]*flex-direction:\s*column;/s);
 });
+
+test("teacher history keeps its wide ledger inside a scroll boundary", () => {
+  const source = read("frontend/assets/css/teacher-history.css");
+
+  assert.match(source, /\.teacher-history-ledger__table\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-history-ledger__header\s*\{[^}]*align-items:\s*flex-start;[^}]*flex-direction:\s*column;/s);
+});

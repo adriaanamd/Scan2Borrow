@@ -102,3 +102,10 @@ test("borrower dashboard data rails contain wide internals", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__table\s*\{[^}]*max-width:\s*100%;[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__loan-actions\s*\{[^}]*min-width:\s*0;/s);
 });
+
+test("student history keeps its wide ledger inside a scroll boundary", () => {
+  const source = read("frontend/assets/css/student-history.css");
+
+  assert.match(source, /\.student-history-ledger__table\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-history-ledger__header\s*\{[^}]*align-items:\s*flex-start;[^}]*flex-direction:\s*column;/s);
+});

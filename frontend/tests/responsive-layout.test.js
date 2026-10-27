@@ -41,3 +41,11 @@ test("page headers allow their text and actions to shrink", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.page-head\s*\{[^}]*gap:\s*8px;[^}]*padding-left:\s*10px;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.page-head\s+\.btn\s*\{[^}]*white-space:\s*normal;/s);
 });
+
+test("shared cards and stat cards do not preserve wide child minimums", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /\.card,\s*\.soft-card,\s*\.table-card\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /\.card\s*>\s*\*,\s*\.soft-card\s*>\s*\*,\s*\.table-card\s*>\s*\*\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /\.stat-card\s*>\s*\*\s*\{[^}]*min-width\s*:\s*0/s);
+});

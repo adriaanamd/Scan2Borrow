@@ -17,3 +17,11 @@ test("shared stylesheet permits a 290px document viewport", () => {
   assert.doesNotMatch(source, /html\s*\{[^}]*min-width\s*:\s*(?:29[1-9]|[3-9]\d{2,})px/s);
   assert.doesNotMatch(source, /body\s*\{[^}]*min-width\s*:\s*(?:29[1-9]|[3-9]\d{2,})px/s);
 });
+
+test("shared shell flex children can shrink below their content width", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /\.app\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /\.topbar-title\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /\.topbar-user\s*\{[^}]*min-width\s*:\s*0/s);
+});

@@ -278,4 +278,17 @@
     overflow-wrap: anywhere;
     white-space: normal;
   }
+
+  .teacher-search-page .teacher-borrow-modal .modal-header,
+  .teacher-search-page .teacher-borrow-modal .modal-body,
+  .teacher-search-page .teacher-borrow-modal .modal-footer {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .teacher-search-page .teacher-borrow-modal__cart-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .4rem;
+  }
 }

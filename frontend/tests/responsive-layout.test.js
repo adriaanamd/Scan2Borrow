@@ -137,3 +137,10 @@ test("teacher search headers and result cards wrap at 290px", () => {
   assert.match(source, /\.teacher-search-page \.teacher-search-recommendations__state\s*>\s*\.row\s*>\s*\*,\s*\.teacher-search-page \.teacher-search-results__state\s*>\s*\.row\s*>\s*\*\s*\{[^}]*min-width:\s*0;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-page \.teacher-search-results__range\s*\{[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*normal;/s);
 });
+
+test("teacher borrow modal content wraps at 290px", () => {
+  const source = read("frontend/assets/css/teacher-search.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-page \.teacher-borrow-modal \.modal-header,\s*\.teacher-search-page \.teacher-borrow-modal \.modal-body,\s*\.teacher-search-page \.teacher-borrow-modal \.modal-footer\s*\{[^}]*padding-left:\s*10px;[^}]*padding-right:\s*10px;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-page \.teacher-borrow-modal__cart-heading\s*\{[^}]*align-items:\s*flex-start;[^}]*flex-direction:\s*column;/s);
+});

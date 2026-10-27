@@ -22,7 +22,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-width: 320px; }
+html { min-width: 0; }
 body {
     margin: 0;
     background-color: var(--app-bg);

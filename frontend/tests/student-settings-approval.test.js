@@ -21,3 +21,18 @@ test('student settings controller exposes request and safe rendering boundaries'
   assert.match(source, /profile-request/);
   assert.match(source, /safePhotoPath/);
 });
+
+test('student settings owns an Organic presentation without touching teacher settings', () => {
+  const studentCss = fs.readFileSync(path.join(root, 'settings.css'), 'utf8');
+  const teacherCss = fs.readFileSync(
+    path.resolve(root, '../../../teacher/pages/settings/settings.css'),
+    'utf8',
+  );
+
+  assert.match(studentCss, /\[data-page="student-settings"\][\s\S]*font-family:\s*Epilogue/);
+  assert.match(studentCss, /\[data-page="student-settings"\][\s\S]*font-family:\s*Fraunces/);
+  assert.match(studentCss, /\[data-page="student-settings"\][\s\S]*border-radius:\s*22px/);
+  assert.match(studentCss, /@media\s*\(max-width:\s*320px\)/);
+  assert.doesNotMatch(studentCss, /data-page="teacher-settings"/);
+  assert.match(teacherCss, /data-page="teacher-settings"/);
+});

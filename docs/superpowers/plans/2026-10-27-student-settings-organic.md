@@ -38,7 +38,7 @@ Append this test to `frontend/tests/student-settings-approval.test.js`:
 test('student settings owns an Organic presentation without touching teacher settings', () => {
   const studentCss = fs.readFileSync(path.join(root, 'settings.css'), 'utf8');
   const teacherCss = fs.readFileSync(
-    path.resolve(root, '../../../../teacher/pages/settings/settings.css'),
+    path.resolve(root, '../../../teacher/pages/settings/settings.css'),
     'utf8',
   );
 

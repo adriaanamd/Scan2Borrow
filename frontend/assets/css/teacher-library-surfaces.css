@@ -238,6 +238,17 @@
   }
 }
 
+@media (max-width: 320px) {
+  .teacher-library-masthead {
+    padding: 1rem;
+  }
+
+  .teacher-search-filters__grid > div {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .teacher-library-page *,
   .teacher-library-page *::before,

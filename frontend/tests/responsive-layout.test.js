@@ -144,3 +144,10 @@ test("teacher borrow modal content wraps at 290px", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-page \.teacher-borrow-modal \.modal-header,\s*\.teacher-search-page \.teacher-borrow-modal \.modal-body,\s*\.teacher-search-page \.teacher-borrow-modal \.modal-footer\s*\{[^}]*padding-left:\s*10px;[^}]*padding-right:\s*10px;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-page \.teacher-borrow-modal__cart-heading\s*\{[^}]*align-items:\s*flex-start;[^}]*flex-direction:\s*column;/s);
 });
+
+test("teacher library filters fit within a 290px panel", () => {
+  const source = read("frontend/assets/css/teacher-library-surfaces.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-library-masthead\s*\{[^}]*padding:\s*1rem;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-filters__grid\s*>\s*div\s*\{[^}]*min-width:\s*0;[^}]*width:\s*100%;/s);
+});

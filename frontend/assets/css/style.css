@@ -140,6 +140,8 @@ hr { border-color: var(--border); opacity: 1; }
 .btn-info { background: var(--sky); border-color: #a7ccdc; color: var(--primary-dark); }
 .badge { font-size: .72rem; font-weight: 750; letter-spacing: .015em; padding: .48em .72em; }
 
+.input-group { min-width: 0; }
+.input-group > .form-control, .input-group > .form-select { min-width: 0; }
 .form-label { color: var(--navy); font-size: .78rem; font-weight: 750; letter-spacing: .015em; }
 .form-control, .form-select { background-color: #fff; border-color: var(--border-strong); border-radius: 4px; color: var(--text); min-height: 42px; }
 .form-control::placeholder { color: #7f95a5; }
@@ -333,6 +335,7 @@ hr { border-color: var(--border); opacity: 1; }
     .auth-wrap { padding: 8px; }
     .page-head { gap: 8px; padding-left: 10px; }
     .page-head .btn { white-space: normal; }
+    .form-control, .form-select, .btn { max-width: 100%; }
 }
 
 /* Reservation queue: a compact Swiss circulation surface scoped to the component. */

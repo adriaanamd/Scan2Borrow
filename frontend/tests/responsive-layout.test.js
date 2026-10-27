@@ -49,3 +49,11 @@ test("shared cards and stat cards do not preserve wide child minimums", () => {
   assert.match(source, /\.card\s*>\s*\*,\s*\.soft-card\s*>\s*\*,\s*\.table-card\s*>\s*\*\s*\{[^}]*min-width\s*:\s*0/s);
   assert.match(source, /\.stat-card\s*>\s*\*\s*\{[^}]*min-width\s*:\s*0/s);
 });
+
+test("shared form controls can shrink inside narrow rows", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /\.input-group\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /\.input-group\s*>\s*\.form-control,\s*\.input-group\s*>\s*\.form-select\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.form-control,\s*\.form-select,\s*\.btn\s*\{[^}]*max-width:\s*100%;/s);
+});

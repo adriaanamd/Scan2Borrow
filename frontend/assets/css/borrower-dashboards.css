@@ -1042,3 +1042,13 @@
   .borrower-dashboard--student .student-dashboard__hero .d-flex.gap-2 .btn,
   .borrower-dashboard--teacher .teacher-dashboard__hero .d-flex.gap-2 .btn { width: 100%; }
 }
+
+@media (max-width: 320px) {
+  .borrower-dashboard__stats,
+  .borrower-dashboard__work-grid,
+  .borrower-dashboard--student .student-dashboard__work-grid,
+  .borrower-dashboard--teacher .teacher-dashboard__analytics-grid,
+  .borrower-dashboard--teacher .teacher-dashboard__insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

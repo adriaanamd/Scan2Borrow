@@ -81,3 +81,10 @@ test("dense tables scroll inside their existing surfaces", () => {
   assert.match(source, /\.table-card\s*>\s*\.table-responsive\s*\{[^}]*min-width\s*:\s*0;[^}]*max-width\s*:\s*100%;[^}]*overflow-x\s*:\s*auto/s);
   assert.match(source, /\.table-responsive\s*\{[^}]*max-width\s*:\s*100%;[^}]*overflow-x\s*:\s*auto/s);
 });
+
+test("borrower dashboard grids collapse at 290px", () => {
+  const source = read("frontend/assets/css/borrower-dashboards.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__stats,[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.borrower-dashboard__work-grid,[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\);/s);
+});

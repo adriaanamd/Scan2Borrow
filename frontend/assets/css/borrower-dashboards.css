@@ -1060,4 +1060,14 @@
   .borrower-dashboard__hero-title {
     overflow-wrap: anywhere;
   }
+
+  .borrower-dashboard__table {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .borrower-dashboard__loan-actions {
+    min-width: 0;
+  }
 }

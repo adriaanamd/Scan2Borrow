@@ -6,11 +6,11 @@ Students and teachers must be able to borrow a book by typing or pasting its phy
 
 ## Context
 
-The backend already exposes role-specific barcode lookup routes and accepts the resulting copy barcode in the existing bulk-borrow payload. The student borrow modal already keeps its text input separate from the scanner trigger. The teacher modal currently places `data-scan-target` on the text input itself, which lets the global scanner click handler intercept clicks intended for typing.
+The backend already exposes role-specific barcode lookup routes and accepts the resulting copy barcode in the existing bulk-borrow payload. The dashboard borrow modals already separate their text inputs from the scanner trigger, but the student and teacher catalog borrow modals place `data-scan-target` on the text input itself. That lets the global scanner click handler intercept clicks intended for typing.
 
 ## Chosen approach
 
-Keep the existing lookup, cart, and borrow-request architecture and make the input actions explicit in both role surfaces:
+Keep the existing lookup, cart, and borrow-request architecture and make the input actions explicit in every borrower surface:
 
 - The barcode input is a normal text input with no scanner target.
 - `Add copy` performs the existing lookup-and-add path.
@@ -18,11 +18,13 @@ Keep the existing lookup, cart, and borrow-request architecture and make the inp
 - A separate `Scan with camera` button carries `data-scan-target="bulk-scan-barcode"`.
 - A successful scan fills the input and returns focus to it; the user then confirms with `Add copy`.
 
+Apply the same contract to the student dashboard, student catalog, teacher dashboard, and teacher catalog borrow modals. Where the dashboard markup already has a separate scanner button, retain that structure and make its label explicit.
+
 This is intentionally a markup-level fix. A shared component or mode toggle would add refactoring and state without improving the requested behavior.
 
 ## Architecture and data flow
 
-The student dashboard continues to use `StudentDashboardPage.lookupAndAdd()` and the student lookup route. The teacher catalog continues to use `BorrowerSearchPage.lookupAndAdd()` and the teacher lookup route. Both flows continue to add the resolved copy to `BulkBorrowCart`, render the cart, and submit the existing `items[...][title_id]`, `quantity`, and `barcodes[]` fields with CSRF protection.
+The student dashboard continues to use `StudentDashboardPage.lookupAndAdd()` and the student dashboard endpoint. The student catalog and teacher catalog continue to use `BorrowerSearchPage.lookupAndAdd()` and their role-specific lookup routes. The teacher dashboard continues to use its existing dashboard controller and endpoint. All four flows continue to add the resolved copy to `BulkBorrowCart`, render the cart, and submit the existing `items[...][title_id]`, `quantity`, and `barcodes[]` fields with CSRF protection.
 
 The global scanner helper remains unchanged. It is activated only through the dedicated camera button and does not need to know whether the borrower is a student or teacher.
 
@@ -39,7 +41,7 @@ Preserve the current role-specific modal styling, spacing, and button classes. T
 
 ## Verification
 
-Add frontend contract assertions for both student and teacher borrow modals confirming:
+Add frontend contract assertions for all four student/teacher borrow modals confirming:
 
 1. The text input does not carry `data-scan-target`.
 2. A separate camera button targets the text input.

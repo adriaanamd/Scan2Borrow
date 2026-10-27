@@ -189,10 +189,11 @@
                   </div>
                   <div class="modal-body">
                     <div id="borrow-error" class="alert alert-danger" hidden></div>
-                    <label class="form-label fw-semibold">Scan a copy</label>
+                    <label class="form-label fw-semibold" for="bulk-scan-barcode">Scan a copy</label>
                     <div class="input-group mb-3">
-                      <input id="bulk-scan-barcode" class="form-control" placeholder="Scan barcode to add a copy" data-scan-target="bulk-scan-barcode" />
-                      <button type="button" id="bulk-scan-add" class="btn btn-outline-secondary">Add</button>
+                      <input id="bulk-scan-barcode" class="form-control" placeholder="Scan barcode to add a copy" />
+                      <button type="button" id="bulk-scan-add" class="btn btn-outline-secondary">Add copy</button>
+                      <button type="button" id="bulk-scan-camera" class="btn btn-outline-secondary" data-scan-target="bulk-scan-barcode" aria-label="Scan with camera">Scan with camera</button>
                     </div>
                     <div class="d-flex justify-content-between mb-2"><strong>Borrow cart</strong><span><span id="bulkBorrowCount">0</span> book(s)</span></div>
                     <div id="bulkBorrowItems" class="mb-2"></div>

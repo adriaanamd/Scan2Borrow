@@ -213,7 +213,8 @@ hr { border-color: var(--border); opacity: 1; }
 .section-title { align-items: center; display: flex; font-size: 15px; font-weight: 750; gap: 8px; margin: 0 0 14px; }
 .section-title .dot { background: var(--accent); border-radius: 1px; box-shadow: none; height: 8px; width: 8px; }
 
-.modal-content, .offcanvas { border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-lg); }
+.modal-content, .offcanvas { border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-lg); min-width: 0; }
+.modal-header > *, .modal-body > *, .modal-footer > * { min-width: 0; }
 .modal-header, .offcanvas-header { background: var(--navy) !important; border-bottom: 4px solid var(--accent); color: #fff; }
 .modal-title, .offcanvas-title, .modal-header h1, .modal-header h2, .modal-header h3, .modal-header h4, .modal-header h5, .modal-header h6 { color: #fff; }
 .modal-body, .offcanvas-body { color: var(--text); }
@@ -336,6 +337,8 @@ hr { border-color: var(--border); opacity: 1; }
     .page-head { gap: 8px; padding-left: 10px; }
     .page-head .btn { white-space: normal; }
     .form-control, .form-select, .btn { max-width: 100%; }
+    .modal-dialog { margin: .5rem; }
+    .modal-header, .modal-body, .modal-footer { padding-left: 10px; padding-right: 10px; }
 }
 
 /* Reservation queue: a compact Swiss circulation surface scoped to the component. */

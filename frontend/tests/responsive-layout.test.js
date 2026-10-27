@@ -57,3 +57,12 @@ test("shared form controls can shrink inside narrow rows", () => {
   assert.match(source, /\.input-group\s*>\s*\.form-control,\s*\.input-group\s*>\s*\.form-select\s*\{[^}]*min-width\s*:\s*0/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.form-control,\s*\.form-select,\s*\.btn\s*\{[^}]*max-width:\s*100%;/s);
 });
+
+test("modal surfaces keep their content inside the narrow viewport", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /\.modal-content,\s*\.offcanvas\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /\.modal-header\s*>\s*\*,\s*\.modal-body\s*>\s*\*,\s*\.modal-footer\s*>\s*\*\s*\{[^}]*min-width\s*:\s*0/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.modal-dialog\s*\{[^}]*margin:\s*\.5rem;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.modal-header,\s*\.modal-body,\s*\.modal-footer\s*\{[^}]*padding-left:\s*10px;[^}]*padding-right:\s*10px;/s);
+});

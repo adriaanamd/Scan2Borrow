@@ -66,3 +66,11 @@ test("modal surfaces keep their content inside the narrow viewport", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.modal-dialog\s*\{[^}]*margin:\s*\.5rem;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.modal-header,\s*\.modal-body,\s*\.modal-footer\s*\{[^}]*padding-left:\s*10px;[^}]*padding-right:\s*10px;/s);
 });
+
+test("authentication panels retain usable proportions at 290px", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.auth-brand-panel\s*\{[^}]*padding:\s*20px\s+12px;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.auth-brand-logo\s*\{[^}]*height:\s*88px;[^}]*width:\s*88px;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.auth-panel\s*\{[^}]*padding:\s*18px\s+12px\s+22px;/s);
+});

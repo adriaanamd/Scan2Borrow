@@ -339,6 +339,9 @@ hr { border-color: var(--border); opacity: 1; }
     .form-control, .form-select, .btn { max-width: 100%; }
     .modal-dialog { margin: .5rem; }
     .modal-header, .modal-body, .modal-footer { padding-left: 10px; padding-right: 10px; }
+    .auth-brand-panel { min-height: 190px; padding: 20px 12px; }
+    .auth-brand-logo { height: 88px; margin-bottom: 12px; width: 88px; }
+    .auth-panel { padding: 18px 12px 22px; }
 }
 
 /* Reservation queue: a compact Swiss circulation surface scoped to the component. */

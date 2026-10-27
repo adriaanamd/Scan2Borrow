@@ -74,3 +74,10 @@ test("authentication panels retain usable proportions at 290px", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.auth-brand-logo\s*\{[^}]*height:\s*88px;[^}]*width:\s*88px;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.auth-panel\s*\{[^}]*padding:\s*18px\s+12px\s+22px;/s);
 });
+
+test("dense tables scroll inside their existing surfaces", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /\.table-card\s*>\s*\.table-responsive\s*\{[^}]*min-width\s*:\s*0;[^}]*max-width\s*:\s*100%;[^}]*overflow-x\s*:\s*auto/s);
+  assert.match(source, /\.table-responsive\s*\{[^}]*max-width\s*:\s*100%;[^}]*overflow-x\s*:\s*auto/s);
+});

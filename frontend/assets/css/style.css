@@ -118,7 +118,8 @@ hr { border-color: var(--border); opacity: 1; }
 .table tbody td { border-color: var(--border); font-size: .86rem; padding: 13px 14px; }
 .table tbody tr { transition: background-color .14s ease; }
 .table tbody tr:hover { --bs-table-hover-bg: var(--sky); }
-.table-card > .table-responsive { border: 1px solid var(--border); border-radius: 5px; }
+.table-card > .table-responsive { border: 1px solid var(--border); border-radius: 5px; min-width: 0; max-width: 100%; overflow-x: auto; }
+.table-responsive { max-width: 100%; overflow-x: auto; }
 .table-card .table { margin-bottom: 0; }
 .row-overdue { background: #fff4f3 !important; }
 

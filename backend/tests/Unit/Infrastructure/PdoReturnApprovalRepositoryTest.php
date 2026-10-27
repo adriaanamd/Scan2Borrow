@@ -145,4 +145,27 @@ final class PdoReturnApprovalRepositoryTest extends TestCase
             self::assertSame('Borrowed', $item['status']);
         }
     }
+
+    public function testApprovalPersistenceFailureReportsTheUnderlyingDatabaseError(): void
+    {
+        $reported = [];
+        $reporter = static function (string $type, int $id, string $action, \Throwable $exception) use (&$reported): void {
+            $reported = compact('type', 'id', 'action', 'exception');
+        };
+        $repository = new PdoReturnApprovalRepository($this->pdo, null, $reporter);
+
+        try {
+            $repository->decide('borrower_item', 1, 'approve', 19, 10.0, '', static function (): void {
+                throw new \RuntimeException('Reservation offer failed.');
+            });
+        } catch (\RuntimeException) {
+            // The public error remains generic; the reporter receives the root cause.
+        }
+
+        self::assertSame('borrower_item', $reported['type'] ?? null);
+        self::assertSame(1, $reported['id'] ?? null);
+        self::assertSame('approve', $reported['action'] ?? null);
+        self::assertInstanceOf(\RuntimeException::class, $reported['exception'] ?? null);
+        self::assertSame('Reservation offer failed.', $reported['exception']->getMessage());
+    }
 }

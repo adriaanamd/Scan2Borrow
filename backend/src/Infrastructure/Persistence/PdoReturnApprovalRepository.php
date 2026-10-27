@@ -16,6 +16,7 @@ final class PdoReturnApprovalRepository implements ReturnApprovalRepositoryInter
     public function __construct(
         private readonly PDO $pdo,
         private readonly ?AuditEventRepositoryInterface $audit = null,
+        private readonly ?Closure $failureReporter = null,
     ) {
     }
 
@@ -122,8 +123,26 @@ final class PdoReturnApprovalRepository implements ReturnApprovalRepositoryInter
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
+            $this->reportFailure($type, $id, $action, $exception);
             throw new RuntimeException('Return decision could not be saved.', 0, $exception);
         }
+    }
+
+    private function reportFailure(string $type, int $id, string $action, \Throwable $exception): void
+    {
+        if ($this->failureReporter !== null) {
+            ($this->failureReporter)($type, $id, $action, $exception);
+
+            return;
+        }
+
+        error_log(sprintf(
+            'Scan2Borrow return decision failed (%s:%d:%s): %s',
+            $type,
+            $id,
+            $action,
+            $exception->getMessage(),
+        ));
     }
 
     /**

@@ -131,6 +131,10 @@ final class PdoHoldRepository implements HoldRepositoryInterface
 
     public function nextEligibleQueued(int $titleId): ?HoldRecord
     {
+        if (!$this->hasTable('reservations')) {
+            return null;
+        }
+
         $statement = $this->pdo->prepare($this->selectSql(
             "r.title_id = :title_id AND r.status = 'queued' AND u.status = 'active'",
         ) . ' ORDER BY r.queue_sequence ASC LIMIT 1');
@@ -292,5 +296,17 @@ final class PdoHoldRepository implements HoldRepositoryInterface
     private function forUpdate(string $query): string
     {
         return $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? $query . ' FOR UPDATE' : $query;
+    }
+
+    private function hasTable(string $table): bool
+    {
+        if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $statement = $this->pdo->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1");
+        } else {
+            $statement = $this->pdo->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table LIMIT 1');
+        }
+        $statement->execute(['table' => $table]);
+
+        return $statement->fetchColumn() !== false;
     }
 }

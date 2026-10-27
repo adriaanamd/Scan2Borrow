@@ -65,6 +65,13 @@ final class PdoHoldRepositoryReservationTest extends TestCase
         self::assertNull((new PdoHoldRepository($this->pdo))->findActiveForUserTitle(7, 4));
     }
 
+    public function testMissingReservationsTableBehavesAsNoQueuedHold(): void
+    {
+        $this->pdo->exec('DROP TABLE reservations');
+
+        self::assertNull((new PdoHoldRepository($this->pdo))->nextEligibleQueued(4));
+    }
+
     public function testOfferAndExpiryUpdateOnlyExpectedState(): void
     {
         $this->pdo->exec("INSERT INTO reservations (user_id, title_id, queue_sequence, status, created_at) VALUES (7, 4, 10, 'queued', CURRENT_TIMESTAMP)");

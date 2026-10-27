@@ -64,6 +64,10 @@ Student and teacher catalog shelves use a local content-based ranking over each 
 
 The recommendation schema is **not** applied automatically when the application starts. Fresh installs already include it through `sql/install.sql`. Existing databases must run `sql/upgrade_search_recommendations.sql` last, after `sql/upgrade_bulk_borrowing.sql`. The migration is idempotent and adds the bounded history, keyword-mapping, full-text, availability, and current-loan indexes needed for concurrent local use. The complete second-checkout procedure, verification SQL, endpoint contract, and troubleshooting notes are in [`docs/SEARCH_RECOMMENDATIONS_SETUP.md`](docs/SEARCH_RECOMMENDATIONS_SETUP.md).
 
+### Narrow mobile support
+
+The frontend remains usable down to a 290px viewport without changing its visual language. Page controls and cards wrap at narrow widths, while dense tables and API/report details keep their existing surfaces and scroll internally when their content cannot be meaningfully compressed.
+
 ## Quality checks
 
 ```text

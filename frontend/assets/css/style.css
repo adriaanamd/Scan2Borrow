@@ -39,7 +39,7 @@ a:hover { color: var(--primary-dark); }
 h1, h2, h3, h4, h5, h6 { color: var(--navy); letter-spacing: -.025em; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(212, 167, 44, .55); outline-offset: 2px; }
 hr { border-color: var(--border); opacity: 1; }
-.app { display: flex; min-height: 100vh; }
+.app { display: flex; min-height: 100vh; min-width: 0; }
 
 /* The navigation is the permanent visual anchor: a navy library-card rail. */
 .sidebar {
@@ -71,10 +71,10 @@ hr { border-color: var(--border); opacity: 1; }
 .nav-logout:hover { background: rgba(180, 35, 24, .18) !important; }
 
 .main { flex: 1; margin-left: 248px; min-width: 0; }
-.topbar { align-items: center; background: rgba(255, 255, 255, .98); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; min-height: 76px; padding: 16px clamp(22px, 3vw, 42px); position: sticky; top: 0; z-index: 10; }
-.topbar-title { align-items: center; display: flex; font-size: clamp(1.05rem, 1.6vw, 1.3rem); font-weight: 760; gap: 12px; margin: 0; }
+.topbar { align-items: center; background: rgba(255, 255, 255, .98); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; min-height: 76px; min-width: 0; padding: 16px clamp(22px, 3vw, 42px); position: sticky; top: 0; z-index: 10; }
+.topbar-title { align-items: center; display: flex; font-size: clamp(1.05rem, 1.6vw, 1.3rem); font-weight: 760; gap: 12px; margin: 0; min-width: 0; }
 .topbar-title::before { background: var(--accent); content: ""; display: inline-block; height: 26px; width: 4px; }
-.topbar-user { line-height: 1.25; text-align: right; }
+.topbar-user { line-height: 1.25; min-width: 0; text-align: right; }
 .user-role { color: var(--primary); display: block; font-size: 10px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
 .user-name { color: var(--navy); font-size: 13px; font-weight: 650; }
 .content { margin: 0 auto; max-width: 1540px; padding: clamp(24px, 3.2vw, 42px); }

@@ -50,6 +50,7 @@
   border-radius: 0.65rem;
   box-shadow: 0 8px 22px rgba(16, 47, 82, 0.045);
   overflow: hidden;
+  min-width: 0;
 }
 
 .guest-requests__section-heading {
@@ -125,5 +126,15 @@
   .guest-requests__table tbody td {
     padding-left: 0.8rem;
     padding-right: 0.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .guest-requests__section-heading {
+    padding: .85rem .75rem;
+  }
+
+  .guest-requests__table {
+    min-width: 640px;
   }
 }

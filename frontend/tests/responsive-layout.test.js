@@ -159,3 +159,11 @@ test("staff management controls fit inside narrow sections", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.staff-management__search\s*\{[^}]*max-width:\s*none;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.staff-management__actions \.btn\s*\{[^}]*white-space:\s*normal;/s);
 });
+
+test("guest request sections contain narrow table surfaces", () => {
+  const source = read("frontend/assets/css/guest-requests.css");
+
+  assert.match(source, /\.guest-requests__section\s*\{[^}]*min-width:\s*0;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.guest-requests__section-heading\s*\{[^}]*padding:\s*\.85rem\s+\.75rem;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.guest-requests__table\s*\{[^}]*min-width:\s*640px;/s);
+});

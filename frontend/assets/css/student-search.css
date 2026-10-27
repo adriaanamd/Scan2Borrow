@@ -178,3 +178,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 320px) {
+  .student-search-page .student-search-results__range {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .student-search-page .borrower-catalog__pagination-controls {
+    flex-wrap: wrap;
+  }
+}

@@ -116,3 +116,10 @@ test("teacher history keeps its wide ledger inside a scroll boundary", () => {
   assert.match(source, /\.teacher-history-ledger__table\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-history-ledger__header\s*\{[^}]*align-items:\s*flex-start;[^}]*flex-direction:\s*column;/s);
 });
+
+test("student search headers and pagination wrap at 290px", () => {
+  const source = read("frontend/assets/css/student-search.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-search-page \.student-search-results__range\s*\{[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*normal;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-search-page \.borrower-catalog__pagination-controls\s*\{[^}]*flex-wrap:\s*wrap;/s);
+});

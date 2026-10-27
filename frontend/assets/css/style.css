@@ -324,6 +324,12 @@ hr { border-color: var(--border); opacity: 1; }
     .table-card { overflow-x: auto; }
 }
 
+@media (max-width: 320px) {
+    .topbar { padding-left: 10px; padding-right: 10px; }
+    .content { padding: 12px 10px 24px; }
+    .auth-wrap { padding: 8px; }
+}
+
 /* Reservation queue: a compact Swiss circulation surface scoped to the component. */
 .reservation-queue {
     --reservation-ink: #141414;

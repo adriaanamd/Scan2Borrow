@@ -123,3 +123,10 @@ test("student search headers and pagination wrap at 290px", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-search-page \.student-search-results__range\s*\{[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*normal;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-search-page \.borrower-catalog__pagination-controls\s*\{[^}]*flex-wrap:\s*wrap;/s);
 });
+
+test("student search result cards cannot widen their result grid", () => {
+  const source = read("frontend/assets/css/student-search.css");
+
+  assert.match(source, /\.student-search-page \.student-search-recommendations__state\s*>\s*\.row\s*>\s*\*,\s*\.student-search-page \.student-search-results__state\s*>\s*\.row\s*>\s*\*\s*\{[^}]*min-width:\s*0;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.student-search-page \.student-search-card,\s*\.student-search-page \.student-recommended-card\s*\{[^}]*min-width:\s*0;/s);
+});

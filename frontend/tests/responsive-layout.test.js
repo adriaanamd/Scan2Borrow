@@ -18,6 +18,14 @@ test("shared stylesheet permits a 290px document viewport", () => {
   assert.doesNotMatch(source, /body\s*\{[^}]*min-width\s*:\s*(?:29[1-9]|[3-9]\d{2,})px/s);
 });
 
+test("API documentation operations collapse cleanly at 290px", () => {
+  const source = read("frontend/assets/css/api-docs.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.api-docs-tag-list\s*\{[^}]*grid-template-columns:\s*1fr;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.api-docs-operation\s+summary\s*\{[^}]*flex-wrap:\s*wrap;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.api-docs-operation-body\s*\{[^}]*padding:\s*12px\s+10px;/s);
+});
+
 test("shared shell flex children can shrink below their content width", () => {
   const source = read("frontend/assets/css/style.css");
 

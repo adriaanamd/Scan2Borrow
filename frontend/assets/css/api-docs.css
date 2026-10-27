@@ -244,3 +244,22 @@
     padding-left: 18px;
   }
 }
+
+@media (max-width: 320px) {
+  .api-docs-tag-list {
+    grid-template-columns: 1fr;
+  }
+
+  .api-docs-operation summary {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .api-docs-auth {
+    margin-left: 0;
+  }
+
+  .api-docs-operation-body {
+    padding: 12px 10px;
+  }
+}

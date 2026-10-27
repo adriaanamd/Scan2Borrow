@@ -25,3 +25,11 @@ test("shared shell flex children can shrink below their content width", () => {
   assert.match(source, /\.topbar-title\s*\{[^}]*min-width\s*:\s*0/s);
   assert.match(source, /\.topbar-user\s*\{[^}]*min-width\s*:\s*0/s);
 });
+
+test("narrow content surfaces keep usable insets at 290px", () => {
+  const source = read("frontend/assets/css/style.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.topbar\s*\{[^}]*padding-left:\s*10px;[^}]*padding-right:\s*10px;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.content\s*\{[^}]*padding:\s*12px\s+10px\s+24px;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.auth-wrap\s*\{[^}]*padding:\s*8px;/s);
+});

@@ -40,6 +40,21 @@
   .report-pagination { align-items: flex-start; flex-direction: column; }
 }
 
+@media (max-width: 320px) {
+  .report-document {
+    padding: 1rem .75rem;
+  }
+
+  .report-document-badge {
+    white-space: normal;
+  }
+
+  .report-pagination__controls {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
 @media print {
   @page { margin: 12mm; }
   body { background: #fff; }

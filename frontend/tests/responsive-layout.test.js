@@ -26,6 +26,14 @@ test("API documentation operations collapse cleanly at 290px", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.api-docs-operation-body\s*\{[^}]*padding:\s*12px\s+10px;/s);
 });
 
+test("staff report controls stack within a 290px document", () => {
+  const source = read("frontend/assets/css/staff-reports.css");
+
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.report-document\s*\{[^}]*padding:\s*1rem\s+\.75rem;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.report-document-badge\s*\{[^}]*white-space:\s*normal;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.report-pagination__controls\s*\{[^}]*flex-wrap:\s*wrap;[^}]*width:\s*100%;/s);
+});
+
 test("shared shell flex children can shrink below their content width", () => {
   const source = read("frontend/assets/css/style.css");
 

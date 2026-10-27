@@ -60,6 +60,7 @@
   border-radius: 0.65rem;
   box-shadow: 0 8px 22px rgba(16, 47, 82, 0.045);
   overflow: hidden;
+  min-width: 0;
 }
 
 .staff-management__section-heading {
@@ -202,5 +203,17 @@
   .staff-management__table tbody td {
     padding-left: 0.8rem;
     padding-right: 0.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .staff-management__search {
+    margin-left: .75rem;
+    margin-right: .75rem;
+    max-width: none;
+  }
+
+  .staff-management__actions .btn {
+    white-space: normal;
   }
 }

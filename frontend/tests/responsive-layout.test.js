@@ -151,3 +151,11 @@ test("teacher library filters fit within a 290px panel", () => {
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-library-masthead\s*\{[^}]*padding:\s*1rem;/s);
   assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.teacher-search-filters__grid\s*>\s*div\s*\{[^}]*min-width:\s*0;[^}]*width:\s*100%;/s);
 });
+
+test("staff management controls fit inside narrow sections", () => {
+  const source = read("frontend/assets/css/staff-management.css");
+
+  assert.match(source, /\.staff-management__section\s*\{[^}]*min-width:\s*0;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.staff-management__search\s*\{[^}]*max-width:\s*none;/s);
+  assert.match(source, /@media\s*\(max-width:\s*320px\)[\s\S]*\.staff-management__actions \.btn\s*\{[^}]*white-space:\s*normal;/s);
+});

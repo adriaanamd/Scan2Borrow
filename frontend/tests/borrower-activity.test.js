@@ -34,6 +34,21 @@ test('activity rows reuse the recommended-book presentation pattern', () => {
   }
 });
 
+test('student activity owns an Organic presentation without changing teacher activity', () => {
+  const studentHtml = read('features/student/pages/activity/activity.html');
+  const teacherHtml = read('features/teacher/pages/activity/activity.html');
+
+  assert.match(studentHtml, /assets\/css\/student-activity\.css/);
+  assert.doesNotMatch(teacherHtml, /assets\/css\/student-activity\.css/);
+
+  const studentCss = read('assets/css/student-activity.css');
+  assert.match(studentCss, /\.student-activity\s*\{[\s\S]*font-family:\s*Epilogue/);
+  assert.match(studentCss, /\.student-activity[\s\S]*font-family:\s*Fraunces/);
+  assert.match(studentCss, /\.student-activity[\s\S]*border-radius:\s*22px/);
+  assert.match(studentCss, /@media\s*\(max-width:\s*320px\)/);
+  assert.doesNotMatch(studentCss, /teacher-activity|borrower-dashboard--teacher/);
+});
+
 test('both dashboards expose recent activity hooks', () => {
   for (const role of ['student', 'teacher']) {
     const html = read('features/' + role + '/pages/dashboard/dashboard.html');

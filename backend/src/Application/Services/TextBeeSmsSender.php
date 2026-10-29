@@ -65,6 +65,13 @@ final class TextBeeSmsSender implements SmsSenderInterface
             throw new RuntimeException('Unable to encode the SMS request.', 0, $exception);
         }
 
+        // Some local XAMPP Apache installations cannot load php_curl.dll even
+        // though PHP's HTTPS stream wrapper is available. Keep TextBee usable
+        // in that environment while still preferring cURL when it is loaded.
+        if (!function_exists('curl_init')) {
+            return $this->streamRequest($url, $apiKey, $body);
+        }
+
         $handle = curl_init($url);
         if ($handle === false) {
             throw new RuntimeException('Unable to initialize the SMS request.');
@@ -98,6 +105,58 @@ final class TextBeeSmsSender implements SmsSenderInterface
         } finally {
             curl_close($handle);
         }
+    }
+
+    /**
+     * @return array{status: int, body: string}
+     */
+    private function streamRequest(string $url, string $apiKey, string $body): array
+    {
+        if (filter_var((string) ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOL) !== true) {
+            throw new RuntimeException('The HTTPS stream wrapper is not enabled.');
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => implode("\r\n", [
+                    'Accept: application/json',
+                    'Content-Type: application/json',
+                    'x-api-key: ' . $apiKey,
+                ]),
+                'content' => $body,
+                'ignore_errors' => true,
+                'timeout' => 15,
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ],
+        ]);
+
+        $responseBody = @file_get_contents($url, false, $context);
+        if (!is_string($responseBody)) {
+            throw new RuntimeException('The SMS request could not be completed.');
+        }
+
+        return [
+            'status' => $this->responseStatus($http_response_header),
+            'body' => $responseBody,
+        ];
+    }
+
+    /**
+     * @param array<int, string> $headers
+     */
+    private function responseStatus(array $headers): int
+    {
+        foreach ($headers as $header) {
+            if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $header, $matches) === 1) {
+                return (int) $matches[1];
+            }
+        }
+
+        return 0;
     }
 
     private function accepted(string $body): bool

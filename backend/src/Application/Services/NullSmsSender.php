@@ -8,7 +8,6 @@ final class NullSmsSender implements SmsSenderInterface
 {
     public function send(string $phoneNumber, string $message): void
     {
-        // Delivery is intentionally delegated to the configured SMS adapter.
-        // The local XAMPP default remains side-effect free when no adapter is configured.
+        throw new OtpDeliveryException('Unable to send the SMS verification code because no SMS provider is configured.');
     }
 }

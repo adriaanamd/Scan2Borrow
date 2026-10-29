@@ -16,10 +16,10 @@ use App\Application\Services\GuestProfileService;
 use App\Application\Services\GuestRegistrationCompletionService;
 use App\Application\Services\GuestRegistrationService;
 use App\Application\Services\LocalPhotoStorage;
-use App\Application\Services\NullSmsSender;
 use App\Application\Services\OtpService;
 use App\Application\Services\RegistrationCompletionService;
 use App\Application\Services\RegistrationService;
+use App\Application\Services\SmsSenderFactory;
 use App\Application\Services\SmtpEmailSender;
 use App\Application\Services\ReturnService;
 use App\Application\Services\ReturnApprovalService;
@@ -98,7 +98,7 @@ final class ApplicationFactory
         $pdo = (new PdoConnectionFactory())->create(DatabaseConfig::fromEnvironment());
         $sessions = new SessionService(new NativeSessionStore());
         $csrf = new CsrfService(new NativeSessionStore());
-        $otp = new OtpService(new PdoOtpRepository($pdo), new SystemClock(), new NullSmsSender(), new SmtpEmailSender());
+        $otp = new OtpService(new PdoOtpRepository($pdo), new SystemClock(), SmsSenderFactory::create(), new SmtpEmailSender());
         $registrationAccounts = new PdoRegistrationAccountRepository($pdo);
         $registration = new RegistrationController(
             new RegistrationService(new \App\Application\Validators\RegistrationValidator(), $registrationAccounts, $otp),

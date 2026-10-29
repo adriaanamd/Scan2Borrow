@@ -21,6 +21,10 @@ Borrower registration lets the user choose whether the OTP is sent by email or c
 
 The mailer uses `smtp.gmail.com` on port `587` with STARTTLS. `MAIL_FROM` defaults to the authenticated Gmail account, and `MAIL_FROM_NAME` controls the school-facing sender name. When testing email delivery, choose Email during registration, use an accessible address, complete the form, then enter the code received on the `/verify-otp` page. The same branded mail transport is used by staff borrower email notifications.
 
+### TextBee registration SMS
+
+Phone OTP delivery uses TextBee's REST API. Set `SMS_ENABLED=true`, `SMS_PROVIDER=textbee`, `SMS_API_KEY` to a TextBee API key, and `SMS_DEVICE_ID` to the paired Android device when a specific device should send the message. `SMS_COUNTRY_CODE=63` converts local Philippine numbers such as `09170000004` to the E.164 value `+639170000004`; numbers already supplied with `+` or `00` prefixes are preserved as international numbers. TextBee requires the sending Android device to be paired, enabled, online, and permitted to send SMS.
+
 ## Structure
 
 ```text

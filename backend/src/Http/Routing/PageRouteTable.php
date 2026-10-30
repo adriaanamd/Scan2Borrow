@@ -58,6 +58,11 @@ final class PageRouteTable
                 $featurePath('staff/pages/copy-history/copy-history.html'),
                 ['admin', 'librarian'],
             ),
+            '/staff/circulation' => new PageRoute(
+                '/staff/circulation',
+                $featurePath('staff/pages/circulation/circulation.html'),
+                ['admin', 'librarian'],
+            ),
             '/staff/barcodes/print' => new PageRoute(
                 '/staff/barcodes/print',
                 $featurePath('staff/pages/barcodes/barcodes.html'),

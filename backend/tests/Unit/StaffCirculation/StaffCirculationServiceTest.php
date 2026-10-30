@@ -23,8 +23,10 @@ final class StaffCirculationServiceTest extends TestCase
 
         $result = $service->lookup('  STU-001  ');
 
-        self::assertSame('Ada Lovelace', $result['borrower']['name']);
+        self::assertIsArray($result['borrower'] ?? null);
+        self::assertSame('Ada Lovelace', $result['borrower']['name'] ?? null);
         self::assertSame('STU-001', $repository->lookedUpBarcode);
+        self::assertIsArray($result['active_loans'] ?? null);
         self::assertCount(1, $result['active_loans']);
     }
 
@@ -79,9 +81,12 @@ final class StaffCirculationServiceTest extends TestCase
         ));
 
         self::assertTrue($result->successful());
-        self::assertMatchesRegularExpression('/^S2B-20260828-[A-F0-9]{6}$/', $result->data()['transaction_code']);
-        self::assertSame('2026-09-10', $repository->borrowed['due_date']);
-        self::assertSame(19, $repository->borrowed['staff_id']);
+        $transactionCode = $result->data()['transaction_code'] ?? null;
+        self::assertIsString($transactionCode);
+        self::assertMatchesRegularExpression('/^S2B-20260828-[A-F0-9]{6}$/', $transactionCode);
+        self::assertIsArray($repository->borrowed);
+        self::assertSame('2026-09-10', $repository->borrowed['due_date'] ?? null);
+        self::assertSame(19, $repository->borrowed['staff_id'] ?? null);
     }
 
     public function testBorrowReturnsRepositoryValidationErrors(): void
@@ -119,8 +124,9 @@ final class StaffCirculationServiceTest extends TestCase
 
         self::assertTrue($result->successful());
         self::assertSame(20.0, $result->data()['total_fine']);
-        self::assertSame([55], $repository->returned['loan_ids']);
-        self::assertSame(['COPY-001'], $repository->returned['copy_barcodes']);
+        self::assertIsArray($repository->returned);
+        self::assertSame([55], $repository->returned['loan_ids'] ?? null);
+        self::assertSame(['COPY-001'], $repository->returned['copy_barcodes'] ?? null);
     }
 
     private function service(FakeStaffCirculationRepository $repository): StaffCirculationService
@@ -169,6 +175,7 @@ final class FakeStaffCirculationRepository implements StaffCirculationRepository
 
     public ?InvalidArgumentException $returnFailure = null;
 
+    /** @return array{ok: true, borrower: array<string, mixed>, active_loans: list<array<string, mixed>>}|null */
     public function findBorrowerByBarcode(string $barcode): ?array
     {
         $this->lookedUpBarcode = $barcode;
@@ -189,6 +196,7 @@ final class FakeStaffCirculationRepository implements StaffCirculationRepository
         ];
     }
 
+    /** @param list<string> $bookBarcodes @return array<string, mixed> */
     public function createDirectBorrow(int $borrowerId, int $staffId, array $bookBarcodes, DateTimeImmutable $dueDate, string $transactionCode): array
     {
         if ($this->borrowFailure !== null) {
@@ -209,6 +217,11 @@ final class FakeStaffCirculationRepository implements StaffCirculationRepository
         ];
     }
 
+    /**
+     * @param list<int> $loanIds
+     * @param list<string> $copyBarcodes
+     * @return array<string, mixed>
+     */
     public function processDirectReturns(int $borrowerId, int $staffId, array $loanIds, array $copyBarcodes, DateTimeImmutable $now, float $finePerDay): array
     {
         if ($this->returnFailure !== null) {

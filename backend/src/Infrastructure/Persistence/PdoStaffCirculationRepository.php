@@ -11,6 +11,7 @@ use App\Domain\Audit\AuditEventType;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PDO;
+use PDOStatement;
 use RuntimeException;
 
 final class PdoStaffCirculationRepository implements StaffCirculationRepositoryInterface
@@ -31,9 +32,10 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             return null;
         }
 
+        $borrowerId = $this->intValue($borrower['id'] ?? null);
         $activeLoans = $normalized
-            ? $this->normalizedActiveLoans((int) $borrower['id'])
-            : $this->legacyActiveLoans((int) $borrower['id']);
+            ? $this->normalizedActiveLoans($borrowerId)
+            : $this->legacyActiveLoans($borrowerId);
         $borrower['name'] = trim($this->string($borrower['firstname'] ?? null) . ' ' . $this->string($borrower['lastname'] ?? null));
         $borrower['active_loans'] = count($activeLoans);
 
@@ -44,6 +46,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         ];
     }
 
+    /** @return array<string, mixed> */
     public function createDirectBorrow(
         int $borrowerId,
         int $staffId,
@@ -79,6 +82,11 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         }
     }
 
+    /**
+     * @param list<int> $loanIds
+     * @param list<string> $copyBarcodes
+     * @return array<string, mixed>
+     */
     public function processDirectReturns(
         int $borrowerId,
         int $staffId,
@@ -113,8 +121,8 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
                 foreach ($rows as $row) {
                     if ($this->availability !== null) {
                         $this->availability->advance(
-                            (int) ($row['title_id'] ?? 0),
-                            (int) ($row['copy_id'] ?? 0),
+                            $this->intValue($row['title_id'] ?? null),
+                            $this->intValue($row['copy_id'] ?? null),
                             $now,
                         );
                     }
@@ -177,8 +185,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
              ORDER BY bt.due_date ASC, bi.id ASC"
         );
         $statement->execute(['user_id' => $borrowerId]);
-        /** @var list<array<string, mixed>> $rows */
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->fetchRows($statement);
 
         return $rows;
     }
@@ -198,13 +205,15 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
              ORDER BY b.due_date ASC, b.id ASC"
         );
         $statement->execute(['user_id' => $borrowerId]);
-        /** @var list<array<string, mixed>> $rows */
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->fetchRows($statement);
 
         return $rows;
     }
 
-    /** @param list<string> $bookBarcodes @return array<string, mixed> */
+    /**
+     * @param list<string> $bookBarcodes
+     * @return array<string, mixed>
+     */
     private function createNormalizedBorrow(int $borrowerId, int $staffId, array $bookBarcodes, DateTimeImmutable $dueDate, string $transactionCode): array
     {
         $copies = $this->normalizedCopiesByBarcodes($bookBarcodes);
@@ -227,7 +236,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         );
         $copyStatement = $this->pdo->prepare('UPDATE book_copies SET status = \'Borrowed\', due_date = :due_date WHERE id = :id');
         foreach ($copies as $copy) {
-            $copyId = (int) $copy['id'];
+            $copyId = $this->intValue($copy['id'] ?? null);
             $itemStatement->execute(['transaction_id' => $transactionId, 'copy_id' => $copyId]);
             $itemId = (int) $this->pdo->lastInsertId();
             $copyStatement->execute(['due_date' => $dueDate->format('Y-m-d'), 'id' => $copyId]);
@@ -243,7 +252,10 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         ];
     }
 
-    /** @param list<string> $bookBarcodes @return array<string, mixed> */
+    /**
+     * @param list<string> $bookBarcodes
+     * @return array<string, mixed>
+     */
     private function createLegacyBorrow(int $borrowerId, int $staffId, array $bookBarcodes, DateTimeImmutable $dueDate, string $transactionCode): array
     {
         $copies = $this->legacyCopiesByBarcodes($bookBarcodes);
@@ -259,12 +271,12 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             $statement->execute([
                 'transaction_code' => $copyCode,
                 'user_id' => $borrowerId,
-                'book_id' => (int) $copy['id'],
+                'book_id' => $this->intValue($copy['id'] ?? null),
                 'processed_by' => $staffId,
                 'due_date' => $dueDate->format('Y-m-d'),
             ]);
             $loanId = (int) $this->pdo->lastInsertId();
-            $copyStatement->execute(['due_date' => $dueDate->format('Y-m-d'), 'id' => (int) $copy['id']]);
+            $copyStatement->execute(['due_date' => $dueDate->format('Y-m-d'), 'id' => $this->intValue($copy['id'] ?? null)]);
             $this->recordLoanAudit($copy, $staffId, null, null, 'legacy_borrowing:' . $loanId . ':direct-borrow');
             $codes[] = $copyCode;
         }
@@ -278,7 +290,10 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         ];
     }
 
-    /** @param list<string> $barcodes @return list<array<string, mixed>> */
+    /**
+     * @param list<string> $barcodes
+     * @return list<array<string, mixed>>
+     */
     private function normalizedCopiesByBarcodes(array $barcodes): array
     {
         $placeholders = $this->namedPlaceholders($barcodes, 'barcode');
@@ -288,11 +303,13 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
              WHERE c.barcode IN (' . $placeholders['sql'] . ') AND c.deleted_at IS NULL ORDER BY c.id'
         ));
         $statement->execute($placeholders['parameters']);
-        /** @var list<array<string, mixed>> $rows */
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        return $this->fetchRows($statement);
     }
 
-    /** @param list<string> $barcodes @return list<array<string, mixed>> */
+    /**
+     * @param list<string> $barcodes
+     * @return list<array<string, mixed>>
+     */
     private function legacyCopiesByBarcodes(array $barcodes): array
     {
         $placeholders = $this->namedPlaceholders($barcodes, 'barcode');
@@ -300,11 +317,13 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             'SELECT id, barcode, title, author, status FROM books WHERE barcode IN (' . $placeholders['sql'] . ') AND deleted_at IS NULL ORDER BY id'
         ));
         $statement->execute($placeholders['parameters']);
-        /** @var list<array<string, mixed>> $rows */
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        return $this->fetchRows($statement);
     }
 
-    /** @param list<array<string, mixed>> $rows @param list<string> $requested */
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param list<string> $requested
+     */
     private function assertAvailableCopies(array $rows, array $requested): void
     {
         $found = [];
@@ -322,7 +341,11 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         }
     }
 
-    /** @param list<int> $loanIds @param list<string> $copyBarcodes @return list<array<string, mixed>> */
+    /**
+     * @param list<int> $loanIds
+     * @param list<string> $copyBarcodes
+     * @return list<array<string, mixed>>
+     */
     private function selectedNormalizedLoans(int $borrowerId, array $loanIds, array $copyBarcodes): array
     {
         $conditions = [];
@@ -337,6 +360,9 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             $conditions[] = 'c.barcode IN (' . $barcodes['sql'] . ')';
             $parameters += $barcodes['parameters'];
         }
+        if ($conditions === []) {
+            return [];
+        }
         $statement = $this->pdo->prepare($this->forUpdate(
             "SELECT bi.id, bi.copy_id, c.barcode AS copy_barcode, c.title_id, c.status AS copy_status,
                     t.title, t.author, bt.id AS transaction_id, bt.transaction_code, bt.due_date
@@ -349,11 +375,14 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
                AND (" . implode(' OR ', $conditions) . ') ORDER BY bi.id'
         ));
         $statement->execute($parameters);
-        /** @var list<array<string, mixed>> $rows */
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        return $this->fetchRows($statement);
     }
 
-    /** @param list<int> $loanIds @param list<string> $copyBarcodes @return list<array<string, mixed>> */
+    /**
+     * @param list<int> $loanIds
+     * @param list<string> $copyBarcodes
+     * @return list<array<string, mixed>>
+     */
     private function selectedLegacyLoans(int $borrowerId, array $loanIds, array $copyBarcodes): array
     {
         $conditions = [];
@@ -368,6 +397,9 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             $conditions[] = 'old_book.barcode IN (' . $barcodes['sql'] . ')';
             $parameters += $barcodes['parameters'];
         }
+        if ($conditions === []) {
+            return [];
+        }
         $statement = $this->pdo->prepare($this->forUpdate(
             "SELECT b.id, b.book_id AS copy_id, old_book.barcode AS copy_barcode, old_book.title,
                     old_book.author, old_book.status AS copy_status, b.transaction_code, b.due_date
@@ -377,17 +409,20 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
                AND (" . implode(' OR ', $conditions) . ') ORDER BY b.id'
         ));
         $statement->execute($parameters);
-        /** @var list<array<string, mixed>> $rows */
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        return $this->fetchRows($statement);
     }
 
-    /** @param list<array<string, mixed>> $rows @param list<int> $loanIds @param list<string> $copyBarcodes */
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param list<int> $loanIds
+     * @param list<string> $copyBarcodes
+     */
     private function assertSelectedRows(array $rows, array $loanIds, array $copyBarcodes): void
     {
         $foundIds = [];
         $foundBarcodes = [];
         foreach ($rows as $row) {
-            $foundIds[(int) ($row['id'] ?? 0)] = true;
+            $foundIds[$this->intValue($row['id'] ?? null)] = true;
             $foundBarcodes[$this->string($row['copy_barcode'] ?? null)] = true;
         }
         foreach ($loanIds as $loanId) {
@@ -414,13 +449,13 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
                 return_decision_note = 'Processed at circulation desk.'
              WHERE id = :id AND return_date IS NULL"
         );
-        $statement->execute(['fine' => $fine, 'staff_id' => $staffId, 'id' => (int) $row['id']]);
+        $statement->execute(['fine' => $fine, 'staff_id' => $staffId, 'id' => $this->intValue($row['id'] ?? null)]);
         if ($statement->rowCount() !== 1) {
             throw new RuntimeException('The selected loan is no longer active.');
         }
         $this->pdo->prepare("UPDATE book_copies SET status = 'Available', due_date = NULL, return_date = CURRENT_DATE WHERE id = :id")
-            ->execute(['id' => (int) $row['copy_id']]);
-        $this->recordReturnAudit($row, $staffId, (int) $row['transaction_id'], (int) $row['id']);
+            ->execute(['id' => $this->intValue($row['copy_id'] ?? null)]);
+        $this->recordReturnAudit($row, $staffId, $this->intValue($row['transaction_id'] ?? null), $this->intValue($row['id'] ?? null));
     }
 
     /** @param array<string, mixed> $row */
@@ -432,13 +467,13 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
                 return_decision_note = 'Processed at circulation desk.'
              WHERE id = :id AND return_date IS NULL"
         );
-        $statement->execute(['fine' => $fine, 'staff_id' => $staffId, 'id' => (int) $row['id']]);
+        $statement->execute(['fine' => $fine, 'staff_id' => $staffId, 'id' => $this->intValue($row['id'] ?? null)]);
         if ($statement->rowCount() !== 1) {
             throw new RuntimeException('The selected loan is no longer active.');
         }
         $this->pdo->prepare("UPDATE books SET status = 'Available', due_date = NULL, return_date = CURRENT_DATE WHERE id = :id")
-            ->execute(['id' => (int) $row['copy_id']]);
-        $this->recordReturnAudit($row, $staffId, null, null, 'legacy_borrowing:' . (int) $row['id'] . ':direct-return');
+            ->execute(['id' => $this->intValue($row['copy_id'] ?? null)]);
+        $this->recordReturnAudit($row, $staffId, null, null, 'legacy_borrowing:' . $this->intValue($row['id'] ?? null) . ':direct-return');
     }
 
     /** @param list<array<string, mixed>> $rows */
@@ -446,7 +481,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     {
         $transactionIds = [];
         foreach ($rows as $row) {
-            $transactionId = (int) ($row['transaction_id'] ?? 0);
+            $transactionId = $this->intValue($row['transaction_id'] ?? null);
             if ($transactionId > 0) {
                 $transactionIds[$transactionId] = true;
             }
@@ -470,7 +505,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             return;
         }
         $this->audit->record(new AuditEvent(
-            (int) ($row['id'] ?? 0),
+            $this->intValue($row['id'] ?? null),
             $staffId,
             AuditEventType::LOANED,
             'Available',
@@ -479,7 +514,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             $transactionId,
             $itemId,
             null,
-            ['barcode' => $this->string($row['barcode'] ?? null), 'title' => $this->string($row['title'] ?? null), 'borrower_id' => (int) ($row['borrower_id'] ?? 0)],
+            ['barcode' => $this->string($row['barcode'] ?? null), 'title' => $this->string($row['title'] ?? null), 'borrower_id' => $this->intValue($row['borrower_id'] ?? null)],
             new DateTimeImmutable(),
             $legacySource,
         ));
@@ -492,7 +527,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             return;
         }
         $this->audit->record(new AuditEvent(
-            (int) ($row['copy_id'] ?? 0),
+            $this->intValue($row['copy_id'] ?? null),
             $staffId,
             AuditEventType::RETURNED,
             'Borrowed',
@@ -507,26 +542,32 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         ));
     }
 
-    /** @param array<string, mixed> $row @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
     private function copyItem(array $row): array
     {
         return [
-            'copy_id' => (int) ($row['id'] ?? 0),
+            'copy_id' => $this->intValue($row['id'] ?? null),
             'copy_barcode' => $this->string($row['barcode'] ?? null),
             'title' => $this->string($row['title'] ?? null),
             'author' => $this->string($row['author'] ?? null),
         ];
     }
 
-    /** @param array<string, mixed> $row @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
     private function returnItem(array $row): array
     {
         return [
-            'loan_id' => (int) ($row['id'] ?? 0),
-            'copy_id' => (int) ($row['copy_id'] ?? 0),
+            'loan_id' => $this->intValue($row['id'] ?? null),
+            'copy_id' => $this->intValue($row['copy_id'] ?? null),
             'copy_barcode' => $this->string($row['copy_barcode'] ?? null),
             'title' => $this->string($row['title'] ?? null),
-            'fine_amount' => (float) ($row['processed_fine'] ?? 0.0),
+            'fine_amount' => $this->floatValue($row['processed_fine'] ?? null),
         ];
     }
 
@@ -617,12 +658,15 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             && $this->hasTable('borrowing_items');
     }
 
-    /** @param list<int|string> $values @return array{sql: string, parameters: array<string, int|string>} */
+    /**
+     * @param list<int|string> $values
+     * @return array{sql: string, parameters: array<string, int|string>}
+     */
     private function namedPlaceholders(array $values, string $prefix): array
     {
         $parameters = [];
         $names = [];
-        foreach (array_values($values) as $index => $value) {
+        foreach ($values as $index => $value) {
             $name = $prefix . '_' . $index;
             $names[] = ':' . $name;
             $parameters[$name] = $value;
@@ -656,7 +700,8 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
                 return false;
             }
             while (($row = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
-                if ($this->string($row['name'] ?? null) === $column) {
+                $name = is_array($row) ? ($row['name'] ?? null) : null;
+                if ($this->string($name) === $column) {
                     return true;
                 }
             }
@@ -674,5 +719,56 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     private function string(mixed $value): string
     {
         return is_string($value) || is_numeric($value) ? trim((string) $value) : '';
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function fetchRows(PDOStatement|false $statement): array
+    {
+        if ($statement === false) {
+            return [];
+        }
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $result = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $normalized = [];
+            foreach ($row as $key => $value) {
+                if (is_string($key)) {
+                    $normalized[$key] = $value;
+                }
+            }
+            $result[] = $normalized;
+        }
+
+        return $result;
+    }
+
+    private function intValue(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_float($value)) {
+            return (int) $value;
+        }
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return 0;
+    }
+
+    private function floatValue(mixed $value): float
+    {
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+        if (is_string($value) && is_numeric($value)) {
+            return (float) $value;
+        }
+
+        return 0.0;
     }
 }

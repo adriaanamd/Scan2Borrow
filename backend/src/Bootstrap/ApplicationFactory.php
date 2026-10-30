@@ -29,6 +29,7 @@ use App\Application\Services\ReservationService;
 use App\Application\Services\SearchHistoryService;
 use App\Application\Services\SystemClock;
 use App\Application\Services\SessionService;
+use App\Application\StaffCirculation\StaffCirculationService;
 use App\Domain\Auth\AuthorizationPolicy;
 use App\Domain\Borrowing\BorrowingPolicy;
 use App\Application\Validators\BookMutationValidator;
@@ -76,6 +77,7 @@ use App\Infrastructure\Persistence\PdoAuditEventRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
 use App\Infrastructure\Persistence\PdoReturnApprovalRepository;
+use App\Infrastructure\Persistence\PdoStaffCirculationRepository;
 use App\Infrastructure\Persistence\PdoGuestIdentityRepository;
 use App\Infrastructure\Persistence\PdoGuestPortalRepository;
 use App\Infrastructure\Persistence\PdoGuestBorrowingRepository;
@@ -151,6 +153,12 @@ final class ApplicationFactory
             new SystemClock(),
             20.0,
             $reservationAvailability,
+        );
+        $staffCirculation = new StaffCirculationService(
+            new PdoStaffCirculationRepository($pdo, $auditRepository, $reservationAvailability, 3),
+            new BorrowingPolicy(3, 7, 30, false),
+            new SystemClock(),
+            20.0,
         );
         $reservationService = new ReservationService($holds);
         $renewalRepository = new \App\Infrastructure\Persistence\PdoRenewalRepository($pdo);
@@ -228,6 +236,7 @@ final class ApplicationFactory
             ),
             $profileChangeService,
             $returnApprovalService,
+            $staffCirculation,
         );
         $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());
         $apiRouter = new Router(array_merge(

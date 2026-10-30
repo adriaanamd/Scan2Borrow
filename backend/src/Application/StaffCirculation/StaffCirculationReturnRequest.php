@@ -6,7 +6,10 @@ namespace App\Application\StaffCirculation;
 
 final readonly class StaffCirculationReturnRequest
 {
-    /** @param list<int|string> $loanIds @param list<string> $copyBarcodes */
+    /**
+     * @param list<int|string> $loanIds
+     * @param list<string> $copyBarcodes
+     */
     public function __construct(
         public int $borrowerId,
         public array $loanIds = [],

@@ -27,6 +27,7 @@ final class PageRouteTableTest extends TestCase
         self::assertTrue($table->forPath('/guest/dashboard')->requiresGuest());
         self::assertSame(['admin', 'librarian'], $table->forPath('/staff/books')->allowedRoles());
         self::assertSame(['admin', 'librarian'], $table->forPath('/staff/copy-history')->allowedRoles());
+        self::assertSame(['admin', 'librarian'], $table->forPath('/staff/circulation')->allowedRoles());
         self::assertSame(['admin', 'librarian'], $table->forPath('/staff/barcodes/print')->allowedRoles());
         self::assertSame(['admin'], $table->forPath('/admin/staff')->allowedRoles());
         self::assertSame(['admin'], $table->forPath('/admin/api-docs')->allowedRoles());
@@ -35,7 +36,7 @@ final class PageRouteTableTest extends TestCase
     public function testEveryPageRouteResolvesToFeatureOwnedTemplate(): void
     {
         $table = new PageRouteTable(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'frontend');
-        foreach (['/login', '/register', '/verify-otp', '/student/dashboard', '/student/search', '/student/activity', '/teacher/dashboard', '/teacher/borrow', '/teacher/history', '/teacher/activity', '/staff/dashboard', '/staff/books', '/staff/copy-history', '/staff/barcodes/print', '/guest/dashboard', '/guest/registration', '/guest/receipt', '/admin/api-docs'] as $path) {
+        foreach (['/login', '/register', '/verify-otp', '/student/dashboard', '/student/search', '/student/activity', '/teacher/dashboard', '/teacher/borrow', '/teacher/history', '/teacher/activity', '/staff/dashboard', '/staff/books', '/staff/copy-history', '/staff/circulation', '/staff/barcodes/print', '/guest/dashboard', '/guest/registration', '/guest/receipt', '/admin/api-docs'] as $path) {
             $template = $table->forPath($path)->templatePath();
             self::assertStringContainsString(DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'features' . DIRECTORY_SEPARATOR, $template, $path);
             self::assertFileExists($template, $path);

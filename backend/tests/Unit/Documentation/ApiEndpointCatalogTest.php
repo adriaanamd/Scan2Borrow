@@ -14,7 +14,7 @@ final class ApiEndpointCatalogTest extends TestCase
         $endpoints = (new ApiEndpointCatalog())->all();
         $paths = array_map(static fn (array $endpoint): string => $endpoint['method'] . ' ' . $endpoint['path'], $endpoints);
 
-        self::assertCount(68, $endpoints);
+        self::assertCount(71, $endpoints);
         self::assertCount(count(array_unique($paths)), $paths);
         self::assertContains('GET /api/admin/api-docs', $paths);
         self::assertContains('GET /api/student/activity', $paths);
@@ -29,6 +29,9 @@ final class ApiEndpointCatalogTest extends TestCase
         self::assertContains('GET /api/staff/copy-history', $paths);
         self::assertContains('GET /api/staff/return-approvals', $paths);
         self::assertContains('POST /api/staff/return-action', $paths);
+        self::assertContains('GET /api/staff/circulation/borrower', $paths);
+        self::assertContains('POST /api/staff/circulation/borrow', $paths);
+        self::assertContains('POST /api/staff/circulation/return', $paths);
         self::assertContains('GET /api/student/recommendations', $paths);
         self::assertContains('POST /api/teacher/search-history', $paths);
     }

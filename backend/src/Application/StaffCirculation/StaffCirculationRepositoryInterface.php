@@ -11,7 +11,10 @@ interface StaffCirculationRepositoryInterface
     /** @return array{ok: true, borrower: array<string, mixed>, active_loans: list<array<string, mixed>>}|null */
     public function findBorrowerByBarcode(string $barcode): ?array;
 
-    /** @param list<string> $bookBarcodes @return array<string, mixed> */
+    /**
+     * @param list<string> $bookBarcodes
+     * @return array<string, mixed>
+     */
     public function createDirectBorrow(
         int $borrowerId,
         int $staffId,
@@ -20,7 +23,11 @@ interface StaffCirculationRepositoryInterface
         string $transactionCode,
     ): array;
 
-    /** @param list<int> $loanIds @param list<string> $copyBarcodes @return array<string, mixed> */
+    /**
+     * @param list<int> $loanIds
+     * @param list<string> $copyBarcodes
+     * @return array<string, mixed>
+     */
     public function processDirectReturns(
         int $borrowerId,
         int $staffId,

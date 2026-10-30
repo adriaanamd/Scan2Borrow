@@ -11,6 +11,9 @@ use App\Application\Services\PhotoStorageInterface;
 use App\Application\Services\ProfileChangeRequestService;
 use App\Application\Services\ReturnApprovalService;
 use App\Application\Services\SessionService;
+use App\Application\StaffCirculation\StaffCirculationBorrowRequest;
+use App\Application\StaffCirculation\StaffCirculationReturnRequest;
+use App\Application\StaffCirculation\StaffCirculationService;
 use App\Domain\Auth\Role;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
@@ -29,6 +32,7 @@ final readonly class StaffController
         private ?BorrowerNotificationService $notifications = null,
         private ?ProfileChangeRequestService $profileChanges = null,
         private ?ReturnApprovalService $returnApprovals = null,
+        private ?StaffCirculationService $circulation = null,
     ) {
     }
 
@@ -314,6 +318,97 @@ final readonly class StaffController
         return new JsonResponse(200, ['ok' => true, 'message' => $message]);
     }
 
+    public function circulationBorrower(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff() || $this->circulation === null) {
+            return $this->unauthorized();
+        }
+
+        $barcode = $this->queryString($request, 'barcode');
+        $result = $this->circulation->lookup($barcode);
+        if (($result['ok'] ?? false) !== true) {
+            $status = $barcode === '' ? 422 : 404;
+
+            $message = $this->stringValue($result['message'] ?? null);
+
+            return new JsonResponse($status, ['ok' => false, 'errors' => [$message !== '' ? $message : 'Student account not found for that ID.']]);
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => [
+            'borrower' => is_array($result['borrower'] ?? null) ? $result['borrower'] : [],
+            'active_loans' => is_array($result['active_loans'] ?? null) ? $result['active_loans'] : [],
+        ]]);
+    }
+
+    public function circulationBorrow(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff() || $this->circulation === null) {
+            return $this->unauthorized();
+        }
+        $csrfFailure = $this->csrfFailure($request);
+        if ($csrfFailure !== null) {
+            return $csrfFailure;
+        }
+        $identity = $this->sessions->current();
+        if ($identity === null) {
+            return $this->unauthorized();
+        }
+
+        $body = $request->body();
+        $borrowerBarcode = $this->bodyString($request, 'borrower_barcode');
+        $bookBarcodes = $this->stringList($body['book_barcodes'] ?? null);
+        if ($bookBarcodes === []) {
+            $singleBarcode = $this->bodyString($request, 'book_barcode');
+            if ($singleBarcode !== '') {
+                $bookBarcodes = [$singleBarcode];
+            }
+        }
+        $result = $this->circulation->borrow(
+            $identity->userId(),
+            new StaffCirculationBorrowRequest($borrowerBarcode, $bookBarcodes, $this->nullableBodyString($body, 'due_date')),
+        );
+
+        return $result->successful()
+            ? new JsonResponse(200, ['ok' => true, 'data' => $result->data() + ['message' => $result->message()], 'message' => $result->message()])
+            : new JsonResponse(422, ['ok' => false, 'errors' => [$result->message()]]);
+    }
+
+    public function circulationReturn(ServerRequest $request): JsonResponse
+    {
+        if (!$this->isStaff() || $this->circulation === null) {
+            return $this->unauthorized();
+        }
+        $csrfFailure = $this->csrfFailure($request);
+        if ($csrfFailure !== null) {
+            return $csrfFailure;
+        }
+        $identity = $this->sessions->current();
+        if ($identity === null) {
+            return $this->unauthorized();
+        }
+
+        $body = $request->body();
+        $copyBarcodes = $this->stringList($body['copy_barcodes'] ?? null);
+        if ($copyBarcodes === []) {
+            $singleBarcode = $this->bodyString($request, 'copy_barcode');
+            if ($singleBarcode !== '') {
+                $copyBarcodes = [$singleBarcode];
+            }
+        }
+        $result = $this->circulation->returnBooks(
+            $identity->userId(),
+            new StaffCirculationReturnRequest(
+                $this->positiveInt($body['borrower_id'] ?? null),
+                $this->integerList($body['loan_ids'] ?? null),
+                $copyBarcodes,
+            ),
+        );
+
+        return $result->successful()
+            ? new JsonResponse(200, ['ok' => true, 'data' => $result->data() + ['message' => $result->message()], 'message' => $result->message()])
+            : new JsonResponse(422, ['ok' => false, 'errors' => [$result->message()]]);
+    }
+
     public function guestAction(ServerRequest $request): JsonResponse
     {
         if (!$this->isStaff() || $this->guestApproval === null) {
@@ -455,6 +550,47 @@ final readonly class StaffController
     {
         $value = $request->body()[$key] ?? '';
 
+        return is_string($value) ? trim($value) : '';
+    }
+
+    /** @param array<string, mixed> $body */
+    private function nullableBodyString(array $body, string $key): ?string
+    {
+        $value = $body[$key] ?? null;
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    /** @return list<string> */
+    private function stringList(mixed $value): array
+    {
+        $values = is_array($value) ? $value : [$value];
+        $result = [];
+        foreach ($values as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $result[] = trim($item);
+            }
+        }
+
+        return $result;
+    }
+
+    /** @return list<int|string> */
+    private function integerList(mixed $value): array
+    {
+        $values = is_array($value) ? $value : [$value];
+        $result = [];
+        foreach ($values as $item) {
+            if (is_int($item) || (is_string($item) && ctype_digit($item))) {
+                $result[] = (int) $item;
+            }
+        }
+
+        return $result;
+    }
+
+    private function stringValue(mixed $value): string
+    {
         return is_string($value) ? trim($value) : '';
     }
 

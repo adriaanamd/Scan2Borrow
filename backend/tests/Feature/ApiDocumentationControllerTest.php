@@ -49,7 +49,7 @@ final class ApiDocumentationControllerTest extends TestCase
 
         self::assertSame(200, $response->statusCode());
         self::assertTrue($payload['ok']);
-        self::assertCount(68, $payload['data']['endpoints']);
+        self::assertCount(71, $payload['data']['endpoints']);
         $paths = array_map(
             static fn (array $endpoint): string => $endpoint['method'] . ' ' . $endpoint['path'],
             $payload['data']['endpoints'],
@@ -60,6 +60,9 @@ final class ApiDocumentationControllerTest extends TestCase
         self::assertContains('POST /api/staff/return-action', $paths);
         self::assertContains('GET /api/student/recommendations', $paths);
         self::assertContains('POST /api/teacher/search-history', $paths);
+        self::assertContains('GET /api/staff/circulation/borrower', $paths);
+        self::assertContains('POST /api/staff/circulation/borrow', $paths);
+        self::assertContains('POST /api/staff/circulation/return', $paths);
     }
 
     private function controller(ApiDocumentationSessionStore $store): ApiDocumentationController

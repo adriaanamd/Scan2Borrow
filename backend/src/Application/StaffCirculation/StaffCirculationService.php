@@ -157,7 +157,10 @@ final class StaffCirculationService
         return 'S2B-' . $this->clock->now()->format('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
     }
 
-    /** @param list<string> $values @return list<string> */
+    /**
+     * @param list<string> $values
+     * @return list<string>
+     */
     private function normalizedBarcodes(array $values): array
     {
         $normalized = [];
@@ -172,7 +175,10 @@ final class StaffCirculationService
         return $normalized;
     }
 
-    /** @param list<int|string> $values @return list<int> */
+    /**
+     * @param list<int|string> $values
+     * @return list<int>
+     */
     private function normalizedLoanIds(array $values): array
     {
         $normalized = [];
@@ -189,7 +195,9 @@ final class StaffCirculationService
     /** @param array<string, mixed> $value */
     private function message(array $value): string
     {
-        return $this->string($value['message'] ?? null) ?: 'Unable to load the borrower account.';
+        $message = $this->string($value['message'] ?? null);
+
+        return $message !== '' ? $message : 'Unable to load the borrower account.';
     }
 
     private function positiveInt(mixed $value): int

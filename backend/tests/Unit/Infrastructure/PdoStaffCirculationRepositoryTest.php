@@ -48,11 +48,11 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
 
         self::assertSame('S2B-20260828-DIRECT', $result['transaction_code']);
         self::assertSame(2, $result['borrowed']);
-        self::assertSame(1, (int) $pdo->query('SELECT COUNT(*) FROM borrowing_transactions WHERE approval_status = \'approved\'')->fetchColumn());
-        self::assertSame(2, (int) $pdo->query("SELECT COUNT(*) FROM borrowing_items WHERE status = 'Borrowed'")->fetchColumn());
-        self::assertSame(2, (int) $pdo->query("SELECT COUNT(*) FROM book_copies WHERE status = 'Borrowed' AND due_date = '2026-09-04'")->fetchColumn());
-        self::assertSame(19, $pdo->query("SELECT processed_by FROM borrowing_transactions WHERE transaction_code = 'S2B-20260828-DIRECT'")->fetchColumn());
-        self::assertSame(19, $pdo->query("SELECT approved_by FROM borrowing_transactions WHERE transaction_code = 'S2B-20260828-DIRECT'")->fetchColumn());
+        self::assertSame(1, $this->integerScalar($pdo, 'SELECT COUNT(*) FROM borrowing_transactions WHERE approval_status = \'approved\''));
+        self::assertSame(2, $this->integerScalar($pdo, "SELECT COUNT(*) FROM borrowing_items WHERE status = 'Borrowed'"));
+        self::assertSame(2, $this->integerScalar($pdo, "SELECT COUNT(*) FROM book_copies WHERE status = 'Borrowed' AND due_date = '2026-09-04'"));
+        self::assertSame(19, $this->scalar($pdo, "SELECT processed_by FROM borrowing_transactions WHERE transaction_code = 'S2B-20260828-DIRECT'"));
+        self::assertSame(19, $this->scalar($pdo, "SELECT approved_by FROM borrowing_transactions WHERE transaction_code = 'S2B-20260828-DIRECT'"));
         self::assertCount(2, $audit->events);
         self::assertSame(AuditEventType::LOANED, $audit->events[0]->type);
     }
@@ -73,8 +73,8 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
                 'S2B-20260828-ROLLBK',
             );
         } finally {
-            self::assertSame(0, (int) $pdo->query('SELECT COUNT(*) FROM borrowing_transactions')->fetchColumn());
-            self::assertSame('Available', $pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-001'")->fetchColumn());
+            self::assertSame(0, $this->integerScalar($pdo, 'SELECT COUNT(*) FROM borrowing_transactions'));
+            self::assertSame('Available', $this->scalar($pdo, "SELECT status FROM book_copies WHERE barcode = 'COPY-001'"));
         }
     }
 
@@ -84,14 +84,14 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         $audit = new StaffCirculationAuditRecorder();
         $repository = new PdoStaffCirculationRepository($pdo, $audit);
         $repository->createDirectBorrow(7, 19, ['COPY-001'], new DateTimeImmutable('2026-08-28'), 'S2B-20260820-RETURN');
-        $loanId = (int) $pdo->query('SELECT id FROM borrowing_items LIMIT 1')->fetchColumn();
-        self::assertSame('2026-08-28', $pdo->query('SELECT due_date FROM borrowing_transactions LIMIT 1')->fetchColumn());
+        $loanId = $this->integerScalar($pdo, 'SELECT id FROM borrowing_items LIMIT 1');
+        self::assertSame('2026-08-28', $this->scalar($pdo, 'SELECT due_date FROM borrowing_transactions LIMIT 1'));
 
         $this->expectException(InvalidArgumentException::class);
         try {
             $repository->processDirectReturns(8, 19, [$loanId], ['COPY-001'], new DateTimeImmutable('2026-09-01 10:00:00'), 20.0);
         } finally {
-            self::assertNull($pdo->query('SELECT return_date FROM borrowing_items WHERE id = ' . $loanId)->fetchColumn());
+            self::assertNull($this->scalar($pdo, 'SELECT return_date FROM borrowing_items WHERE id = ' . $loanId));
         }
     }
 
@@ -101,7 +101,7 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         $audit = new StaffCirculationAuditRecorder();
         $repository = new PdoStaffCirculationRepository($pdo, $audit);
         $repository->createDirectBorrow(7, 19, ['COPY-001'], new DateTimeImmutable('2026-08-28'), 'S2B-20260820-RETURN');
-        $loanId = (int) $pdo->query('SELECT id FROM borrowing_items LIMIT 1')->fetchColumn();
+        $loanId = $this->integerScalar($pdo, 'SELECT id FROM borrowing_items LIMIT 1');
 
         $result = $repository->processDirectReturns(
             7,
@@ -114,10 +114,10 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
 
         self::assertSame(1, $result['returned']);
         self::assertSame(60.0, $result['total_fine']);
-        self::assertNotNull($pdo->query('SELECT return_date FROM borrowing_items WHERE id = ' . $loanId)->fetchColumn());
-        self::assertSame('Returned', $pdo->query('SELECT status FROM borrowing_items WHERE id = ' . $loanId)->fetchColumn());
-        self::assertSame('Available', $pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-001'")->fetchColumn());
-        self::assertSame('Returned', $pdo->query("SELECT status FROM borrowing_transactions WHERE transaction_code = 'S2B-20260820-RETURN'")->fetchColumn());
+        self::assertNotNull($this->scalar($pdo, 'SELECT return_date FROM borrowing_items WHERE id = ' . $loanId));
+        self::assertSame('Returned', $this->scalar($pdo, 'SELECT status FROM borrowing_items WHERE id = ' . $loanId));
+        self::assertSame('Available', $this->scalar($pdo, "SELECT status FROM book_copies WHERE barcode = 'COPY-001'"));
+        self::assertSame('Returned', $this->scalar($pdo, "SELECT status FROM borrowing_transactions WHERE transaction_code = 'S2B-20260820-RETURN'"));
         self::assertSame(AuditEventType::RETURNED, $audit->events[1]->type);
     }
 
@@ -132,13 +132,36 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
 
         $borrowed = $repository->createDirectBorrow(7, 19, ['BOOK-001'], new DateTimeImmutable('2026-09-04'), 'S2B-20260828-LEGACY');
         self::assertSame(1, $borrowed['borrowed']);
-        self::assertSame('Borrowed', $pdo->query("SELECT status FROM books WHERE barcode = 'BOOK-001'")->fetchColumn());
-        self::assertSame(19, $pdo->query("SELECT processed_by FROM borrowing WHERE transaction_code = 'S2B-20260828-LEGACY'")->fetchColumn());
+        self::assertSame('Borrowed', $this->scalar($pdo, "SELECT status FROM books WHERE barcode = 'BOOK-001'"));
+        self::assertSame(19, $this->scalar($pdo, "SELECT processed_by FROM borrowing WHERE transaction_code = 'S2B-20260828-LEGACY'"));
 
-        $loanId = (int) $pdo->query("SELECT id FROM borrowing WHERE transaction_code = 'S2B-20260828-LEGACY'")->fetchColumn();
+        $loanId = $this->integerScalar($pdo, "SELECT id FROM borrowing WHERE transaction_code = 'S2B-20260828-LEGACY'");
         $returned = $repository->processDirectReturns(7, 19, [$loanId], ['BOOK-001'], new DateTimeImmutable('2026-09-04 10:00:00'), 20.0);
         self::assertSame(1, $returned['returned']);
-        self::assertSame('Available', $pdo->query("SELECT status FROM books WHERE barcode = 'BOOK-001'")->fetchColumn());
+        self::assertSame('Available', $this->scalar($pdo, "SELECT status FROM books WHERE barcode = 'BOOK-001'"));
+    }
+
+    private function scalar(PDO $pdo, string $query): mixed
+    {
+        $statement = $pdo->query($query);
+        if ($statement === false) {
+            throw new RuntimeException('Test query failed.');
+        }
+
+        return $statement->fetchColumn();
+    }
+
+    private function integerScalar(PDO $pdo, string $query): int
+    {
+        $value = $this->scalar($pdo, $query);
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        throw new RuntimeException('Expected an integer test result.');
     }
 
     private function normalizedPdo(): PDO

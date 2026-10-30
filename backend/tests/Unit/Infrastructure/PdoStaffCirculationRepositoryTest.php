@@ -23,7 +23,8 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         $pdo->exec("INSERT INTO borrowing_transactions (id, transaction_code, user_id, processed_by, approval_status, borrow_date, due_date, status, fine_amount) VALUES (31, 'S2B-ACTIVE', 7, 19, 'approved', '2026-08-20 10:00:00', '2026-08-28', 'Borrowed', 0)");
         $pdo->exec("INSERT INTO borrowing_items (id, transaction_id, copy_id, status, fine_amount) VALUES (55, 31, 11, 'Borrowed', 0)");
 
-        $result = (new PdoStaffCirculationRepository($pdo))->findBorrowerByBarcode('STU-001');
+        $repository = new PdoStaffCirculationRepository($pdo);
+        $result = $repository->findBorrowerByBarcode('STU-001');
 
         self::assertIsArray($result);
         self::assertSame('Ada Lovelace', $result['borrower']['name']);
@@ -40,7 +41,8 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         $pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date, deleted_at) VALUES (21, 'LEGACY-001', 'Legacy Copy', 'Ada Author', 'Borrowed', '2026-09-04', NULL)");
         $pdo->exec("INSERT INTO borrowing (transaction_code, user_id, book_id, approval_status, borrow_date, due_date, status, fine_amount) VALUES ('LEGACY-TX', 7, 21, 'approved', '2026-08-20 10:00:00', '2026-09-04', 'Borrowed', 0)");
 
-        $result = (new PdoStaffCirculationRepository($pdo))->findBorrowerByBarcode('STU-001');
+        $repository = new PdoStaffCirculationRepository($pdo);
+        $result = $repository->findBorrowerByBarcode('STU-001');
 
         self::assertIsArray($result);
         self::assertSame('LEGACY-001', $result['active_loans'][0]['copy_barcode']);
@@ -92,12 +94,25 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         $pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date, deleted_at) VALUES (21, 'LEGACY-001', 'Legacy Copy', 'Ada Author', 'Borrowed', '2026-09-04', NULL)");
         $pdo->exec("INSERT INTO borrowing (transaction_code, user_id, book_id, approval_status, borrow_date, due_date, status, fine_amount) VALUES ('LEGACY-TX', 7, 21, 'approved', '2026-08-20 10:00:00', '2026-09-04', 'Borrowed', 0)");
 
-        $result = (new PdoStaffCirculationRepository($pdo))->findBorrowerByBarcode('STU-001');
+        $repository = new PdoStaffCirculationRepository($pdo);
+        $result = $repository->findBorrowerByBarcode('STU-001');
 
         self::assertIsArray($result);
         self::assertCount(2, $result['active_loans']);
         self::assertSame(2, $result['borrower']['borrow_limit_count']);
         self::assertSame(['COPY-001', 'LEGACY-001'], array_column($result['active_loans'], 'copy_barcode'));
+
+        $legacyLoanId = $this->integerScalar($pdo, "SELECT id FROM borrowing WHERE transaction_code = 'LEGACY-TX'");
+        $returned = $repository->processDirectReturns(
+            7,
+            19,
+            [55, $legacyLoanId],
+            ['COPY-001', 'LEGACY-001'],
+            new DateTimeImmutable('2026-09-04 10:00:00'),
+            20.0,
+        );
+
+        self::assertSame(2, $returned['returned']);
     }
 
     public function testNormalizedDirectBorrowApprovesCopiesAndRecordsAudit(): void
@@ -187,6 +202,35 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         self::assertSame('Available', $this->scalar($pdo, "SELECT status FROM book_copies WHERE barcode = 'COPY-001'"));
         self::assertSame('Returned', $this->scalar($pdo, "SELECT status FROM borrowing_transactions WHERE transaction_code = 'S2B-20260820-RETURN'"));
         self::assertSame(AuditEventType::RETURNED, $audit->events[1]->type);
+    }
+
+    public function testReturnRequiresEachLoanIdToMatchItsCopyBarcode(): void
+    {
+        $pdo = $this->normalizedPdo();
+        $repository = new PdoStaffCirculationRepository($pdo);
+        $repository->createDirectBorrow(
+            7,
+            19,
+            ['COPY-001', 'COPY-002'],
+            new DateTimeImmutable('2026-08-28'),
+            'S2B-20260820-PAIR',
+        );
+        $firstLoanId = $this->integerScalar($pdo, 'SELECT id FROM borrowing_items WHERE copy_id = 11');
+
+        $this->expectException(InvalidArgumentException::class);
+        try {
+            $repository->processDirectReturns(
+                7,
+                19,
+                [$firstLoanId],
+                ['COPY-002'],
+                new DateTimeImmutable('2026-09-01 10:00:00'),
+                20.0,
+            );
+        } finally {
+            self::assertSame('Borrowed', $this->scalar($pdo, "SELECT status FROM book_copies WHERE barcode = 'COPY-001'"));
+            self::assertSame('Borrowed', $this->scalar($pdo, "SELECT status FROM book_copies WHERE barcode = 'COPY-002'"));
+        }
     }
 
     public function testLegacyLookupBorrowAndReturnRemainSupported(): void

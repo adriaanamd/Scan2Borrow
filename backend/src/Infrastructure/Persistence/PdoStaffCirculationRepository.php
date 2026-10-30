@@ -108,35 +108,39 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             $legacyRows = $this->hasTable('borrowing') && $this->hasTable('books')
                 ? $this->selectedLegacyLoans($borrowerId, $loanIds, $copyBarcodes)
                 : [];
-            if ($normalizedRows !== [] && $legacyRows !== []) {
-                throw new InvalidArgumentException('Selected books belong to different circulation storage records.');
-            }
-            $normalized = $normalizedRows !== [] || ($legacyRows === [] && $this->usesNormalizedInventory());
-            $rows = $normalized ? $normalizedRows : $legacyRows;
-            $this->assertSelectedRows($rows, $loanIds, $copyBarcodes);
+            $rows = $this->selectReturnRows(
+                array_map(static fn (array $row): array => $row + ['_storage' => 'normalized'], $normalizedRows),
+                array_map(static fn (array $row): array => $row + ['_storage' => 'legacy'], $legacyRows),
+                $loanIds,
+                $copyBarcodes,
+            );
 
             $totalFine = 0.0;
+            $normalizedRows = [];
             foreach ($rows as &$row) {
                 $fine = $this->fine($row['due_date'] ?? null, $now, $finePerDay);
                 $totalFine += $fine;
                 $row['processed_fine'] = $fine;
+                $normalized = ($row['_storage'] ?? '') === 'normalized';
                 if ($normalized) {
                     $this->returnNormalizedLoan($row, $staffId, $fine);
+                    $normalizedRows[] = $row;
                 } else {
                     $this->returnLegacyLoan($row, $staffId, $fine);
                 }
             }
 
-            if ($normalized) {
-                $this->closeCompletedTransactions($rows, $staffId);
-                foreach ($rows as $row) {
-                    if ($this->availability !== null) {
-                        $this->availability->advance(
-                            $this->intValue($row['title_id'] ?? null),
-                            $this->intValue($row['copy_id'] ?? null),
-                            $now,
-                        );
+            if ($normalizedRows !== []) {
+                $this->closeCompletedTransactions($normalizedRows, $staffId);
+                foreach ($normalizedRows as $row) {
+                    if ($this->availability === null) {
+                        continue;
                     }
+                    $this->availability->advance(
+                        $this->intValue($row['title_id'] ?? null),
+                        $this->intValue($row['copy_id'] ?? null),
+                        $now,
+                    );
                 }
             }
             unset($row);
@@ -424,31 +428,98 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param list<array<string, mixed>> $normalizedRows
+     * @param list<array<string, mixed>> $legacyRows
      * @param list<int> $loanIds
      * @param list<string> $copyBarcodes
+     * @return list<array<string, mixed>>
      */
-    private function assertSelectedRows(array $rows, array $loanIds, array $copyBarcodes): void
+    private function selectReturnRows(array $normalizedRows, array $legacyRows, array $loanIds, array $copyBarcodes): array
     {
-        $foundIds = [];
-        $foundBarcodes = [];
-        foreach ($rows as $row) {
-            $foundIds[$this->intValue($row['id'] ?? null)] = true;
-            $foundBarcodes[$this->string($row['copy_barcode'] ?? null)] = true;
+        $candidates = array_merge($normalizedRows, $legacyRows);
+        if ($candidates === []) {
+            throw new InvalidArgumentException('The selected book does not belong to this borrower.');
         }
-        foreach ($loanIds as $loanId) {
-            if (!isset($foundIds[$loanId])) {
-                throw new InvalidArgumentException('The selected loan is no longer active for this borrower.');
+
+        if ($loanIds !== [] && $copyBarcodes !== []) {
+            if (count($loanIds) !== count($copyBarcodes)) {
+                throw new InvalidArgumentException('Each selected loan must match its returned copy barcode.');
+            }
+            $selected = [];
+            $selectedKeys = [];
+            foreach ($loanIds as $index => $loanId) {
+                $barcode = $copyBarcodes[$index];
+                $matches = $this->matchingReturnRows($candidates, $loanId, $barcode);
+                if (count($matches) !== 1) {
+                    throw new InvalidArgumentException('The selected loan and copy barcode do not match an active borrower loan.');
+                }
+                $key = $this->returnRowKey($matches[0]);
+                if (isset($selectedKeys[$key])) {
+                    throw new InvalidArgumentException('Please select each returned copy only once.');
+                }
+                $selectedKeys[$key] = true;
+                $selected[] = $matches[0];
+            }
+
+            return $selected;
+        }
+
+        $selected = [];
+        $selectedKeys = [];
+        if ($loanIds !== []) {
+            foreach ($loanIds as $loanId) {
+                $matches = $this->matchingReturnRows($candidates, $loanId, null);
+                if (count($matches) !== 1) {
+                    throw new InvalidArgumentException('The selected loan is ambiguous or no longer active for this borrower.');
+                }
+                $key = $this->returnRowKey($matches[0]);
+                if (isset($selectedKeys[$key])) {
+                    throw new InvalidArgumentException('Please select each returned copy only once.');
+                }
+                $selectedKeys[$key] = true;
+                $selected[] = $matches[0];
             }
         }
         foreach ($copyBarcodes as $barcode) {
-            if (!isset($foundBarcodes[$barcode])) {
-                throw new InvalidArgumentException('The selected book does not belong to this borrower.');
+            $matches = $this->matchingReturnRows($candidates, null, $barcode);
+            if (count($matches) !== 1) {
+                throw new InvalidArgumentException('The selected book is ambiguous or does not belong to this borrower.');
             }
+            $key = $this->returnRowKey($matches[0]);
+            if (isset($selectedKeys[$key])) {
+                throw new InvalidArgumentException('Please select each returned copy only once.');
+            }
+            $selectedKeys[$key] = true;
+            $selected[] = $matches[0];
         }
-        if ($rows === []) {
-            throw new InvalidArgumentException('The selected book does not belong to this borrower.');
+
+        return $selected;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function matchingReturnRows(array $rows, ?int $loanId, ?string $barcode): array
+    {
+        $matches = [];
+        foreach ($rows as $row) {
+            if ($loanId !== null && $this->intValue($row['id'] ?? null) !== $loanId) {
+                continue;
+            }
+            if ($barcode !== null && $this->string($row['copy_barcode'] ?? null) !== $barcode) {
+                continue;
+            }
+            $matches[] = $row;
         }
+
+        return $matches;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function returnRowKey(array $row): string
+    {
+        return $this->string($row['_storage'] ?? '') . ':' . $this->intValue($row['id'] ?? null);
     }
 
     /** @param array<string, mixed> $row */

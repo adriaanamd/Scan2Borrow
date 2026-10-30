@@ -73,12 +73,17 @@ final class PdoOtpRepository implements OtpRepositoryInterface
         );
     }
 
-    public function markUsed(int $id): void
+    public function markUsed(int $id, DateTimeImmutable $now): bool
     {
         $statement = $this->pdo->prepare(
-            'UPDATE otp_codes SET is_used = 1, is_verified = 1 WHERE id = :id'
+            'UPDATE otp_codes SET is_used = 1, is_verified = 1 WHERE id = :id AND is_used = 0 AND expires_at > :now'
         );
-        $statement->execute(['id' => $id]);
+        $statement->execute([
+            'id' => $id,
+            'now' => $now->format('Y-m-d H:i:s'),
+        ]);
+
+        return $statement->rowCount() === 1;
     }
 
     public function updateCode(int $id, string $code, DateTimeImmutable $expiresAt): void

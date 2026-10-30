@@ -48,11 +48,14 @@ final class OtpService implements RegistrationOtpInterface
     public function verify(string $barcode, string $code): ?array
     {
         $record = $this->repository->latestUnused(trim($barcode));
-        if ($record === null || $record->otpCode() !== trim($code) || $record->expiresAt() <= $this->clock->now()) {
+        $now = $this->clock->now();
+        if ($record === null || $record->otpCode() !== trim($code) || $record->expiresAt() <= $now) {
             return null;
         }
 
-        $this->repository->markUsed($record->id());
+        if (!$this->repository->markUsed($record->id(), $now)) {
+            return null;
+        }
 
         return $record->payload();
     }

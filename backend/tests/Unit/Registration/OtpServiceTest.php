@@ -89,6 +89,25 @@ final class OtpServiceTest extends TestCase
         self::assertNull($service->verify('2024004', '123456'));
     }
 
+    public function testVerifyRejectsACodeWhenAtomicClaimLosesTheRace(): void
+    {
+        $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:00'));
+        $repository = new FakeOtpRepository();
+        $repository->record = OtpRecord::pending(
+            8,
+            '2024004',
+            '123456',
+            '09170000004',
+            ['role' => 'student'],
+            $clock->now()->modify('+1 minute'),
+            $clock->now(),
+        );
+        $repository->claimSucceeds = false;
+        $service = new OtpService($repository, $clock, new FakeSmsSender(), new FakeEmailSender());
+
+        self::assertNull($service->verify('2024004', '123456'));
+    }
+
     public function testResendIsBlockedForSixtySecondsThenUpdatesExistingRecord(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:30'));
@@ -273,6 +292,8 @@ final class FakeOtpRepository implements OtpRepositoryInterface
 
     public ?int $updatedId = null;
 
+    public bool $claimSucceeds = true;
+
     public function deleteExpired(DateTimeImmutable $now, string $barcode): void
     {
     }
@@ -291,11 +312,17 @@ final class FakeOtpRepository implements OtpRepositoryInterface
         return $this->record;
     }
 
-    public function markUsed(int $id): void
+    public function markUsed(int $id, DateTimeImmutable $now): bool
     {
+        if (!$this->claimSucceeds) {
+            return false;
+        }
         if ($this->record !== null && $this->record->id() === $id) {
             $this->record = $this->record->usedCopy();
+            return true;
         }
+
+        return false;
     }
 
     public function updateCode(int $id, string $code, DateTimeImmutable $expiresAt): void

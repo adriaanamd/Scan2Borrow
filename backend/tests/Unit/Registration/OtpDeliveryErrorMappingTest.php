@@ -195,7 +195,7 @@ final class ErrorMappingOtpRepository implements OtpRepositoryInterface
         return $this->record;
     }
 
-    public function markUsed(int $id): void {}
+    public function markUsed(int $id, DateTimeImmutable $now): bool { return true; }
 
     public function updateCode(int $id, string $code, DateTimeImmutable $expiresAt): void
     {

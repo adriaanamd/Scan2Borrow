@@ -15,7 +15,7 @@ interface OtpRepositoryInterface
 
     public function latestUnused(string $barcode): ?OtpRecord;
 
-    public function markUsed(int $id): void;
+    public function markUsed(int $id, DateTimeImmutable $now): bool;
 
     public function updateCode(int $id, string $code, DateTimeImmutable $expiresAt): void;
 }

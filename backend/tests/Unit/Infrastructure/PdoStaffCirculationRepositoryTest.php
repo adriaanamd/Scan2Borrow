@@ -67,6 +67,37 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         self::assertSame('Borrowed', $this->scalar($pdo, "SELECT status FROM books WHERE barcode = 'LEGACY-001'"));
         self::assertSame(0, $this->integerScalar($pdo, 'SELECT COUNT(*) FROM borrowing_transactions'));
         self::assertSame(1, $this->integerScalar($pdo, 'SELECT COUNT(*) FROM borrowing'));
+
+        $loanId = $this->integerScalar($pdo, "SELECT id FROM borrowing WHERE transaction_code = 'S2B-20260828-LEGACY-MIXED'");
+        $returned = $repository->processDirectReturns(
+            7,
+            19,
+            [$loanId],
+            ['LEGACY-001'],
+            new DateTimeImmutable('2026-09-04 10:00:00'),
+            20.0,
+        );
+
+        self::assertSame(1, $returned['returned']);
+        self::assertSame('Available', $this->scalar($pdo, "SELECT status FROM books WHERE barcode = 'LEGACY-001'"));
+    }
+
+    public function testLookupMergesActiveLoansAcrossBothStoresWithoutDuplicatingCopies(): void
+    {
+        $pdo = $this->normalizedPdo();
+        $pdo->exec("INSERT INTO borrowing_transactions (id, transaction_code, user_id, processed_by, approval_status, borrow_date, due_date, status, fine_amount) VALUES (31, 'S2B-NORMALIZED', 7, 19, 'approved', '2026-08-20 10:00:00', '2026-08-28', 'Borrowed', 0)");
+        $pdo->exec("INSERT INTO borrowing_items (id, transaction_id, copy_id, status, fine_amount) VALUES (55, 31, 11, 'Borrowed', 0)");
+        $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode TEXT UNIQUE, title TEXT, author TEXT, status TEXT, due_date TEXT, return_date TEXT, deleted_at TEXT)');
+        $pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code TEXT UNIQUE, user_id INTEGER, book_id INTEGER, processed_by INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, return_status TEXT DEFAULT \'none\', return_decided_at TEXT, return_decided_by INTEGER, return_decision_note TEXT, status TEXT, fine_amount NUMERIC)');
+        $pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date, deleted_at) VALUES (21, 'LEGACY-001', 'Legacy Copy', 'Ada Author', 'Borrowed', '2026-09-04', NULL)");
+        $pdo->exec("INSERT INTO borrowing (transaction_code, user_id, book_id, approval_status, borrow_date, due_date, status, fine_amount) VALUES ('LEGACY-TX', 7, 21, 'approved', '2026-08-20 10:00:00', '2026-09-04', 'Borrowed', 0)");
+
+        $result = (new PdoStaffCirculationRepository($pdo))->findBorrowerByBarcode('STU-001');
+
+        self::assertIsArray($result);
+        self::assertCount(2, $result['active_loans']);
+        self::assertSame(2, $result['borrower']['borrow_limit_count']);
+        self::assertSame(['COPY-001', 'LEGACY-001'], array_column($result['active_loans'], 'copy_barcode'));
     }
 
     public function testNormalizedDirectBorrowApprovesCopiesAndRecordsAudit(): void

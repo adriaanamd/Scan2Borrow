@@ -32,13 +32,16 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         }
 
         $borrowerId = $this->intValue($borrower['id'] ?? null);
-        $normalized = $this->usesNormalizedBorrowingDataForUser($borrowerId);
-        $activeLoans = $normalized
+        $normalizedLoans = $this->hasNormalizedSchema()
             ? $this->normalizedActiveLoans($borrowerId)
-            : $this->legacyActiveLoans($borrowerId);
+            : [];
+        $legacyLoans = $this->hasTable('borrowing') && $this->hasTable('books')
+            ? $this->legacyActiveLoans($borrowerId)
+            : [];
+        $activeLoans = $this->mergeLoanRows($normalizedLoans, $legacyLoans);
         $borrower['name'] = trim($this->string($borrower['firstname'] ?? null) . ' ' . $this->string($borrower['lastname'] ?? null));
         $borrower['active_loans'] = count($activeLoans);
-        $borrower['borrow_limit_count'] = $this->activeLoanCount($this->intValue($borrower['id'] ?? null), $normalized);
+        $borrower['borrow_limit_count'] = $this->activeLoanCount($borrowerId);
 
         return [
             'ok' => true,
@@ -63,9 +66,8 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         $this->pdo->beginTransaction();
         try {
             $normalizedStorage = $this->storageForBorrowBarcodes($bookBarcodes);
-            $normalizedBorrowing = $this->usesNormalizedBorrowingDataForUser($borrowerId);
-            $this->assertBorrowerCanBorrow($borrowerId, $normalizedBorrowing);
-            $activeCount = $this->activeLoanCount($borrowerId, $normalizedBorrowing);
+            $this->assertBorrowerCanBorrow($borrowerId);
+            $activeCount = $this->activeLoanCount($borrowerId);
             if ($activeCount + count($bookBarcodes) > $this->maxBooks) {
                 throw new RuntimeException('This borrower has reached the ' . $this->maxBooks . '-book limit.');
             }
@@ -109,8 +111,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             if ($normalizedRows !== [] && $legacyRows !== []) {
                 throw new InvalidArgumentException('Selected books belong to different circulation storage records.');
             }
-            $normalized = $normalizedRows !== []
-                || ($legacyRows === [] && $this->usesNormalizedBorrowingDataForUser($borrowerId));
+            $normalized = $normalizedRows !== [] || ($legacyRows === [] && $this->usesNormalizedInventory());
             $rows = $normalized ? $normalizedRows : $legacyRows;
             $this->assertSelectedRows($rows, $loanIds, $copyBarcodes);
 
@@ -596,7 +597,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         return round($days * $finePerDay, 2);
     }
 
-    private function assertBorrowerCanBorrow(int $borrowerId, bool $normalized): void
+    private function assertBorrowerCanBorrow(int $borrowerId): void
     {
         $borrower = $this->userById($borrowerId, true);
         if ($borrower === null || !in_array(strtolower($this->string($borrower['role'] ?? null)), ['student', 'teacher'], true)) {
@@ -605,7 +606,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         if (strtolower($this->string($borrower['status'] ?? 'active')) !== 'active' || strtolower($this->string($borrower['borrowing_status'] ?? 'active')) !== 'active') {
             throw new RuntimeException('This account is not currently allowed to borrow books.');
         }
-        if ($this->activeLoanCount($borrowerId, $normalized) >= $this->maxBooks) {
+        if ($this->activeLoanCount($borrowerId) >= $this->maxBooks) {
             throw new RuntimeException('This borrower has reached the ' . $this->maxBooks . '-book limit.');
         }
     }
@@ -635,25 +636,69 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         return $row === false ? null : $row;
     }
 
-    private function activeLoanCount(int $borrowerId, bool $normalized): int
+    private function activeLoanCount(int $borrowerId): int
     {
-        if ($normalized && $this->hasNormalizedSchema()) {
-            $statement = $this->pdo->prepare(
-                "SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
-                 WHERE bt.user_id = :user_id AND bt.approval_status IN ('pending', 'approved') AND bi.return_date IS NULL
-                   AND bi.status IN ('Pending', 'Borrowed', 'Overdue')"
-            );
-        } elseif ($this->hasTable('borrowing')) {
-            $statement = $this->pdo->prepare(
-                "SELECT COUNT(*) FROM borrowing WHERE user_id = :user_id AND approval_status IN ('pending', 'approved')
-                 AND return_date IS NULL AND status IN ('Pending', 'Borrowed', 'Overdue')"
-            );
-        } else {
-            return 0;
-        }
+        $normalizedRows = $this->hasNormalizedSchema()
+            ? $this->normalizedBorrowLimitRows($borrowerId)
+            : [];
+        $legacyRows = $this->hasTable('borrowing') && $this->hasTable('books')
+            ? $this->legacyBorrowLimitRows($borrowerId)
+            : [];
+
+        return count($this->mergeLoanRows($normalizedRows, $legacyRows));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function normalizedBorrowLimitRows(int $borrowerId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT bi.id, bi.copy_id, c.barcode AS copy_barcode
+             FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+             JOIN book_copies c ON c.id = bi.copy_id
+             WHERE bt.user_id = :user_id AND bt.approval_status IN ('pending', 'approved')
+               AND bi.return_date IS NULL AND bi.status IN ('Pending', 'Borrowed', 'Overdue')"
+        );
         $statement->execute(['user_id' => $borrowerId]);
 
-        return (int) $statement->fetchColumn();
+        return $this->fetchRows($statement);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function legacyBorrowLimitRows(int $borrowerId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT b.id, b.book_id AS copy_id, old_book.barcode AS copy_barcode
+             FROM borrowing b JOIN books old_book ON old_book.id = b.book_id
+             WHERE b.user_id = :user_id AND b.approval_status IN ('pending', 'approved')
+               AND b.return_date IS NULL AND b.status IN ('Pending', 'Borrowed', 'Overdue')"
+        );
+        $statement->execute(['user_id' => $borrowerId]);
+
+        return $this->fetchRows($statement);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $preferred
+     * @param list<array<string, mixed>> $fallback
+     * @return list<array<string, mixed>>
+     */
+    private function mergeLoanRows(array $preferred, array $fallback): array
+    {
+        $merged = [];
+        $seen = [];
+        foreach (array_merge($preferred, $fallback) as $row) {
+            $barcode = $this->string($row['copy_barcode'] ?? null);
+            $key = $barcode !== ''
+                ? 'barcode:' . $barcode
+                : 'loan:' . $this->intValue($row['id'] ?? null) . ':' . count($merged);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $merged[] = $row;
+        }
+
+        return $merged;
     }
 
     /** @param list<string> $barcodes */
@@ -675,19 +720,6 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     private function usesNormalizedInventory(): bool
     {
         return $this->hasNormalizedSchema() && $this->tableCount('book_copies') > 0;
-    }
-
-    private function usesNormalizedBorrowingDataForUser(int $borrowerId): bool
-    {
-        if (!$this->hasNormalizedSchema()) {
-            return false;
-        }
-        $statement = $this->pdo->prepare(
-            'SELECT 1 FROM borrowing_transactions WHERE user_id = :user_id LIMIT 1'
-        );
-        $statement->execute(['user_id' => $borrowerId]);
-
-        return $statement->fetchColumn() !== false;
     }
 
     /** @param list<string> $barcodes */

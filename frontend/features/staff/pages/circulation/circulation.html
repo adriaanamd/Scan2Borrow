@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf" content="" />
+    <title>Circulation Desk | Scan2Borrow</title>
+    <link rel="icon" type="image/png" href="/scan2borrow/public/favicon.png" />
+    <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/features/staff/pages/circulation/circulation.css" rel="stylesheet" />
+    <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
+    <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
+  </head>
+  <body data-app-page="staff-circulation" class="circulation-page">
+    <div class="app">
+      <aside class="sidebar" data-app-navbar data-navbar-role="session"></aside>
+      <main class="main">
+        <header class="topbar">
+          <h1 class="topbar-title">Circulation Desk</h1>
+          <div class="topbar-user"><span class="user-role">Staff</span></div>
+        </header>
+        <div class="content">
+          <div class="page-head circulation-head">
+            <div>
+              <p class="circulation-kicker">In-person workflow</p>
+              <h2>Scan, confirm, complete.</h2>
+              <p>Use the borrower’s ID barcode or QR code to handle the desk transaction without searching the student directory.</p>
+            </div>
+            <div class="circulation-rule" aria-hidden="true"><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="circulation-mode" role="tablist" aria-label="Circulation action">
+            <button type="button" class="circulation-mode__button is-active" data-circulation-mode="borrow" role="tab" aria-selected="true">Borrow books</button>
+            <button type="button" class="circulation-mode__button" data-circulation-mode="return" role="tab" aria-selected="false">Return books</button>
+          </div>
+
+          <div id="circulation-status" class="circulation-status" role="status" aria-live="polite">Scan a student ID to begin.</div>
+
+          <section id="circulation-borrower" class="circulation-borrower" hidden aria-label="Borrower details">
+            <div class="circulation-borrower__identity">
+              <span class="circulation-borrower__label">Borrower account</span>
+              <h2 id="circulation-borrower-name"></h2>
+              <p><span id="circulation-borrower-id"></span><span class="circulation-separator">·</span><span id="circulation-borrower-role"></span></p>
+            </div>
+            <dl class="circulation-borrower__metric"><dt>Active loans</dt><dd id="circulation-borrower-active">0</dd></dl>
+            <button type="button" class="circulation-link" data-circulation-action="clear-borrower">Clear borrower</button>
+          </section>
+
+          <form id="circulation-borrower-form" class="circulation-id-form">
+            <div>
+              <label for="circulation-borrower-barcode">Borrower ID barcode or QR value</label>
+              <input id="circulation-borrower-barcode" name="barcode" autocomplete="off" placeholder="Scan or enter student ID" />
+            </div>
+            <div id="circulation-borrower-scanner" class="circulation-scanner" data-scan-root>
+              <button type="button" class="circulation-camera" data-scan-target="circulation-borrower-barcode">Scan ID with camera</button>
+            </div>
+            <button type="submit" class="circulation-primary">Load borrower</button>
+          </form>
+
+          <section id="circulation-borrow-panel" class="circulation-panel" data-mode-panel="borrow" aria-labelledby="circulation-borrow-heading">
+            <div class="circulation-panel__heading">
+              <div><p class="circulation-kicker">Desk checkout</p><h2 id="circulation-borrow-heading">Build a borrowing transaction</h2></div>
+              <span class="circulation-panel__index">01 / 02</span>
+            </div>
+            <form id="circulation-borrow-form" class="circulation-book-form">
+              <div>
+                <label for="circulation-book-barcode">Book copy barcode</label>
+                <input id="circulation-book-barcode" name="book_barcode" autocomplete="off" placeholder="Scan each physical copy" />
+              </div>
+              <div id="circulation-book-scanner" class="circulation-scanner" data-scan-root>
+                <button type="button" class="circulation-camera" data-scan-target="circulation-book-barcode">Scan book copy</button>
+              </div>
+              <button type="submit" class="circulation-secondary">Add copy</button>
+            </form>
+            <div class="circulation-panel__body">
+              <div>
+                <label for="circulation-due-date">Due date <span>(optional for students)</span></label>
+                <input id="circulation-due-date" type="date" />
+              </div>
+              <div class="circulation-list-block">
+                <div class="circulation-list-block__head"><span>Copies in draft</span><span>Exact scan</span></div>
+                <ul id="circulation-borrow-copy-list" class="circulation-copy-list"><li class="circulation-empty">No book copies scanned yet.</li></ul>
+              </div>
+            </div>
+            <div class="circulation-panel__footer">
+              <p>Review the borrower and every physical copy before approval.</p>
+              <button type="button" class="circulation-primary" data-circulation-action="review-borrow">Review transaction</button>
+            </div>
+          </section>
+
+          <section id="circulation-return-panel" class="circulation-panel" data-mode-panel="return" hidden aria-labelledby="circulation-return-heading">
+            <div class="circulation-panel__heading">
+              <div><p class="circulation-kicker">Desk return</p><h2 id="circulation-return-heading">Select books being handed back</h2></div>
+              <span class="circulation-panel__index">02 / 02</span>
+            </div>
+            <form id="circulation-return-form" class="circulation-book-form">
+              <div>
+                <label for="circulation-return-book-barcode">Returned copy barcode</label>
+                <input id="circulation-return-book-barcode" name="copy_barcode" autocomplete="off" placeholder="Scan a returned copy" />
+              </div>
+              <div id="circulation-return-scanner" class="circulation-scanner" data-scan-root>
+                <button type="button" class="circulation-camera" data-scan-target="circulation-return-book-barcode">Scan returned copy</button>
+              </div>
+              <button type="submit" class="circulation-secondary">Select copy</button>
+            </form>
+            <div class="circulation-list-block circulation-list-block--returns">
+              <div class="circulation-list-block__head"><span>Active loans</span><span>Scan or tick</span></div>
+              <div id="circulation-return-loans" class="circulation-loan-list"><p class="circulation-empty">Scan a student ID to load active loans.</p></div>
+            </div>
+            <div class="circulation-panel__footer">
+              <p>Only active loans belonging to the scanned borrower can be returned.</p>
+              <button id="circulation-return-submit" type="button" class="circulation-primary" data-circulation-action="submit-return">Process selected returns</button>
+            </div>
+          </section>
+
+          <div id="circulation-review-modal" class="circulation-review" hidden role="dialog" aria-modal="true" aria-labelledby="circulation-review-title">
+            <div class="circulation-review__card">
+              <div class="circulation-review__head"><div><p class="circulation-kicker">Final check</p><h2 id="circulation-review-title">Approve borrowing transaction?</h2></div><button type="button" class="circulation-link" data-circulation-action="reject-borrow">Close</button></div>
+              <p>Confirm these scanned copies are physically in the borrower’s hands before approval.</p>
+              <ul id="circulation-review-items" class="circulation-copy-list"></ul>
+              <div class="circulation-review__actions">
+                <button type="button" class="circulation-secondary" data-circulation-action="reject-borrow">Reject draft</button>
+                <button type="button" class="circulation-primary" id="circulation-approve-borrow" data-circulation-action="approve-borrow">Approve borrowing</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/scan2borrow/frontend/features/staff/pages/circulation/entry.js"></script>
+    <script src="/scan2borrow/frontend/assets/js/core/icons.js" defer></script>
+  </body>
+</html>

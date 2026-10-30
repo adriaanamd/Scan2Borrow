@@ -130,6 +130,23 @@ test('staff navigation exposes the copy history page', () => {
   const navbar = fs.readFileSync(path.resolve(testsDirectory, '..', 'assets', 'js', 'core', 'app-navbar.js'), 'utf8');
   assert.match(navbar, /staff\/copy-history/);
   assert.match(navbar, /Copy History/);
+  assert.match(navbar, /staff\/circulation/);
+  assert.match(navbar, /Circulation/);
+});
+
+test('staff circulation page exposes scan-first borrow and return controls', () => {
+  const pageDirectory = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'circulation');
+  const template = fs.readFileSync(path.join(pageDirectory, 'circulation.html'), 'utf8');
+  const stylesheet = fs.readFileSync(path.join(pageDirectory, 'circulation.css'), 'utf8');
+
+  assert.match(template, /data-app-page="staff-circulation"/);
+  assert.match(template, /circulation-borrower-scanner/);
+  assert.match(template, /circulation-book-scanner/);
+  assert.match(template, /circulation-return-scanner/);
+  assert.match(template, /circulation-review-modal/);
+  assert.match(template, /circulation-approve-borrow/);
+  assert.match(stylesheet, /#002fa7/);
+  assert.match(stylesheet, /@media/);
 });
 
 test('admin profile approval stays visible only on the protected admin surface', () => {

@@ -47,6 +47,28 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         self::assertSame(1, $result['borrower']['borrow_limit_count']);
     }
 
+    public function testLegacyBookBarcodeCanStillBeBorrowedWhenNormalizedInventoryExists(): void
+    {
+        $pdo = $this->normalizedPdo();
+        $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode TEXT UNIQUE, title TEXT, author TEXT, status TEXT, due_date TEXT, return_date TEXT, deleted_at TEXT)');
+        $pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code TEXT UNIQUE, user_id INTEGER, book_id INTEGER, processed_by INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, return_status TEXT DEFAULT \'none\', return_decided_at TEXT, return_decided_by INTEGER, return_decision_note TEXT, status TEXT, fine_amount NUMERIC)');
+        $pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date, deleted_at) VALUES (21, 'LEGACY-001', 'Legacy Copy', 'Ada Author', 'Available', NULL, NULL)");
+
+        $repository = new PdoStaffCirculationRepository($pdo);
+        $result = $repository->createDirectBorrow(
+            7,
+            19,
+            ['LEGACY-001'],
+            new DateTimeImmutable('2026-09-04'),
+            'S2B-20260828-LEGACY-MIXED',
+        );
+
+        self::assertSame(1, $result['borrowed']);
+        self::assertSame('Borrowed', $this->scalar($pdo, "SELECT status FROM books WHERE barcode = 'LEGACY-001'"));
+        self::assertSame(0, $this->integerScalar($pdo, 'SELECT COUNT(*) FROM borrowing_transactions'));
+        self::assertSame(1, $this->integerScalar($pdo, 'SELECT COUNT(*) FROM borrowing'));
+    }
+
     public function testNormalizedDirectBorrowApprovesCopiesAndRecordsAudit(): void
     {
         $pdo = $this->normalizedPdo();

@@ -26,13 +26,13 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
 
     public function findBorrowerByBarcode(string $barcode): ?array
     {
-        $normalized = $this->usesNormalizedBorrowingData();
         $borrower = $this->userByBarcode(trim($barcode));
         if ($borrower === null) {
             return null;
         }
 
         $borrowerId = $this->intValue($borrower['id'] ?? null);
+        $normalized = $this->usesNormalizedBorrowingDataForUser($borrowerId);
         $activeLoans = $normalized
             ? $this->normalizedActiveLoans($borrowerId)
             : $this->legacyActiveLoans($borrowerId);
@@ -62,8 +62,8 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
 
         $this->pdo->beginTransaction();
         try {
-            $normalizedStorage = $this->usesNormalizedInventory();
-            $normalizedBorrowing = $this->usesNormalizedBorrowingData();
+            $normalizedStorage = $this->storageForBorrowBarcodes($bookBarcodes);
+            $normalizedBorrowing = $this->usesNormalizedBorrowingDataForUser($borrowerId);
             $this->assertBorrowerCanBorrow($borrowerId, $normalizedBorrowing);
             $activeCount = $this->activeLoanCount($borrowerId, $normalizedBorrowing);
             if ($activeCount + count($bookBarcodes) > $this->maxBooks) {
@@ -99,11 +99,19 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     ): array {
         $this->pdo->beginTransaction();
         try {
-            $normalized = $this->usesNormalizedBorrowingData();
-            $this->assertBorrowerExists($borrowerId, $normalized);
-            $rows = $normalized
+            $this->assertBorrowerExists($borrowerId);
+            $normalizedRows = $this->hasNormalizedSchema()
                 ? $this->selectedNormalizedLoans($borrowerId, $loanIds, $copyBarcodes)
-                : $this->selectedLegacyLoans($borrowerId, $loanIds, $copyBarcodes);
+                : [];
+            $legacyRows = $this->hasTable('borrowing') && $this->hasTable('books')
+                ? $this->selectedLegacyLoans($borrowerId, $loanIds, $copyBarcodes)
+                : [];
+            if ($normalizedRows !== [] && $legacyRows !== []) {
+                throw new InvalidArgumentException('Selected books belong to different circulation storage records.');
+            }
+            $normalized = $normalizedRows !== []
+                || ($legacyRows === [] && $this->usesNormalizedBorrowingDataForUser($borrowerId));
+            $rows = $normalized ? $normalizedRows : $legacyRows;
             $this->assertSelectedRows($rows, $loanIds, $copyBarcodes);
 
             $totalFine = 0.0;
@@ -602,13 +610,10 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         }
     }
 
-    private function assertBorrowerExists(int $borrowerId, bool $normalized): void
+    private function assertBorrowerExists(int $borrowerId): void
     {
         if ($this->userById($borrowerId, true) === null) {
             throw new InvalidArgumentException('Student account was not found.');
-        }
-        if ($normalized && !$this->hasNormalizedSchema()) {
-            throw new RuntimeException('Circulation schema is unavailable.');
         }
     }
 
@@ -672,9 +677,40 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         return $this->hasNormalizedSchema() && $this->tableCount('book_copies') > 0;
     }
 
-    private function usesNormalizedBorrowingData(): bool
+    private function usesNormalizedBorrowingDataForUser(int $borrowerId): bool
     {
-        return $this->hasNormalizedSchema() && $this->tableCount('borrowing_transactions') > 0;
+        if (!$this->hasNormalizedSchema()) {
+            return false;
+        }
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM borrowing_transactions WHERE user_id = :user_id LIMIT 1'
+        );
+        $statement->execute(['user_id' => $borrowerId]);
+
+        return $statement->fetchColumn() !== false;
+    }
+
+    /** @param list<string> $barcodes */
+    private function storageForBorrowBarcodes(array $barcodes): bool
+    {
+        $normalizedRows = $this->hasNormalizedSchema()
+            ? $this->normalizedCopiesByBarcodes($barcodes)
+            : [];
+        $legacyRows = $this->hasTable('books')
+            ? $this->legacyCopiesByBarcodes($barcodes)
+            : [];
+        $requestedCount = count($barcodes);
+        if (count($normalizedRows) === $requestedCount) {
+            return true;
+        }
+        if (count($legacyRows) === $requestedCount) {
+            return false;
+        }
+        if ($normalizedRows !== [] || $legacyRows !== []) {
+            throw new RuntimeException('Scanned book copies must belong to the same circulation storage records.');
+        }
+
+        return $this->usesNormalizedInventory();
     }
 
     private function tableCount(string $table): int

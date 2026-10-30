@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { AuthService } from '../features/auth/services/auth.service.js';
 import { LoginPage } from '../features/auth/pages/login/login.page.js';
 import { RegistrationPage } from '../features/auth/pages/register/register.page.js';
@@ -288,6 +289,8 @@ test('Guest and profile OTP pages keep distinct form boundaries and redirects', 
   let profileSubmit;
   let guestRedirect = '';
   let profileRedirect = '';
+  let guestTick;
+  let profileTick;
   const makeDocument = (formId, form) => ({
     getElementById(id) {
       if (id === formId) return form;
@@ -300,23 +303,27 @@ test('Guest and profile OTP pages keep distinct form boundaries and redirects', 
   const profileForm = { addEventListener(name, callback) { if (name === 'submit') profileSubmit = callback; } };
   const guest = new GuestOtpPage({}, {
     document: makeDocument('guest-otp-form', guestForm),
-    window: { location: { set href(value) { guestRedirect = value; } }, setInterval: () => 1, clearInterval() {} },
+    window: { location: { set href(value) { guestRedirect = value; } }, setInterval(callback) { guestTick = callback; return 1; }, clearInterval() {} },
     auth: { verifyGuestOtp: async () => ({ ok: true }) },
     formDataFactory: () => ({ guestForm }),
   });
   const profile = new ProfileOtpPage({}, {
     document: makeDocument('profile-otp-form', profileForm),
-    window: { location: { set href(value) { profileRedirect = value; } }, setInterval: () => 2, clearInterval() {} },
+    window: { location: { set href(value) { profileRedirect = value; } }, setInterval(callback) { profileTick = callback; return 2; }, clearInterval() {} },
     auth: { verifyGuestOtp: async () => ({ ok: true, message: 'Profile updated.' }) },
     formDataFactory: () => ({ profileForm }),
   });
 
   await guestSubmit({ preventDefault() {} });
   await profileSubmit({ preventDefault() {} });
+  guestTick();
+  profileTick();
   assert.deepEqual(guest.formDataFactory(guestForm), { guestForm });
   assert.deepEqual(profile.formDataFactory(profileForm), { profileForm });
   assert.equal(guestRedirect, '/scan2borrow/guest/dashboard');
   assert.equal(profileRedirect, '/scan2borrow/guest/profile');
+  assert.equal(guest.expiresIn, 59);
+  assert.equal(profile.expiresIn, 59);
   guest.destroy();
   profile.destroy();
 });
@@ -325,4 +332,15 @@ test('guest auth pages expose browser-loadable entry modules', () => {
   assert.equal(typeof bootGuestRegistration, 'function');
   assert.equal(typeof bootGuestOtp, 'function');
   assert.equal(typeof bootProfileOtp, 'function');
+});
+
+test('guest and profile OTP templates advertise the one-minute expiry', () => {
+  for (const template of [
+    new URL('../features/auth/pages/guest-otp/guest-otp.html', import.meta.url),
+    new URL('../features/auth/pages/profile-otp/profile-otp.html', import.meta.url),
+  ]) {
+    const source = readFileSync(template, 'utf8');
+    assert.match(source, /1:00/);
+    assert.doesNotMatch(source, /5 minute/);
+  }
 });

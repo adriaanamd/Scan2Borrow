@@ -68,6 +68,19 @@ final class StaffCirculationServiceTest extends TestCase
         self::assertSame('This borrower has reached the 3-book limit.', $capacity->message());
     }
 
+    public function testBorrowCountsPendingRemoteRequestsTowardCapacity(): void
+    {
+        $repository = new FakeStaffCirculationRepository();
+        $repository->borrower['borrow_limit_count'] = 3;
+        $service = $this->service($repository);
+
+        $result = $service->borrow(19, new StaffCirculationBorrowRequest('STU-001', ['COPY-002']));
+
+        self::assertFalse($result->successful());
+        self::assertSame('This borrower has reached the 3-book limit.', $result->message());
+        self::assertNull($repository->borrowed);
+    }
+
     public function testBorrowValidatesTeacherDueDateAndReturnsApprovedTransaction(): void
     {
         $repository = new FakeStaffCirculationRepository();

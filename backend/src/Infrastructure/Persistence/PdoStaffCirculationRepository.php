@@ -26,7 +26,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
 
     public function findBorrowerByBarcode(string $barcode): ?array
     {
-        $normalized = $this->usesNormalizedSchema();
+        $normalized = $this->usesNormalizedBorrowingData();
         $borrower = $this->userByBarcode(trim($barcode));
         if ($borrower === null) {
             return null;
@@ -38,6 +38,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
             : $this->legacyActiveLoans($borrowerId);
         $borrower['name'] = trim($this->string($borrower['firstname'] ?? null) . ' ' . $this->string($borrower['lastname'] ?? null));
         $borrower['active_loans'] = count($activeLoans);
+        $borrower['borrow_limit_count'] = $this->activeLoanCount($this->intValue($borrower['id'] ?? null), $normalized);
 
         return [
             'ok' => true,
@@ -61,14 +62,15 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
 
         $this->pdo->beginTransaction();
         try {
-            $normalized = $this->usesNormalizedSchema();
-            $this->assertBorrowerCanBorrow($borrowerId, $normalized);
-            $activeCount = $this->activeLoanCount($borrowerId, $normalized);
+            $normalizedStorage = $this->usesNormalizedInventory();
+            $normalizedBorrowing = $this->usesNormalizedBorrowingData();
+            $this->assertBorrowerCanBorrow($borrowerId, $normalizedBorrowing);
+            $activeCount = $this->activeLoanCount($borrowerId, $normalizedBorrowing);
             if ($activeCount + count($bookBarcodes) > $this->maxBooks) {
                 throw new RuntimeException('This borrower has reached the ' . $this->maxBooks . '-book limit.');
             }
 
-            $result = $normalized
+            $result = $normalizedStorage
                 ? $this->createNormalizedBorrow($borrowerId, $staffId, $bookBarcodes, $dueDate, $transactionCode)
                 : $this->createLegacyBorrow($borrowerId, $staffId, $bookBarcodes, $dueDate, $transactionCode);
             $this->pdo->commit();
@@ -97,7 +99,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     ): array {
         $this->pdo->beginTransaction();
         try {
-            $normalized = $this->usesNormalizedSchema();
+            $normalized = $this->usesNormalizedBorrowingData();
             $this->assertBorrowerExists($borrowerId, $normalized);
             $rows = $normalized
                 ? $this->selectedNormalizedLoans($borrowerId, $loanIds, $copyBarcodes)
@@ -170,7 +172,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     /** @return list<array<string, mixed>> */
     private function normalizedActiveLoans(int $borrowerId): array
     {
-        if (!$this->usesNormalizedSchema()) {
+        if (!$this->hasNormalizedSchema()) {
             return [];
         }
         $statement = $this->pdo->prepare(
@@ -605,7 +607,7 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         if ($this->userById($borrowerId, true) === null) {
             throw new InvalidArgumentException('Student account was not found.');
         }
-        if ($normalized && !$this->usesNormalizedSchema()) {
+        if ($normalized && !$this->hasNormalizedSchema()) {
             throw new RuntimeException('Circulation schema is unavailable.');
         }
     }
@@ -630,13 +632,20 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
 
     private function activeLoanCount(int $borrowerId, bool $normalized): int
     {
-        $statement = $this->pdo->prepare($normalized
-            ? "SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
-               WHERE bt.user_id = :user_id AND bt.approval_status = 'approved' AND bi.return_date IS NULL
-                 AND bi.status IN ('Borrowed', 'Overdue')"
-            : "SELECT COUNT(*) FROM borrowing WHERE user_id = :user_id AND approval_status = 'approved'
-               AND return_date IS NULL AND status IN ('Borrowed', 'Overdue')"
-        );
+        if ($normalized && $this->hasNormalizedSchema()) {
+            $statement = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM borrowing_items bi JOIN borrowing_transactions bt ON bt.id = bi.transaction_id
+                 WHERE bt.user_id = :user_id AND bt.approval_status IN ('pending', 'approved') AND bi.return_date IS NULL
+                   AND bi.status IN ('Pending', 'Borrowed', 'Overdue')"
+            );
+        } elseif ($this->hasTable('borrowing')) {
+            $statement = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM borrowing WHERE user_id = :user_id AND approval_status IN ('pending', 'approved')
+                 AND return_date IS NULL AND status IN ('Pending', 'Borrowed', 'Overdue')"
+            );
+        } else {
+            return 0;
+        }
         $statement->execute(['user_id' => $borrowerId]);
 
         return (int) $statement->fetchColumn();
@@ -650,12 +659,39 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
         }
     }
 
-    private function usesNormalizedSchema(): bool
+    private function hasNormalizedSchema(): bool
     {
         return $this->hasTable('book_copies')
             && $this->hasTable('book_titles')
             && $this->hasTable('borrowing_transactions')
             && $this->hasTable('borrowing_items');
+    }
+
+    private function usesNormalizedInventory(): bool
+    {
+        return $this->hasNormalizedSchema() && $this->tableCount('book_copies') > 0;
+    }
+
+    private function usesNormalizedBorrowingData(): bool
+    {
+        return $this->hasNormalizedSchema() && $this->tableCount('borrowing_transactions') > 0;
+    }
+
+    private function tableCount(string $table): int
+    {
+        $statement = $this->pdo->query('SELECT COUNT(*) FROM ' . $table);
+        if ($statement === false) {
+            return 0;
+        }
+        $value = $statement->fetchColumn();
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return 0;
     }
 
     /**

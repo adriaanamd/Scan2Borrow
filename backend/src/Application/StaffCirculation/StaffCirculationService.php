@@ -65,9 +65,14 @@ final class StaffCirculationService
             return StaffCirculationResult::failure('Please scan each book copy only once.');
         }
 
-        $activeLoans = is_numeric($borrower['active_loans'] ?? null)
-            ? (int) $borrower['active_loans']
-            : (is_array($lookup['active_loans'] ?? null) ? count($lookup['active_loans']) : 0);
+        $activeLoans = 0;
+        if (is_numeric($borrower['borrow_limit_count'] ?? null)) {
+            $activeLoans = (int) $borrower['borrow_limit_count'];
+        } elseif (is_numeric($borrower['active_loans'] ?? null)) {
+            $activeLoans = (int) $borrower['active_loans'];
+        } elseif (is_array($lookup['active_loans'] ?? null)) {
+            $activeLoans = count($lookup['active_loans']);
+        }
         $remaining = $this->policy->maxBooks() - $activeLoans;
         if (count($bookBarcodes) > $remaining) {
             return StaffCirculationResult::failure(

@@ -32,6 +32,21 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         self::assertSame(55, $result['active_loans'][0]['id']);
     }
 
+    public function testLegacyBorrowingIsUsedUntilNormalizedTransactionsExist(): void
+    {
+        $pdo = $this->normalizedPdo();
+        $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode TEXT UNIQUE, title TEXT, author TEXT, status TEXT, due_date TEXT, return_date TEXT, deleted_at TEXT)');
+        $pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code TEXT UNIQUE, user_id INTEGER, book_id INTEGER, processed_by INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, return_status TEXT DEFAULT \'none\', return_decided_at TEXT, return_decided_by INTEGER, return_decision_note TEXT, status TEXT, fine_amount NUMERIC)');
+        $pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date, deleted_at) VALUES (21, 'LEGACY-001', 'Legacy Copy', 'Ada Author', 'Borrowed', '2026-09-04', NULL)");
+        $pdo->exec("INSERT INTO borrowing (transaction_code, user_id, book_id, approval_status, borrow_date, due_date, status, fine_amount) VALUES ('LEGACY-TX', 7, 21, 'approved', '2026-08-20 10:00:00', '2026-09-04', 'Borrowed', 0)");
+
+        $result = (new PdoStaffCirculationRepository($pdo))->findBorrowerByBarcode('STU-001');
+
+        self::assertIsArray($result);
+        self::assertSame('LEGACY-001', $result['active_loans'][0]['copy_barcode']);
+        self::assertSame(1, $result['borrower']['borrow_limit_count']);
+    }
+
     public function testNormalizedDirectBorrowApprovesCopiesAndRecordsAudit(): void
     {
         $pdo = $this->normalizedPdo();

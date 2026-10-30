@@ -17,8 +17,11 @@ export class GuestOtpPage {
     this.resend = document.getElementById('resend-form');
     this.redirect = redirect;
     this.resendMessage = resendMessage;
+    this.expiresIn = 60;
+    this.intervalId = null;
     this.listeners = [];
     this.bindEvents();
+    this.startCountdown();
   }
 
   listen(target, eventName, callback) {
@@ -36,6 +39,23 @@ export class GuestOtpPage {
     return this;
   }
 
+  startCountdown() {
+    this.renderCountdown();
+    if (typeof this.window?.setInterval !== 'function') return;
+    this.intervalId = this.window.setInterval(() => {
+      if (this.expiresIn > 0) this.expiresIn -= 1;
+      this.renderCountdown();
+    }, 1000);
+  }
+
+  renderCountdown() {
+    const node = this.document.getElementById('expires-in');
+    if (!node) return;
+    const minutes = Math.floor(this.expiresIn / 60);
+    const seconds = String(this.expiresIn % 60).padStart(2, '0');
+    node.textContent = `${minutes}:${seconds}`;
+  }
+
   async submit(event) {
     event.preventDefault();
     try {
@@ -50,6 +70,10 @@ export class GuestOtpPage {
   async resendOtp(event) {
     event.preventDefault();
     const response = await this.auth.resendGuestOtp(this.formDataFactory(this.resend));
+    if (response.ok) {
+      this.expiresIn = 60;
+      this.renderCountdown();
+    }
     this.message(
       response.ok ? 'form-success' : 'form-error',
       response.message || response.errors?.[0] || this.resendMessage,
@@ -65,5 +89,6 @@ export class GuestOtpPage {
 
   destroy() {
     this.listeners.splice(0).forEach((remove) => remove());
+    if (this.intervalId !== null) this.window.clearInterval?.(this.intervalId);
   }
 }

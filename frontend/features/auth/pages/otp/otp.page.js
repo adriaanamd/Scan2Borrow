@@ -76,6 +76,11 @@ export class OtpPage {
   async resend(event) {
     event.preventDefault();
     const response = await this.auth.resendOtp(this.formDataFactory(this.resendForm));
+    if (response.ok) {
+      this.expiresIn = 60;
+      const node = this.document.getElementById('countdown');
+      if (node) node.textContent = '1:00';
+    }
     this.message(
       response.ok ? 'form-success' : 'form-error',
       response.message || response.errors?.[0] || 'Unable to resend OTP.',

@@ -41,6 +41,14 @@ final class TextBeeSmsSender implements SmsSenderInterface
         if ($deviceId !== '') {
             $payload['deviceId'] = $deviceId;
         }
+        $simSubscriptionId = $this->environment('SMS_SIM_SUBSCRIPTION_ID');
+        if ($simSubscriptionId !== '') {
+            if (!ctype_digit($simSubscriptionId)) {
+                throw $this->deliveryException();
+            }
+
+            $payload['simSubscriptionId'] = (int) $simSubscriptionId;
+        }
 
         try {
             $response = ($this->request)(self::ENDPOINT, $apiKey, $payload);

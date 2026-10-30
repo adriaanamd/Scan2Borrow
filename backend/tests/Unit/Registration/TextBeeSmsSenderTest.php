@@ -19,6 +19,7 @@ final class TextBeeSmsSenderTest extends TestCase
     {
         $this->restoreEnvironment('SMS_API_KEY');
         $this->restoreEnvironment('SMS_DEVICE_ID');
+        $this->restoreEnvironment('SMS_SIM_SUBSCRIPTION_ID');
         $this->restoreEnvironment('SMS_COUNTRY_CODE');
         parent::tearDown();
     }
@@ -27,6 +28,7 @@ final class TextBeeSmsSenderTest extends TestCase
     {
         $this->setEnvironment('SMS_API_KEY', 'test-api-key');
         $this->setEnvironment('SMS_DEVICE_ID', 'device-123');
+        $this->setEnvironment('SMS_SIM_SUBSCRIPTION_ID', '3');
         $this->setEnvironment('SMS_COUNTRY_CODE', '63');
 
         $sender = new TextBeeSmsSender(function (string $url, string $apiKey, array $payload): array {
@@ -51,7 +53,24 @@ final class TextBeeSmsSenderTest extends TestCase
             'message' => 'Your OTP code is: 123456',
             'recipients' => ['+639170000004'],
             'deviceId' => 'device-123',
+            'simSubscriptionId' => 3,
         ], $this->request['payload']);
+    }
+
+    public function testInvalidSimSubscriptionIdFailsBeforeMakingRequest(): void
+    {
+        $this->setEnvironment('SMS_API_KEY', 'test-api-key');
+        $this->setEnvironment('SMS_SIM_SUBSCRIPTION_ID', 'not-a-number');
+        $called = false;
+        $sender = new TextBeeSmsSender(static function (string $url, string $apiKey, array $payload) use (&$called): array {
+            $called = true;
+
+            return ['status' => 200, 'body' => '{"data":{"success":true}}'];
+        });
+
+        $this->expectException(OtpDeliveryException::class);
+        $sender->send('09170000004', 'Your OTP code is: 123456');
+        self::assertFalse($called);
     }
 
     public function testAcceptsImmediateTextBeeSuccessResponse(): void

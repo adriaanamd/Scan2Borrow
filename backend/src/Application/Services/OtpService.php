@@ -10,6 +10,8 @@ use DateTimeImmutable;
 
 final class OtpService implements RegistrationOtpInterface
 {
+    public const EXPIRY_SECONDS = 60;
+
     public function __construct(
         private readonly OtpRepositoryInterface $repository,
         private readonly ClockInterface $clock,
@@ -32,7 +34,7 @@ final class OtpService implements RegistrationOtpInterface
             $code,
             $phoneNumber,
             $payload,
-            $now->modify('+5 minutes'),
+            $now->modify('+' . self::EXPIRY_SECONDS . ' seconds'),
             $now,
         ));
         $this->deliver($payload, $phoneNumber, $code, false);
@@ -78,7 +80,7 @@ final class OtpService implements RegistrationOtpInterface
         }
 
         $code = $this->newCode();
-        $expiresAt = $this->clock->now()->modify('+5 minutes');
+        $expiresAt = $this->clock->now()->modify('+' . self::EXPIRY_SECONDS . ' seconds');
         $this->repository->updateCode($record->id(), $code, $expiresAt);
         $this->deliver($record->payload(), $record->phoneNumber(), $code, true);
 
@@ -95,7 +97,7 @@ final class OtpService implements RegistrationOtpInterface
         $prefix = $resend ? 'Your new OTP code is: ' : 'Your OTP code is: ';
 
         return "Scan2Borrow Registration\n\n" . $prefix . $code
-            . "\n\nThis code will expire in 5 minutes.\n\nDo not share this code with anyone.";
+            . "\n\nThis code will expire in 1 minute.\n\nDo not share this code with anyone.";
     }
 
     /**
@@ -152,7 +154,7 @@ final class OtpService implements RegistrationOtpInterface
             . '<div style="color:#63798b;font-size:11px;font-weight:bold;letter-spacing:.1em;margin-bottom:9px;text-transform:uppercase;">' . $label . '</div>'
             . '<div style="color:#102f52;font-size:34px;font-weight:bold;letter-spacing:.22em;line-height:1.1;margin-left:.22em;">' . $this->escape($code) . '</div>'
             . '</td></tr></table>'
-            . '<p style="color:#63798b;font-size:13px;line-height:1.6;margin:0 0 18px;"><strong style="color:#23384a;">This code expires in 5 minutes.</strong> For your security, do not share it with anyone.</p>'
+            . '<p style="color:#63798b;font-size:13px;line-height:1.6;margin:0 0 18px;"><strong style="color:#23384a;">This code expires in 1 minute.</strong> For your security, do not share it with anyone.</p>'
             . '<p style="font-size:14px;line-height:1.6;margin:0;">If you did not request this registration, you may safely ignore this email.</p>';
 
         return SchoolEmailTemplate::render('Registration verification', 'Verify your library account', $body);

@@ -15,7 +15,7 @@ export class OtpPage {
     this.input = this.form?.querySelector('input[name="otp"]');
     const channel = new URLSearchParams(this.window.location?.search || '').get('channel');
     this.channel = ['email', 'phone'].includes(channel) ? channel : '';
-    this.expiresIn = 300;
+    this.expiresIn = 60;
     this.intervalId = null;
     this.listeners = [];
     this.bindEvents();

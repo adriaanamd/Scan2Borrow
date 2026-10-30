@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
 
 final class OtpServiceTest extends TestCase
 {
-    public function testStartStoresSixDigitCodeWithFiveMinuteExpiry(): void
+    public function testStartStoresSixDigitCodeWithOneMinuteExpiry(): void
     {
         $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:00'));
         $repository = new FakeOtpRepository();
@@ -30,7 +30,7 @@ final class OtpServiceTest extends TestCase
         self::assertSame('2024004', $record->barcode());
         self::assertSame('09170000004', $record->phoneNumber());
         self::assertSame(['role' => 'student'], $record->payload());
-        self::assertSame('2026-08-28 10:05:00', $record->expiresAt()->format('Y-m-d H:i:s'));
+        self::assertSame('2026-08-28 10:01:00', $record->expiresAt()->format('Y-m-d H:i:s'));
     }
 
     public function testVerifyMarksLatestValidCodeUsedAndReturnsPayload(): void
@@ -43,7 +43,7 @@ final class OtpServiceTest extends TestCase
             '123456',
             '09170000004',
             ['role' => 'student'],
-            $clock->now()->modify('+5 minutes'),
+            $clock->now()->modify('+1 minute'),
             $clock->now(),
         );
         $service = new OtpService($repository, $clock, new FakeSmsSender(), new FakeEmailSender());
@@ -53,9 +53,9 @@ final class OtpServiceTest extends TestCase
         self::assertNull($service->verify('2024004', '123456'));
     }
 
-    public function testExpiredCodeCannotBeVerified(): void
+    public function testCodeIsValidBeforeTheSixtySecondBoundary(): void
     {
-        $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:06:00'));
+        $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:00:59'));
         $repository = new FakeOtpRepository();
         $repository->record = OtpRecord::pending(
             8,
@@ -63,7 +63,25 @@ final class OtpServiceTest extends TestCase
             '123456',
             '09170000004',
             ['role' => 'student'],
-            new DateTimeImmutable('2026-08-28 10:05:00'),
+            new DateTimeImmutable('2026-08-28 10:01:00'),
+            new DateTimeImmutable('2026-08-28 10:00:00'),
+        );
+        $service = new OtpService($repository, $clock, new FakeSmsSender(), new FakeEmailSender());
+
+        self::assertSame(['role' => 'student'], $service->verify('2024004', '123456'));
+    }
+
+    public function testCodeExpiresAtTheSixtySecondBoundary(): void
+    {
+        $clock = new FixedClock(new DateTimeImmutable('2026-08-28 10:01:00'));
+        $repository = new FakeOtpRepository();
+        $repository->record = OtpRecord::pending(
+            8,
+            '2024004',
+            '123456',
+            '09170000004',
+            ['role' => 'student'],
+            new DateTimeImmutable('2026-08-28 10:01:00'),
             new DateTimeImmutable('2026-08-28 10:00:00'),
         );
         $service = new OtpService($repository, $clock, new FakeSmsSender(), new FakeEmailSender());
@@ -81,7 +99,7 @@ final class OtpServiceTest extends TestCase
             '123456',
             '09170000004',
             ['role' => 'student'],
-            $clock->now()->modify('+5 minutes'),
+            $clock->now()->modify('+1 minute'),
             new DateTimeImmutable('2026-08-28 10:00:00'),
         );
         $service = new OtpService($repository, $clock, new FakeSmsSender(), new FakeEmailSender());
@@ -170,7 +188,7 @@ final class OtpServiceTest extends TestCase
             '123456',
             '09170000004',
             ['firstname' => 'Lia', 'lastname' => 'Santos', 'email' => 'lia@example.test'],
-            $clock->now()->modify('+5 minutes'),
+            $clock->now()->modify('+1 minute'),
             new DateTimeImmutable('2026-08-28 10:00:00'),
         );
         $email = new FakeEmailSender();

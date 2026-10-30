@@ -68,7 +68,7 @@ final class OtpDeliveryErrorMappingTest extends TestCase
             '123456',
             '09170000004',
             ['email' => 'lia@example.test'],
-            $clock->now()->modify('+5 minutes'),
+            $clock->now()->modify('+1 minute'),
             new DateTimeImmutable('2026-08-28 10:00:00'),
         );
         $otp = new OtpService($repository, $clock, new ErrorMappingSmsSender(), new ErrorMappingEmailSender(false));

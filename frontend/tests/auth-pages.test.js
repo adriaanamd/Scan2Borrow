@@ -198,7 +198,7 @@ test('OtpPage verifies, resends, sanitizes input, and counts down', async () => 
   const resendForm = {
     addEventListener(name, callback) { if (name === 'submit') resendSubmit = callback; },
   };
-  const countdown = { textContent: '5:00' };
+  const countdown = { textContent: '1:00' };
   const messages = new Map([
     ['form-error', { hidden: true, textContent: '' }],
     ['form-success', { hidden: true, textContent: '' }],
@@ -232,7 +232,7 @@ test('OtpPage verifies, resends, sanitizes input, and counts down', async () => 
 
   assert.deepEqual(verifyBody, { form });
   assert.deepEqual(resendBody, { form: resendForm });
-  assert.equal(countdown.textContent, '4:59');
+  assert.equal(countdown.textContent, '0:59');
   assert.equal(messages.get('form-success').textContent, 'Sent again.');
   page.destroy();
 });

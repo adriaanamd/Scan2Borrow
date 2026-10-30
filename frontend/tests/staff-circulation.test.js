@@ -141,3 +141,30 @@ test('CirculationPage selects exact active loans for scanned and manual returns'
   });
   assert.equal(page.returnLoans.length, 0);
 });
+
+test('CirculationPage keeps normalized and legacy loans distinct when numeric IDs overlap', async () => {
+  const document = circulationDocument();
+  const calls = [];
+  const service = {
+    lookupStudent: async () => ({ data: {
+      borrower: { id: 7, barcode: 'STU-001', name: 'Ada Lovelace', role: 'student', active_loans: 2 },
+      active_loans: [
+        { id: 55, storage: 'normalized', loan_key: 'normalized:55', copy_barcode: 'COPY-001', title: 'Clean Code' },
+        { id: 55, storage: 'legacy', loan_key: 'legacy:55', copy_barcode: 'LEGACY-001', title: 'Legacy Copy' },
+      ],
+    } }),
+    returnBooks: async (payload) => { calls.push(payload); return { data: { returned: 2 }, message: 'Return processed successfully.' }; },
+  };
+  const page = new CirculationPage(document, { service, document, window: {} });
+
+  await page.lookupStudent('STU-001');
+  page.addReturnCopy('COPY-001');
+  page.addReturnCopy('LEGACY-001');
+  await page.submitReturn();
+
+  assert.deepEqual(calls[0], {
+    borrowerId: 7,
+    loanIds: [55, 55],
+    copyBarcodes: ['COPY-001', 'LEGACY-001'],
+  });
+});

@@ -161,6 +161,11 @@ final class StaffCirculationControllerRepository implements StaffCirculationRepo
     public int $borrowStaffId = 0;
     public int $returnStaffId = 0;
 
+    public function staffCanCirculate(int $staffId): bool
+    {
+        return $staffId === 19;
+    }
+
     public function findBorrowerByBarcode(string $barcode): array
     {
         return [

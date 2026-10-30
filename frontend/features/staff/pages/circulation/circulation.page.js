@@ -157,14 +157,16 @@ export class CirculationPage {
     if (!this.borrower) return this.showStatus('Scan a student ID before selecting returns.', 'error');
     const loan = this.returnLoans.find((candidate) => String(candidate.copy_barcode || candidate.barcode || '') === value);
     if (!loan) return this.showStatus('That copy is not an active loan for this borrower.', 'error');
-    this.selectedReturnIds.add(Number(loan.id));
+    this.selectedReturnIds.add(this.returnLoanKey(loan));
     this.renderReturnLoans();
     this.showStatus(`${this.selectedReturnIds.size} return${this.selectedReturnIds.size === 1 ? '' : 's'} selected.`, 'success');
   }
 
   selectReturnLoan(loanId, selected) {
-    const id = Number(loanId);
-    if (!Number.isInteger(id) || id < 1) return;
+    const rawId = String(loanId || '').trim();
+    const loan = this.returnLoans.find((candidate) => String(candidate.id || '').trim() === rawId);
+    const id = loan ? this.returnLoanKey(loan) : rawId;
+    if (!id) return;
     if (selected) this.selectedReturnIds.add(id);
     else this.selectedReturnIds.delete(id);
     this.renderReturnLoans();
@@ -226,7 +228,7 @@ export class CirculationPage {
 
   async submitReturn() {
     if (!this.borrower) return this.showStatus('Scan a student ID before processing a return.', 'error');
-    const selectedLoans = this.returnLoans.filter((loan) => this.selectedReturnIds.has(Number(loan.id)));
+    const selectedLoans = this.returnLoans.filter((loan) => this.selectedReturnIds.has(this.returnLoanKey(loan)));
     if (!selectedLoans.length) return this.showStatus('Select or scan at least one active book to return.', 'error');
     try {
       const response = await this.service.returnBooks({
@@ -234,8 +236,8 @@ export class CirculationPage {
         loanIds: selectedLoans.map((loan) => Number(loan.id)),
         copyBarcodes: selectedLoans.map((loan) => String(loan.copy_barcode || loan.barcode || '')),
       });
-      const selected = new Set(selectedLoans.map((loan) => Number(loan.id)));
-      this.returnLoans = this.returnLoans.filter((loan) => !selected.has(Number(loan.id)));
+      const selected = new Set(selectedLoans.map((loan) => this.returnLoanKey(loan)));
+      this.returnLoans = this.returnLoans.filter((loan) => !selected.has(this.returnLoanKey(loan)));
       this.selectedReturnIds.clear();
       this.renderReturnLoans();
       this.showStatus(response?.message || response?.data?.message || 'Return processed successfully.', 'success');
@@ -279,8 +281,9 @@ export class CirculationPage {
     if (!list) return;
     list.innerHTML = this.returnLoans.length
       ? this.returnLoans.map((loan) => {
-        const id = Number(loan.id);
-        const checked = this.selectedReturnIds.has(id) ? ' checked' : '';
+        const key = this.returnLoanKey(loan);
+        const id = this.escape(key);
+        const checked = this.selectedReturnIds.has(key) ? ' checked' : '';
         return `<label class="circulation-loan"><input type="checkbox" data-return-loan="${id}"${checked}><span><strong>${this.escape(loan.title || 'Book copy')}</strong><small>${this.escape(loan.copy_barcode || loan.barcode || '')} · due ${this.escape(loan.due_date || '—')}</small></span></label>`;
       }).join('')
       : '<p class="circulation-empty">Scan a student ID to load active loans.</p>';
@@ -289,6 +292,12 @@ export class CirculationPage {
   text(id, value) {
     const node = this.document.getElementById(id);
     if (node) node.textContent = String(value ?? '');
+  }
+
+  returnLoanKey(loan) {
+    const explicit = String(loan?.loan_key || '').trim();
+    if (explicit) return explicit;
+    return `${String(loan?.storage || 'legacy').trim()}:${String(loan?.id || '').trim()}`;
   }
 
   showStatus(message, state = 'info') {

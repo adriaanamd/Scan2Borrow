@@ -55,6 +55,19 @@ final class StaffCirculationServiceTest extends TestCase
         self::assertNull($repository->borrowed);
     }
 
+    public function testBorrowRejectsStaffWhoCannotCirculate(): void
+    {
+        $repository = new FakeStaffCirculationRepository();
+        $repository->staffAllowed = false;
+        $service = $this->service($repository);
+
+        $result = $service->borrow(19, new StaffCirculationBorrowRequest('STU-001', ['COPY-001']));
+
+        self::assertFalse($result->successful());
+        self::assertSame('Only active librarians or administrators can process circulation transactions.', $result->message());
+        self::assertNull($repository->borrowed);
+    }
+
     public function testBorrowRejectsDuplicateCopiesAndCapacityOverflow(): void
     {
         $repository = new FakeStaffCirculationRepository();
@@ -187,6 +200,13 @@ final class FakeStaffCirculationRepository implements StaffCirculationRepository
     public ?array $returned = null;
 
     public ?InvalidArgumentException $returnFailure = null;
+
+    public bool $staffAllowed = true;
+
+    public function staffCanCirculate(int $staffId): bool
+    {
+        return $this->staffAllowed && $staffId === 19;
+    }
 
     /** @return array{ok: true, borrower: array<string, mixed>, active_loans: list<array<string, mixed>>}|null */
     public function findBorrowerByBarcode(string $barcode): ?array

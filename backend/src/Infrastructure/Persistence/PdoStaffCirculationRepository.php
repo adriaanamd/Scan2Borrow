@@ -24,6 +24,26 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     ) {
     }
 
+    public function staffCanCirculate(int $staffId): bool
+    {
+        if ($staffId < 1 || !$this->hasTable('users')) {
+            return false;
+        }
+
+        $statusClause = $this->hasColumn('users', 'status') ? ' AND u.status = :status' : '';
+        $statement = $this->pdo->prepare(
+            'SELECT 1 FROM users u
+             WHERE u.id = :id AND u.role IN (\'admin\', \'librarian\')' . $statusClause . ' LIMIT 1'
+        );
+        $parameters = ['id' => $staffId];
+        if ($statusClause !== '') {
+            $parameters['status'] = 'active';
+        }
+        $statement->execute($parameters);
+
+        return $statement->fetchColumn() !== false;
+    }
+
     public function findBorrowerByBarcode(string $barcode): ?array
     {
         $borrower = $this->userByBarcode(trim($barcode));
@@ -757,17 +777,23 @@ final class PdoStaffCirculationRepository implements StaffCirculationRepositoryI
     {
         $merged = [];
         $seen = [];
-        foreach (array_merge($preferred, $fallback) as $row) {
-            $barcode = $this->string($row['copy_barcode'] ?? null);
-            $key = $barcode !== ''
-                ? 'barcode:' . $barcode
-                : 'loan:' . $this->intValue($row['id'] ?? null) . ':' . count($merged);
-            if (isset($seen[$key])) {
-                continue;
+        $append = function (array $rows, string $storage) use (&$merged, &$seen): void {
+            foreach ($rows as $row) {
+                $barcode = $this->string($row['copy_barcode'] ?? null);
+                $key = $barcode !== ''
+                    ? 'barcode:' . $barcode
+                    : 'loan:' . $storage . ':' . $this->intValue($row['id'] ?? null);
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+                $row['storage'] = $storage;
+                $row['loan_key'] = $storage . ':' . $this->intValue($row['id'] ?? null);
+                $merged[] = $row;
             }
-            $seen[$key] = true;
-            $merged[] = $row;
-        }
+        };
+        $append($preferred, 'normalized');
+        $append($fallback, 'legacy');
 
         return $merged;
     }

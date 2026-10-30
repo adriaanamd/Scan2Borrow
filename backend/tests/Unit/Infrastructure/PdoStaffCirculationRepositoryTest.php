@@ -17,6 +17,17 @@ use RuntimeException;
 
 final class PdoStaffCirculationRepositoryTest extends TestCase
 {
+    public function testOnlyActiveLibrariansAndAdministratorsCanCirculate(): void
+    {
+        $pdo = $this->normalizedPdo();
+        $repository = new PdoStaffCirculationRepository($pdo);
+
+        self::assertTrue($repository->staffCanCirculate(19));
+        self::assertFalse($repository->staffCanCirculate(7));
+        $pdo->exec("UPDATE users SET status = 'inactive' WHERE id = 19");
+        self::assertFalse($repository->staffCanCirculate(19));
+    }
+
     public function testNormalizedLookupReturnsBorrowerDetailsAndActiveCopies(): void
     {
         $pdo = $this->normalizedPdo();
@@ -92,7 +103,7 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         $pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode TEXT UNIQUE, title TEXT, author TEXT, status TEXT, due_date TEXT, return_date TEXT, deleted_at TEXT)');
         $pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY AUTOINCREMENT, transaction_code TEXT UNIQUE, user_id INTEGER, book_id INTEGER, processed_by INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, return_status TEXT DEFAULT \'none\', return_decided_at TEXT, return_decided_by INTEGER, return_decision_note TEXT, status TEXT, fine_amount NUMERIC)');
         $pdo->exec("INSERT INTO books (id, barcode, title, author, status, due_date, deleted_at) VALUES (21, 'LEGACY-001', 'Legacy Copy', 'Ada Author', 'Borrowed', '2026-09-04', NULL)");
-        $pdo->exec("INSERT INTO borrowing (transaction_code, user_id, book_id, approval_status, borrow_date, due_date, status, fine_amount) VALUES ('LEGACY-TX', 7, 21, 'approved', '2026-08-20 10:00:00', '2026-09-04', 'Borrowed', 0)");
+        $pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, status, fine_amount) VALUES (55, 'LEGACY-TX', 7, 21, 'approved', '2026-08-20 10:00:00', '2026-09-04', 'Borrowed', 0)");
 
         $repository = new PdoStaffCirculationRepository($pdo);
         $result = $repository->findBorrowerByBarcode('STU-001');
@@ -101,12 +112,12 @@ final class PdoStaffCirculationRepositoryTest extends TestCase
         self::assertCount(2, $result['active_loans']);
         self::assertSame(2, $result['borrower']['borrow_limit_count']);
         self::assertSame(['COPY-001', 'LEGACY-001'], array_column($result['active_loans'], 'copy_barcode'));
+        self::assertSame(['normalized:55', 'legacy:55'], array_column($result['active_loans'], 'loan_key'));
 
-        $legacyLoanId = $this->integerScalar($pdo, "SELECT id FROM borrowing WHERE transaction_code = 'LEGACY-TX'");
         $returned = $repository->processDirectReturns(
             7,
             19,
-            [55, $legacyLoanId],
+            [55, 55],
             ['COPY-001', 'LEGACY-001'],
             new DateTimeImmutable('2026-09-04 10:00:00'),
             20.0,

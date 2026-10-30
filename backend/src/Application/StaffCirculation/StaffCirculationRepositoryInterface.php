@@ -8,6 +8,8 @@ use DateTimeImmutable;
 
 interface StaffCirculationRepositoryInterface
 {
+    public function staffCanCirculate(int $staffId): bool;
+
     /** @return array{ok: true, borrower: array<string, mixed>, active_loans: list<array<string, mixed>>}|null */
     public function findBorrowerByBarcode(string $barcode): ?array;
 

@@ -39,6 +39,10 @@ final class StaffCirculationService
 
     public function borrow(int $staffId, StaffCirculationBorrowRequest $request): StaffCirculationResult
     {
+        if (!$this->repository->staffCanCirculate($staffId)) {
+            return StaffCirculationResult::failure('Only active librarians or administrators can process circulation transactions.');
+        }
+
         $lookup = $this->lookup($request->borrowerBarcode);
         if (($lookup['ok'] ?? false) !== true) {
             return StaffCirculationResult::failure($this->message($lookup));
@@ -102,6 +106,10 @@ final class StaffCirculationService
 
     public function returnBooks(int $staffId, StaffCirculationReturnRequest $request): StaffCirculationResult
     {
+        if (!$this->repository->staffCanCirculate($staffId)) {
+            return StaffCirculationResult::failure('Only active librarians or administrators can process circulation transactions.');
+        }
+
         if ($request->borrowerId < 1) {
             return StaffCirculationResult::failure('Please scan a valid student ID before processing a return.');
         }
@@ -189,7 +197,7 @@ final class StaffCirculationService
         $normalized = [];
         foreach ($values as $value) {
             $id = $this->positiveInt($value);
-            if ($id > 0 && !in_array($id, $normalized, true)) {
+            if ($id > 0) {
                 $normalized[] = $id;
             }
         }

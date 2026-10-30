@@ -8,12 +8,14 @@ export class BarcodeScannerComponent {
     window = globalThis.window,
     toastService = new ToastService({ document }),
     scannerFactory = (viewId) => new window.Html5Qrcode(viewId),
+    onDecoded = null,
   } = {}) {
     this.root = root;
     this.document = document;
     this.window = window;
     this.toastService = toastService;
     this.scannerFactory = scannerFactory;
+    this.onDecoded = onDecoded;
     this.libraryLoading = null;
     this.scanner = null;
     this.view = null;
@@ -58,7 +60,7 @@ export class BarcodeScannerComponent {
   }
 
   startScanner(targetInput, autoSubmit, button) {
-    const viewId = 'scanner-view';
+    const viewId = this.root?.id ? `${this.root.id}-view` : 'scanner-view';
     let view = this.document.getElementById(viewId);
     if (!view) {
       view = this.document.createElement('div');
@@ -77,9 +79,11 @@ export class BarcodeScannerComponent {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 280, height: 140 } },
       (decodedText) => {
-        targetInput.value = decodedText.trim();
+        const value = decodedText.trim();
+        targetInput.value = value;
         scanner.stop().then(() => {
           this.finishScan();
+          this.onDecoded?.(value, targetInput);
           if (autoSubmit && targetInput.form) targetInput.form.submit();
           else targetInput.focus();
         });

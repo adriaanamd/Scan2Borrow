@@ -102,13 +102,11 @@
 .overview-chart-count, .overview-status-count { font-variant-numeric: tabular-nums; font-weight: 750; }
 
 .overview-borrowers-list, .overview-borrowers-modal-list { list-style: none; margin: 0; padding: 0; }
-.overview-borrower-row { align-items: center; border-bottom: 1px solid var(--border); display: grid; gap: .7rem; grid-template-columns: 1.7rem 2rem minmax(0, 1fr) auto; padding: .55rem 0; }
+.overview-borrower-row { align-items: center; border-bottom: 1px solid var(--border); display: grid; gap: .7rem; grid-template-columns: 1.7rem minmax(0, 1fr) auto; padding: .55rem 0; }
 .overview-borrower-row:last-child, .overview-borrower-modal-row:last-child { border-bottom: 0; }
 .overview-borrower-row[data-hidden="true"] { display: none; }
-.overview-borrowers-modal-row { align-items: center; border-bottom: 1px solid var(--border); display: grid; gap: 1rem; grid-template-columns: 2.25rem 2.25rem minmax(0, 1fr) auto; padding: .8rem .25rem; }
+.overview-borrowers-modal-row { align-items: center; border-bottom: 1px solid var(--border); display: grid; gap: 1rem; grid-template-columns: 2.25rem minmax(0, 1fr) auto; padding: .8rem .25rem; }
 .overview-borrower-rank, .overview-genre-rank { color: var(--primary); font-size: .76rem; font-variant-numeric: tabular-nums; font-weight: 750; }
-.overview-borrower-photo { align-items: center; background: var(--sky); border: 1px solid var(--border); border-radius: 50%; color: var(--primary); display: flex; font-size: .68rem; font-weight: 800; height: 2rem; justify-content: center; overflow: hidden; width: 2rem; }
-.overview-borrower-photo img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .overview-borrower-name { font-size: .82rem; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .overview-borrower-barcode { color: var(--muted); display: block; font-size: .68rem; font-weight: 400; margin-top: .1rem; }
 .overview-borrower-count, .overview-genre-count { color: var(--navy); font-size: .82rem; font-variant-numeric: tabular-nums; font-weight: 750; }

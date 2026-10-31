@@ -560,31 +560,9 @@ export class StaffDashboardPage {
     rank.className = "overview-borrower-rank";
     rank.textContent = String(index + 1).padStart(2, "0");
 
-    const borrowerName = String(borrower.name || "Borrower");
-    const photo = this.media(
-      borrower.photo || borrower.borrower_photo || borrower.profile_photo || "",
-    );
-    const avatar = document.createElement("span");
-    avatar.className = "overview-borrower-photo";
-    if (photo) {
-      const image = document.createElement("img");
-      image.src = photo;
-      image.alt = `${borrowerName} profile photo`;
-      image.loading = "lazy";
-      avatar.appendChild(image);
-    } else {
-      avatar.textContent = borrowerName
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase() || "--";
-    }
-
     const identity = document.createElement("span");
     identity.className = "overview-borrower-name";
-    identity.textContent = borrowerName;
+    identity.textContent = String(borrower.name || "");
     const barcode = document.createElement("span");
     barcode.className = "overview-borrower-barcode";
     barcode.textContent = String(borrower.barcode || "");
@@ -594,7 +572,7 @@ export class StaffDashboardPage {
     count.className = "overview-borrower-count";
     count.textContent = String(this.nonNegativeInteger(borrower.borrowing_count));
 
-    row.append(rank, avatar, identity, count);
+    row.append(rank, identity, count);
     return row;
   }
 

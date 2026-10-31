@@ -193,9 +193,10 @@ Create borrowerLookupFixture() with nodes exposing hidden, disabled, value, text
     test('scanner lifecycle shares lookup and closes cleanly', async () => {
       const fixture = borrowerLookupFixture();
       let options;
+      let lookedUpBarcode = '';
       let destroyed = false;
       const modal = new BorrowerLookupModal(fixture.root, {
-        service: { lookupByBarcode: async (barcode) => ({ data: { borrower: { id: 7, barcode, name: 'Ada Lovelace', active_loans: 0 }, active_loans: [] } }) },
+        service: { lookupByBarcode: async (barcode) => { lookedUpBarcode = barcode; return { data: { borrower: { id: 7, barcode, name: 'Ada Lovelace', active_loans: 0 }, active_loans: [] } }; } },
         document: fixture.document,
         window: {},
         scannerFactory: (_root, scannerOptions) => { options = scannerOptions; return { start() {}, destroy() { destroyed = true; } }; },
@@ -205,7 +206,7 @@ Create borrowerLookupFixture() with nodes exposing hidden, disabled, value, text
       await options.onDecoded('STU-001');
       await modal.onHidden();
 
-      assert.equal(fixture.nodes.id.textContent, 'STU-001');
+      assert.equal(lookedUpBarcode, 'STU-001');
       assert.equal(destroyed, true);
     });
 

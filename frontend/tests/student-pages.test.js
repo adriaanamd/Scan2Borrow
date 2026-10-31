@@ -28,6 +28,23 @@ test('student dashboard renders the approved profile photo in the hero avatar', 
   assert.match(avatar.innerHTML, /alt="Profile photo"/);
 });
 
+test('student dashboard renders approved data-image profile photos', () => {
+  const avatar = {
+    innerHTML: '',
+    classList: { add() {}, remove() {} },
+  };
+  const page = Object.create(StudentDashboardPage.prototype);
+  page.$ = (id) => (id === 'borrower-avatar' ? avatar : null);
+
+  page.renderProfilePhoto({ photo: 'data:image/jpeg;base64,ZmFrZQ==' });
+
+  assert.match(avatar.innerHTML, /src="data:image\/jpeg;base64,ZmFrZQ=="/);
+
+  page.renderProfilePhoto({ photo: '/uploads/profile/grace.jpg' });
+
+  assert.match(avatar.innerHTML, /src="\/scan2borrow\/uploads\/profile\/grace\.jpg"/);
+});
+
 test('student search exposes a feature-owned page controller with catalog rendering boundaries', () => {
   assert.equal(StudentSearchPage.name, 'StudentSearchPage');
   for (const method of ['load', 'render', 'bookCard', 'renderActiveFilters', 'bindEvents']) {

@@ -109,9 +109,19 @@ export class TeacherDashboardPage {
 
   safePhotoPath(path) {
     if (!path || typeof path !== "string") return "";
-    return path.startsWith("/scan2borrow/uploads/") || path.startsWith("uploads/")
-      ? (path.startsWith("uploads/") ? `/scan2borrow/${path}` : path)
-      : "";
+    const normalized = path.trim().replace(/\\/g, "/");
+    const resolver = globalThis.Scan2BorrowMedia?.resolve;
+    if (typeof resolver === "function") {
+      const resolved = resolver(normalized);
+      if (/^data:image\//i.test(resolved) || /^\/scan2borrow\/uploads\//i.test(resolved)) {
+        return resolved;
+      }
+    }
+    if (/^data:image\//i.test(normalized)) return normalized;
+    if (/^\/scan2borrow\/uploads\//i.test(normalized)) return normalized;
+    if (/^\/uploads\//i.test(normalized)) return `/scan2borrow${normalized}`;
+    if (/^uploads\//i.test(normalized)) return `/scan2borrow/${normalized}`;
+    return "";
   }
 
   renderRecentActivity(rows) {

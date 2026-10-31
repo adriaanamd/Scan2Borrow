@@ -20,6 +20,16 @@ test('student and teacher dashboards expose their redesign scopes and shared sty
   assert.ok(teacher.indexOf('/scan2borrow/frontend/assets/css/style.css') < teacher.indexOf(href));
 });
 
+test('student and teacher dashboards load the shared media resolver before their controllers', () => {
+  for (const relative of [
+    'features/student/pages/dashboard/dashboard.html',
+    'features/teacher/pages/dashboard/dashboard.html',
+  ]) {
+    const source = read(relative);
+    assert.match(source, /\/scan2borrow\/frontend\/assets\/js\/core\/media\.js/);
+  }
+});
+
 test('borrower dashboard content and interaction IDs remain intact', () => {
   for (const relative of [
     'features/student/pages/dashboard/dashboard.html',

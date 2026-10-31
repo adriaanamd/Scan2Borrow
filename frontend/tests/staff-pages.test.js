@@ -99,6 +99,8 @@ test('approval cards prioritize the borrower name over the book title', () => {
 
   assert.match(approvalCard, /approval-card__borrower/);
   assert.match(approvalCard, /approval-card__book-title/);
+  assert.match(approvalCard, /borrower_photo/);
+  assert.match(approvalCard, /approval-card__borrower-photo/);
   assert.ok(approvalCard.indexOf('approval-card__borrower') < approvalCard.indexOf('approval-card__book-title'));
   assert.match(returnCard, /return-approval-card__borrower/);
   assert.match(returnCard, /return-approval-card__book-title/);
@@ -169,6 +171,8 @@ test('staff circulation page exposes scan-first borrow and return controls', () 
   assert.match(template, /circulation-return-scanner/);
   assert.match(template, /circulation-review-modal/);
   assert.match(template, /circulation-approve-borrow/);
+  assert.match(template, /id="circulation-borrower-photo"/);
+  assert.match(template, /assets\/js\/core\/media\.js/);
   assert.match(stylesheet, /var\(--primary\)/);
   assert.match(stylesheet, /@media/);
 });
@@ -190,7 +194,9 @@ test('staff circulation page exposes the borrower profile workflow in the app sh
   assert.match(template, /Requested Books/);
   assert.match(template, /Borrowed Books History/);
   assert.match(template, /Transaction Summary/);
+  assert.match(template, /circulation-borrower-photo/);
   assert.match(controller, /data-circulation-request-action="approve"/);
+  assert.match(controller, /circulation-borrower-photo/);
   assert.match(template, /data-circulation-history-filter="returned"/);
 });
 

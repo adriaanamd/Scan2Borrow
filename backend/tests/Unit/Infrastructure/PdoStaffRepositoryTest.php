@@ -26,7 +26,7 @@ final class PdoStaffRepositoryTest extends TestCase
         $this->pdo->exec('CREATE TABLE return_notifications (id INTEGER PRIMARY KEY, borrowing_id INTEGER, user_id INTEGER, book_id INTEGER, message TEXT, is_viewed INTEGER, viewed_at TEXT, created_at TEXT)');
         $this->pdo->exec("INSERT INTO books (id, barcode, title, author, category_name, status, floor_no, section_name, shelf_no, created_at) VALUES (1, 'BK-1', 'Clean Code', 'Martin', 'Computer Science', 'Available', '2', 'IT', 'A1', '2026-08-01')");
         $this->pdo->exec("INSERT INTO users VALUES (1, 'STAFF-1', 'Ada', 'Lovelace', 'Library', 'Librarian', NULL, NULL, 'ada@example.test', '09170000000', NULL, 'librarian', NULL, 'active')");
-        $this->pdo->exec("INSERT INTO users VALUES (2, 'STU-1', 'Grace', 'Hopper', 'IT', NULL, 'CS', '4', 'grace@example.test', '09171111111', NULL, 'student', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO users VALUES (2, 'STU-1', 'Grace', 'Hopper', 'IT', NULL, 'CS', '4', 'grace@example.test', '09171111111', 'uploads/profile/grace.jpg', 'student', NULL, 'active')");
         $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES (1, 'TX-1', 2, 1, 'pending', '2026-08-20', '2026-08-27', NULL, 'Pending', 0)");
     }
 
@@ -39,6 +39,7 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame(1, $dashboard['stats']['total_books']);
         self::assertSame('Grace Hopper', $repository->borrowers('Grace')[0]['name']);
         self::assertSame('TX-1', $repository->pendingBorrowings()[0]['transaction_code']);
+        self::assertSame('uploads/profile/grace.jpg', $repository->pendingBorrowings()[0]['borrower_photo']);
     }
 
     public function testBorrowersAggregateActiveAndOverdueLoansPerUser(): void
@@ -133,7 +134,7 @@ final class PdoStaffRepositoryTest extends TestCase
         $pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, processed_by INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, status TEXT, fine_amount NUMERIC, requested_at TEXT, approved_at TEXT, approved_by INTEGER)');
         $pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date TEXT, status TEXT, fine_amount NUMERIC)');
         $pdo->exec('CREATE TABLE notifications (id INTEGER PRIMARY KEY, user_id INTEGER, type TEXT, title TEXT, message TEXT, related_id INTEGER, is_read INTEGER, created_at TEXT)');
-        $pdo->exec("INSERT INTO users VALUES (2, 'STU-1', 'Grace', NULL, 'Hopper', 'IT', NULL, 'CS', '4', NULL, 'student')");
+        $pdo->exec("INSERT INTO users VALUES (2, 'STU-1', 'Grace', NULL, 'Hopper', 'IT', NULL, 'CS', '4', 'uploads/profile/grace.jpg', 'student')");
         $pdo->exec("INSERT INTO book_titles VALUES (1, 'Clean Code', 'Martin', 'Computer Science', '2026-08-01')");
         $pdo->exec("INSERT INTO book_copies VALUES (1, 1, 'COPY-1', 'Reserved', '2026-09-10', '2', NULL)");
         $pdo->exec("INSERT INTO borrowing_transactions VALUES (1, 'TX-PENDING', 2, NULL, 'pending', '2026-09-03 10:00:00', '2026-09-10', NULL, 'Pending', 0, '2026-09-03 10:00:00', NULL, NULL)");
@@ -160,6 +161,16 @@ final class PdoStaffRepositoryTest extends TestCase
 
         $dashboard = (new PdoBorrowerPortalRepository($pdo))->dashboard(2);
         self::assertSame('Borrowed', $dashboard['current_loans'][0]['status']);
+    }
+
+    public function testNormalizedPendingBorrowingsIncludeBorrowerPhoto(): void
+    {
+        $repository = new PdoStaffRepository($this->normalizedApprovalFixture());
+
+        $pending = $repository->pendingBorrowings();
+
+        self::assertCount(1, $pending);
+        self::assertSame('uploads/profile/grace.jpg', $pending[0]['borrower_photo']);
     }
 
     public function testNormalizedRejectionClosesItemsAndLeavesCopiesAvailable(): void

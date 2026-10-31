@@ -42,6 +42,7 @@ function circulationDocument() {
   [
     'circulation-status',
     'circulation-borrower',
+    'circulation-borrower-photo',
     'circulation-borrower-course',
     'circulation-borrower-year',
     'circulation-borrower-status',
@@ -147,6 +148,7 @@ test('CirculationPage renders the verified borrower workflow sections from looku
         name: 'Ada Lovelace',
         role: 'student',
         status: 'active',
+        photo: 'uploads/profile/grace.jpg',
         course: 'Computer Science',
         year_level: '3',
         active_loans: 1,
@@ -166,6 +168,7 @@ test('CirculationPage renders the verified borrower workflow sections from looku
 
   assert.equal(document.getElementById('circulation-borrower-course').textContent, 'Computer Science');
   assert.equal(document.getElementById('circulation-borrower-year').textContent, '3');
+  assert.match(document.getElementById('circulation-borrower-photo').innerHTML, /src="\/scan2borrow\/uploads\/profile\/grace\.jpg"/);
   assert.match(document.getElementById('circulation-requested-books').innerHTML, /Algorithms/);
   assert.match(document.getElementById('circulation-requested-books').innerHTML, /Database Systems/);
   assert.match(document.getElementById('circulation-requested-books').innerHTML, /Pending borrow request/);

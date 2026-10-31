@@ -33,14 +33,14 @@ final class StaffDashboardMarkupTest extends TestCase
         }
     }
 
-    public function testDashboardExposesPendingApprovalControl(): void
+    public function testDashboardDoesNotExposeApprovalShortcutControls(): void
     {
         $dashboard = $this->page('staff-dashboard');
 
-        self::assertStringContainsString('id="pending-approvals-trigger"', $dashboard);
-        self::assertStringContainsString('data-bs-target="#approvalModal"', $dashboard);
-        self::assertStringContainsString('id="pending-approvals-count"', $dashboard);
-        self::assertStringContainsString('>Pending Approvals<', $dashboard);
+        self::assertStringNotContainsString('id="pending-approvals-trigger"', $dashboard);
+        self::assertStringNotContainsString('id="return-approvals-trigger"', $dashboard);
+        self::assertDoesNotMatchRegularExpression('/<button[^>]*data-bs-target="#approvalModal"/', $dashboard);
+        self::assertDoesNotMatchRegularExpression('/<button[^>]*data-bs-target="#returnApprovalModal"/', $dashboard);
     }
 
     public function testOverviewHooksDoNotLeakIntoOtherAdminPages(): void

@@ -685,7 +685,7 @@ export class StaffDashboardPage {
 
   approvalCard(row) {
     const cover = this.media(row.cover_file || "");
-    const borrowerPhoto = this.media(row.borrower_photo || "");
+    const borrowerPhoto = this.media(row.borrower_photo || row.photo || row.profile_photo || "");
     const borrowerName = row.borrower || "Borrower";
     const borrowerInitials = borrowerName
       .split(/\s+/)
@@ -1379,7 +1379,17 @@ export class StaffDashboardPage {
   }
 
   media(value) {
-    return Scan2BorrowMedia.resolve(value);
+    const resolver = globalThis.Scan2BorrowMedia?.resolve;
+    if (typeof resolver === "function") return resolver(value);
+
+    const normalized = String(value ?? "").trim().replace(/\\/g, "/");
+    if (!normalized) return "";
+    if (/^(data:image\/|blob:|https?:\/\/|\/\/)/i.test(normalized)) return normalized;
+    if (normalized.toLowerCase().startsWith("/scan2borrow/")) return normalized;
+    if (normalized.toLowerCase().startsWith("/uploads/")) return `/scan2borrow${normalized}`;
+    if (normalized.toLowerCase().startsWith("uploads/")) return `/scan2borrow/${normalized}`;
+
+    return normalized.startsWith("/") ? normalized : `/scan2borrow/${normalized}`;
   }
 
   nonNegativeInteger(value) {

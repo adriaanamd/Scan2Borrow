@@ -107,6 +107,37 @@ test('approval cards prioritize the borrower name over the book title', () => {
   assert.ok(returnCard.indexOf('return-approval-card__borrower') < returnCard.indexOf('return-approval-card__book-title'));
 });
 
+test('dashboard approval cards resolve borrower photos without a global media script', () => {
+  const page = Object.create(StaffDashboardPage.prototype);
+  page.escape = (value) => String(value ?? '');
+  page.date = (value) => String(value ?? '');
+
+  const card = page.approvalCard({
+    borrower: 'Grace Hopper',
+    borrower_photo: 'uploads/profile/grace.jpg',
+    title: 'Clean Code',
+    id: 7,
+  });
+
+  assert.match(card, /class="approval-card__borrower-photo"/);
+  assert.match(card, /src="\/scan2borrow\/uploads\/profile\/grace\.jpg"/);
+});
+
+test('dashboard approval cards accept a plain photo field from compatible payloads', () => {
+  const page = Object.create(StaffDashboardPage.prototype);
+  page.escape = (value) => String(value ?? '');
+  page.date = (value) => String(value ?? '');
+
+  const card = page.approvalCard({
+    borrower: 'Grace Hopper',
+    photo: 'uploads/profile/grace.jpg',
+    title: 'Clean Code',
+    id: 7,
+  });
+
+  assert.match(card, /src="\/scan2borrow\/uploads\/profile\/grace\.jpg"/);
+});
+
 test('inventory boundaries preserve list, bulk action, drawer, and page contracts', async () => {
   const calls = [];
   const service = new InventoryService({

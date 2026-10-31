@@ -100,7 +100,7 @@ final class StaffDashboardFrontendContractTest extends TestCase
         self::assertIsString($html);
         self::assertStringContainsString('data-app-page="staff-dashboard"', $html);
         self::assertStringContainsString('frontend/features/staff/pages/dashboard/staff-dashboard.page.js', $html);
-        foreach (['pending-approvals-count', 'overview-activity', 'overview-borrowers-modal', 'Overview'] as $marker) {
+        foreach (['Pending Approvals', 'overview-activity', 'overview-borrowers-modal', 'Overview'] as $marker) {
             self::assertStringContainsString($marker, $html);
         }
     }

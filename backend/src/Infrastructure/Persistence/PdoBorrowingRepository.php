@@ -132,13 +132,26 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         $selected = [];
         if ($requestedBarcodes !== []) {
             $placeholders = implode(',', array_fill(0, count($requestedBarcodes), '?'));
-            $query = 'SELECT c.id, c.title_id, c.barcode, c.accession_no, t.title, t.author FROM book_copies c JOIN book_titles t ON t.id = c.title_id WHERE c.title_id = ? AND c.barcode IN (' . $placeholders . ') AND c.status = \'Available\' AND c.deleted_at IS NULL ORDER BY c.id';
+            $query = 'SELECT c.id, c.title_id, c.barcode, c.accession_no, c.status, t.title, t.author FROM book_copies c JOIN book_titles t ON t.id = c.title_id WHERE c.title_id = ? AND c.barcode IN (' . $placeholders . ') AND c.deleted_at IS NULL ORDER BY c.id';
             $statement = $this->pdo->prepare($this->forUpdate($query));
             $statement->execute(array_merge([$item->titleId], $requestedBarcodes));
             /** @var list<array<string, mixed>> $rows */
             $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+            $foundBarcodes = [];
             foreach ($rows as $row) {
+                $barcode = is_string($row['barcode'] ?? null) ? trim($row['barcode']) : '';
+                if ($barcode !== '') {
+                    $foundBarcodes[$barcode] = true;
+                }
+                if (($row['status'] ?? null) !== 'Available') {
+                    throw new \RuntimeException('Book copy ' . $barcode . ' is not available.');
+                }
                 $selected[] = $this->copyContext($row);
+            }
+            foreach ($requestedBarcodes as $barcode) {
+                if (!isset($foundBarcodes[$barcode])) {
+                    throw new \RuntimeException('Book copy ' . $barcode . ' was not found for this title.');
+                }
             }
         }
 

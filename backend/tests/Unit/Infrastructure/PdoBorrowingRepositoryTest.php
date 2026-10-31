@@ -36,11 +36,11 @@ final class PdoBorrowingRepositoryTest extends TestCase
         );
         $this->pdo->exec(
             'CREATE TABLE book_titles (' .
-            'id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, quantity INTEGER NOT NULL DEFAULT 0)'
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(200) NOT NULL, author VARCHAR(150), quantity INTEGER NOT NULL DEFAULT 0)'
         );
         $this->pdo->exec(
             'CREATE TABLE book_copies (' .
-            'id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL UNIQUE, ' .
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL UNIQUE, accession_no VARCHAR(50), ' .
             'status VARCHAR(20) NOT NULL, deleted_at DATETIME, due_date DATE, return_date DATE)'
         );
         $this->pdo->exec(
@@ -232,22 +232,25 @@ final class PdoBorrowingRepositoryTest extends TestCase
         );
     }
 
-    public function testBorrowingAUsedCopyBarcodeFallsBackToAnotherAvailableCopyOfTheTitle(): void
+    public function testBorrowingAUsedCopyBarcodeIsRejectedInsteadOfSubstituted(): void
     {
         $this->pdo->exec("UPDATE book_copies SET status = 'Borrowed' WHERE barcode = 'COPY-1'");
         $repository = new PdoBorrowingRepository($this->pdo);
 
-        $result = $repository->createBulkTransaction(
-            new BulkBorrowRequest(8, Role::STUDENT, [new BulkBorrowItem(1, 1, ['COPY-1'])]),
-            new DateTimeImmutable('2026-09-04'),
-            'S2B-20260828-FALLBK',
-            'Pending',
-            'pending',
-        );
-
-        self::assertSame(1, $result['copy_count']);
-        self::assertSame('Reserved', $this->pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-2'")->fetchColumn());
-        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM borrowing_items WHERE transaction_id = 1 AND copy_id = 2')->fetchColumn());
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Book copy COPY-1 is not available.');
+        try {
+            $repository->createBulkTransaction(
+                new BulkBorrowRequest(8, Role::STUDENT, [new BulkBorrowItem(1, 1, ['COPY-1'])]),
+                new DateTimeImmutable('2026-09-04'),
+                'S2B-20260828-FALLBK',
+                'Pending',
+                'pending',
+            );
+        } finally {
+            self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM borrowing_transactions')->fetchColumn());
+            self::assertSame('Available', $this->pdo->query("SELECT status FROM book_copies WHERE barcode = 'COPY-2'")->fetchColumn());
+        }
     }
 
     public function testMixedPinnedAndFallbackCopiesAreAllocatedWithoutDuplicatingThePinnedCopy(): void

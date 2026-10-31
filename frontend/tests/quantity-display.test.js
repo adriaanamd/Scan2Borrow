@@ -14,17 +14,16 @@ test('inventory and catalog cards expose total and available quantities', () => 
   assert.match(read('features/staff/pages/inventory/inventory.html'), /<th[^>]*>Quantity<\/th>/i);
 });
 
-test('barcode lookup does not pin an unavailable copy when the title has other available copies', () => {
+test('barcode lookup rejects an unavailable physical copy instead of substituting another copy', () => {
   for (const relative of [
     'app/shared/pages/borrower-search.page.js',
     'features/student/pages/dashboard/student-dashboard.page.js',
     'features/teacher/pages/dashboard/teacher-dashboard.page.js',
   ]) {
-    assert.match(
-      read(relative),
-      /copy\.status === ["']Available["'] \? barcode : ["']["']/,
-      `${relative} must let the server allocate another available copy for a title.`,
-    );
+    const source = read(relative);
+    assert.match(source, /copy\.status !== ["']Available["']/, `${relative} must reject unavailable scans.`);
+    assert.match(source, /Book copy .* is not available\./, `${relative} must explain why the scan was rejected.`);
+    assert.match(source, /this\.cart\.addTitle\(copy, 1, barcode\)/, `${relative} must pin the exact available scan.`);
   }
 });
 

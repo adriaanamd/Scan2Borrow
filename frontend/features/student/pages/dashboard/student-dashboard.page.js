@@ -429,7 +429,13 @@ export class StudentDashboardPage {
     if (!barcode) return;
     fetch(`/scan2borrow/api/student/borrow/lookup?barcode=${encodeURIComponent(barcode)}`, { headers: { "X-Requested-With": "fetch" } })
       .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
-      .then(({ ok, payload }) => { if (!ok) throw new Error(payload.message || "Book copy not found."); const copy = payload.data; this.cart.addTitle(copy, 1, copy.status === "Available" ? barcode : ""); this.renderCart(); })
+      .then(({ ok, payload }) => {
+        if (!ok) throw new Error(payload.message || "Book copy not found.");
+        const copy = payload.data;
+        if (copy.status !== "Available") throw new Error(`Book copy ${barcode} is not available.`);
+        this.cart.addTitle(copy, 1, barcode);
+        this.renderCart();
+      })
       .catch((error) => this.showToast(error.message, false));
   }
 

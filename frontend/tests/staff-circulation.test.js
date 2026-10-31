@@ -62,6 +62,13 @@ function circulationDocument() {
     'circulation-review-modal',
     'circulation-review-items',
     'circulation-approve-borrow',
+    'circulation-borrower-form',
+    'circulation-borrow-form',
+    'circulation-return-form',
+    'circulation-borrower-barcode',
+    'circulation-book-barcode',
+    'circulation-return-book-barcode',
+    'circulation-due-date',
   ].forEach((id) => document.node(id));
   return document;
 }
@@ -136,6 +143,57 @@ test('CirculationPage keeps scanned and manually entered borrow copies in one re
   assert.equal(page.borrowCopies.length, 0);
   page.rejectBorrow();
   assert.equal(calls.length, 1);
+});
+
+test('CirculationPage binds the desk checkout form and approval button to the transaction flow', async () => {
+  const document = circulationDocument();
+  const formListeners = new Map();
+  const borrowForm = document.getElementById('circulation-borrow-form');
+  borrowForm.addEventListener = (type, listener) => formListeners.set(type, listener);
+
+  const actionButtons = new Map();
+  for (const action of ['review-borrow', 'approve-borrow']) {
+    const listeners = new Map();
+    actionButtons.set(action, {
+      dataset: { circulationAction: action },
+      addEventListener(type, listener) { listeners.set(type, listener); },
+      async click() {
+        return listeners.get('click')?.({
+          preventDefault() {},
+          stopPropagation() {},
+          currentTarget: this,
+          target: this,
+        });
+      },
+    });
+  }
+  document.querySelectorAll = (selector) => selector === '[data-circulation-action]'
+    ? [...actionButtons.values()]
+    : [];
+
+  const calls = [];
+  const service = {
+    lookupStudent: async () => ({ data: {
+      borrower: { id: 7, barcode: 'STU-001', name: 'Ada Lovelace', role: 'student' },
+      active_loans: [],
+    } }),
+    borrow: async (payload) => { calls.push(payload); return { message: 'Borrowing transaction approved.' }; },
+  };
+  const page = new CirculationPage(document, {
+    service,
+    document,
+    window: { Scan2BorrowConfirmation: { confirm: async ({ onConfirm }) => onConfirm() } },
+  });
+
+  page.start();
+  await page.lookupStudent('STU-001');
+  document.getElementById('circulation-book-barcode').value = 'COPY-001';
+  await formListeners.get('submit')({ preventDefault() {} });
+  await actionButtons.get('review-borrow').click();
+  await actionButtons.get('approve-borrow').click();
+
+  assert.equal(document.getElementById('circulation-review-modal').hidden, true);
+  assert.deepEqual(calls, [{ borrowerBarcode: 'STU-001', bookBarcodes: ['COPY-001'], dueDate: '' }]);
 });
 
 test('CirculationPage renders the verified borrower workflow sections from lookup data', async () => {

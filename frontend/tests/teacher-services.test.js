@@ -43,3 +43,18 @@ test('teacher pages expose dashboard and settings feature boundaries', () => {
   assert.equal(TeacherSettingsPage.name, 'TeacherSettingsPage');
   assert.equal(typeof TeacherSettingsPage.prototype.render, 'function');
 });
+
+test('teacher dashboard renders the approved profile photo in the hero avatar', () => {
+  const avatar = {
+    innerHTML: '',
+    textContent: '',
+    classList: { add() {}, remove() {} },
+  };
+  const document = { getElementById: (id) => (id === 'teacher-avatar' ? avatar : null) };
+  const page = Object.create(TeacherDashboardPage.prototype);
+
+  page.renderProfilePhoto({ photo: 'uploads/profile/faculty.jpg' }, document);
+
+  assert.match(avatar.innerHTML, /<img[^>]+src="\/scan2borrow\/uploads\/profile\/faculty\.jpg"/);
+  assert.match(avatar.innerHTML, /alt="Profile photo"/);
+});

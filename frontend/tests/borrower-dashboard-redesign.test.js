@@ -93,6 +93,7 @@ test('student profile block exposes the Organic hero composition hooks', () => {
     assert.match(source, new RegExp(selector));
   }
   assert.match(source, /id="borrower-name"/);
+  assert.match(source, /id="borrower-avatar"/);
   assert.match(source, /id="borrower-meta"/);
   assert.match(source, /id="borrower-barcode"/);
   assert.match(source, /data-bs-target="#borrowModal"/);
@@ -105,6 +106,7 @@ test('teacher profile block exposes the Swiss hero composition hooks', () => {
     assert.match(source, new RegExp(selector));
   }
   assert.match(source, /id="teacher-name"/);
+  assert.match(source, /id="teacher-avatar"/);
   assert.match(source, /id="teacher-meta"/);
   assert.match(source, /id="teacher-barcode"/);
   assert.match(source, /data-bs-target="#borrowModal"/);

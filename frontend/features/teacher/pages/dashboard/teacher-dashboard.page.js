@@ -75,6 +75,7 @@ export class TeacherDashboardPage {
       user.department ? ` · ${user.department}` : "",
       user.position ? ` · ${user.position}` : "",
     ].join("");
+    this.renderProfilePhoto(user);
     document.getElementById("teacher-barcode").textContent = user.barcode || "";
     document.getElementById("active-count").textContent = String(
       stats.active || 0,
@@ -92,6 +93,25 @@ export class TeacherDashboardPage {
     this.renderLoans(this.currentLoans);
     this.loadRenewals();
     this.renderBarcode(user.barcode || "");
+  }
+
+  renderProfilePhoto(user, documentRef = globalThis.document) {
+    const avatar = documentRef?.getElementById("teacher-avatar");
+    if (!avatar) return;
+
+    const photo = this.safePhotoPath(user?.photo);
+    if (photo) avatar.classList?.add("has-photo");
+    else avatar.classList?.remove("has-photo");
+    avatar.innerHTML = photo
+      ? `<img src="${this.escapeHtml(photo)}" alt="Profile photo" />`
+      : "";
+  }
+
+  safePhotoPath(path) {
+    if (!path || typeof path !== "string") return "";
+    return path.startsWith("/scan2borrow/uploads/") || path.startsWith("uploads/")
+      ? (path.startsWith("uploads/") ? `/scan2borrow/${path}` : path)
+      : "";
   }
 
   renderRecentActivity(rows) {

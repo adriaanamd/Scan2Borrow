@@ -94,6 +94,7 @@ export class StudentDashboardPage {
       user.course ? ` · ${user.course}` : "",
       user.year_level ? ` · Year ${user.year_level}` : "",
     ].join("");
+    this.renderProfilePhoto(user);
 
     this.$("active-count").textContent = String(active);
     this.$("overdue-count").textContent = String(overdue);
@@ -113,6 +114,25 @@ export class StudentDashboardPage {
     this.renderLoans(this.currentLoans);
     this.loadRenewals();
     this.renderBarcode(user.barcode || "");
+  }
+
+  renderProfilePhoto(user) {
+    const avatar = this.$("borrower-avatar");
+    if (!avatar) return;
+
+    const photo = this.safePhotoPath(user?.photo);
+    if (photo) avatar.classList?.add("has-photo");
+    else avatar.classList?.remove("has-photo");
+    avatar.innerHTML = photo
+      ? `<img src="${this.escapeHtml(photo)}" alt="Profile photo" />`
+      : "";
+  }
+
+  safePhotoPath(path) {
+    if (!path || typeof path !== "string") return "";
+    return path.startsWith("/scan2borrow/uploads/") || path.startsWith("uploads/")
+      ? (path.startsWith("uploads/") ? `/scan2borrow/${path}` : path)
+      : "";
   }
 
   renderRecentActivity(rows) {

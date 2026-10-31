@@ -13,6 +13,21 @@ test('student dashboard exposes a feature-owned page controller with legacy rend
   }
 });
 
+test('student dashboard renders the approved profile photo in the hero avatar', () => {
+  const avatar = {
+    innerHTML: '',
+    textContent: '',
+    classList: { add() {}, remove() {} },
+  };
+  const page = Object.create(StudentDashboardPage.prototype);
+  page.$ = (id) => (id === 'borrower-avatar' ? avatar : null);
+
+  page.renderProfilePhoto({ photo: 'uploads/profile/grace.jpg' });
+
+  assert.match(avatar.innerHTML, /<img[^>]+src="\/scan2borrow\/uploads\/profile\/grace\.jpg"/);
+  assert.match(avatar.innerHTML, /alt="Profile photo"/);
+});
+
 test('student search exposes a feature-owned page controller with catalog rendering boundaries', () => {
   assert.equal(StudentSearchPage.name, 'StudentSearchPage');
   for (const method of ['load', 'render', 'bookCard', 'renderActiveFilters', 'bindEvents']) {

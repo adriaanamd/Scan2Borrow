@@ -101,7 +101,20 @@
   border: 3px solid rgba(255, 255, 255, .45);
   border-radius: 50%;
   height: 76px;
+  overflow: hidden;
   width: 76px;
+}
+
+.borrower-dashboard--student .student-dashboard__hero .avatar-placeholder.has-photo::before {
+  content: none;
+}
+
+.borrower-dashboard--student .student-dashboard__hero .avatar-placeholder img,
+.borrower-dashboard--teacher .teacher-dashboard__hero .profile-avatar img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .borrower-dashboard--student .student-dashboard__hero .btn-accent {
@@ -201,6 +214,7 @@
   border-radius: 4px;
   box-shadow: 8px 8px 0 rgba(0, 47, 167, .12);
   color: #FFFFFF;
+  overflow: hidden;
 }
 
 .borrower-dashboard--teacher .teacher-dashboard__hero .btn-accent {

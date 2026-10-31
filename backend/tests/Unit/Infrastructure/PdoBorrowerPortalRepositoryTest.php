@@ -19,7 +19,7 @@ final class PdoBorrowerPortalRepositoryTest extends TestCase
         $this->pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, barcode TEXT, firstname TEXT, middlename TEXT, lastname TEXT, department TEXT, position TEXT, course TEXT, year_level TEXT, photo TEXT, role TEXT)');
         $this->pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode TEXT, title TEXT, author TEXT, category_name TEXT, status TEXT, deleted_at TEXT, floor_no TEXT, created_at TEXT)');
         $this->pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, book_id INTEGER, borrow_date TEXT, due_date TEXT, return_date TEXT, status TEXT, fine_amount NUMERIC)');
-        $this->pdo->exec("INSERT INTO users VALUES (1, 'STU-1', 'Grace', 'B.', 'Hopper', 'IT', NULL, 'CS', '4', NULL, 'student')");
+        $this->pdo->exec("INSERT INTO users VALUES (1, 'STU-1', 'Grace', 'B.', 'Hopper', 'IT', NULL, 'CS', '4', 'uploads/profile/grace.jpg', 'student')");
         $this->pdo->exec("INSERT INTO books VALUES
             (1, 'BK-1', 'Clean Code', 'Martin', 'Computer Science', 'Borrowed', NULL, '2', '2026-08-01'),
             (2, 'BK-2', 'Refactoring', 'Fowler', 'Computer Science', 'Available', NULL, '2', '2026-08-02'),
@@ -40,6 +40,7 @@ final class PdoBorrowerPortalRepositoryTest extends TestCase
         $dashboard = (new PdoBorrowerPortalRepository($this->pdo))->dashboard(1);
 
         self::assertSame('Grace Hopper', $dashboard['user']['name']);
+        self::assertSame('uploads/profile/grace.jpg', $dashboard['user']['photo']);
         self::assertSame(1, $dashboard['stats']['active']);
         self::assertSame(1, $dashboard['stats']['overdue']);
         self::assertSame(25.0, $dashboard['stats']['fines']);

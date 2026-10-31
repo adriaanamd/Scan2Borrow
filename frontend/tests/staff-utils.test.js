@@ -289,7 +289,7 @@ test('staff notify page sends email and SMS actions through the notification ser
         },
       },
       notificationService: {
-        async notify(id, channel) {
+        async send(id, channel) {
           calls.push([id, channel]);
           return { ok: true, message: `${channel} notification sent.` };
         },

@@ -49,7 +49,7 @@ export class StaffNotifyPage {
     button.disabled = true;
     this.text(`#notify-${channel}-alert`, 'Sending notification...');
     try {
-      const result = await this.notificationService?.notify(this.userId, channel);
+      const result = await this.notificationService?.send(this.userId, channel);
       const ok = result?.ok !== false;
       this.text(`#notify-${channel}-alert`, result?.message || (ok ? 'Notification sent.' : 'Could not send notification.'));
       return result;

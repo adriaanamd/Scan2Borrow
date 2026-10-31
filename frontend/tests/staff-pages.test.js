@@ -94,6 +94,25 @@ test('staff dashboard exposes return approvals as a separate action', () => {
   assert.doesNotMatch(borrowModal, /class="return-approval-section"|id="returnApprovalList"/);
 });
 
+test('approval cards prioritize the borrower name over the book title', () => {
+  const source = fs.readFileSync(staffDashboardSource, 'utf8');
+  const returnCardStart = source.indexOf('\n  returnApprovalCard(row)');
+  const approvalCardStart = source.indexOf('\n  approvalCard(row)');
+
+  assert.ok(returnCardStart >= 0);
+  assert.ok(approvalCardStart >= 0);
+
+  const returnCard = source.slice(returnCardStart, source.indexOf('\n  updateApprovalCounts()', returnCardStart));
+  const approvalCard = source.slice(approvalCardStart, source.indexOf('\n  async refreshNotifications()', approvalCardStart));
+
+  assert.match(approvalCard, /approval-card__borrower/);
+  assert.match(approvalCard, /approval-card__book-title/);
+  assert.ok(approvalCard.indexOf('approval-card__borrower') < approvalCard.indexOf('approval-card__book-title'));
+  assert.match(returnCard, /return-approval-card__borrower/);
+  assert.match(returnCard, /return-approval-card__book-title/);
+  assert.ok(returnCard.indexOf('return-approval-card__borrower') < returnCard.indexOf('return-approval-card__book-title'));
+});
+
 test('inventory boundaries preserve list, bulk action, drawer, and page contracts', async () => {
   const calls = [];
   const service = new InventoryService({

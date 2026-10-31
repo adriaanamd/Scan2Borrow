@@ -239,9 +239,9 @@ export class CirculationPage {
   async approveBorrow() {
     if (!this.borrower || !this.borrowCopies.length) return;
     const proceed = () => this.submitBorrow();
-    const confirm = this.window?.Scan2BorrowConfirmation?.confirm;
-    if (typeof confirm === 'function') {
-      await confirm({
+    const confirmation = this.window?.Scan2BorrowConfirmation;
+    if (typeof confirmation?.confirm === 'function') {
+      await confirmation.confirm({
         title: 'Approve borrowing transaction?',
         message: `Approve ${this.borrowCopies.length} scanned copy${this.borrowCopies.length === 1 ? '' : 'ies'} for ${this.borrower.name || 'this borrower'}?`,
         confirmLabel: 'Approve borrowing',

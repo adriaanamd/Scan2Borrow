@@ -196,6 +196,31 @@ test('CirculationPage binds the desk checkout form and approval button to the tr
   assert.deepEqual(calls, [{ borrowerBarcode: 'STU-001', bookBarcodes: ['COPY-001'], dueDate: '' }]);
 });
 
+test('CirculationPage preserves the confirmation service receiver when approving a borrow', async () => {
+  const document = circulationDocument();
+  let submitted = 0;
+  const confirmation = {
+    pending: null,
+    confirm(config) {
+      this.pending = config;
+      return config.onConfirm();
+    },
+  };
+  const page = new CirculationPage(document, {
+    service: {},
+    document,
+    window: { Scan2BorrowConfirmation: confirmation },
+  });
+  page.borrower = { barcode: 'STU-001', name: 'Ada Lovelace' };
+  page.borrowCopies = [{ barcode: 'COPY-001' }];
+  page.submitBorrow = async () => { submitted += 1; };
+
+  await page.approveBorrow();
+
+  assert.equal(submitted, 1);
+  assert.equal(confirmation.pending.confirmLabel, 'Approve borrowing');
+});
+
 test('CirculationPage renders the verified borrower workflow sections from lookup data', async () => {
   const document = circulationDocument();
   const service = {

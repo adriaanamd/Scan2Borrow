@@ -11,6 +11,7 @@ final readonly class BorrowerNotificationService
     public function __construct(
         private StaffRepositoryInterface $staff,
         private EmailSenderInterface $email,
+        private ?SmsSenderInterface $sms = null,
     ) {
     }
 
@@ -25,7 +26,21 @@ final readonly class BorrowerNotificationService
         $name = $this->string($borrower['name'] ?? null);
 
         if ($channel === 'sms') {
-            return ['ok' => false, 'message' => 'SMS is not enabled. Please configure an SMS adapter.'];
+            if ($this->sms === null) {
+                return ['ok' => false, 'message' => 'SMS is not enabled. Please configure an SMS adapter.'];
+            }
+            $phoneNumber = $this->string($borrower['contact_no'] ?? null);
+            if ($phoneNumber === '') {
+                return ['ok' => false, 'message' => 'This borrower has no contact number on file.'];
+            }
+
+            try {
+                $this->sms->send($phoneNumber, $this->messageText($name, $details['history']));
+            } catch (\Throwable) {
+                return ['ok' => false, 'message' => 'Could not send SMS notification. Please try again.'];
+            }
+
+            return ['ok' => true, 'message' => 'Notification sent to ' . $phoneNumber . '.'];
         }
         if ($channel !== 'email') {
             return ['ok' => false, 'message' => 'Unknown notification channel.'];
@@ -68,6 +83,27 @@ final readonly class BorrowerNotificationService
             . '<p style="font-size:14px;line-height:1.6;margin:22px 0 0;">Kindly return all borrowed books on or before their due dates to avoid additional fines.</p>';
 
         return SchoolEmailTemplate::render('Library account notice', 'Your borrowed book record', $body);
+    }
+
+    /** @param list<array<string, mixed>> $history */
+    private function messageText(string $name, array $history): string
+    {
+        $loans = [];
+        foreach ($history as $loan) {
+            if ($loan['return_date'] !== null && $loan['return_date'] !== '') {
+                continue;
+            }
+
+            $title = $this->string($loan['title'] ?? null);
+            $dueDate = $this->string($loan['due_date'] ?? null);
+            $loans[] = $title . ($dueDate === '' ? '' : ' (due ' . $dueDate . ')');
+        }
+
+        $loanSummary = $loans === []
+            ? 'You have no active borrowed books.'
+            : 'Active borrowed books: ' . implode('; ', $loans) . '.';
+
+        return 'Scan2Borrow Library Services: Dear ' . $name . ', ' . $loanSummary . ' Please return borrowed books on or before their due dates.';
     }
 
     private function escape(mixed $value): string

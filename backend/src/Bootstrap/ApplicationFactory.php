@@ -233,6 +233,7 @@ final class ApplicationFactory
             new BorrowerNotificationService(
                 $staffRepository,
                 new SmtpEmailSender(),
+                SmsSenderFactory::create(),
             ),
             $profileChangeService,
             $returnApprovalService,

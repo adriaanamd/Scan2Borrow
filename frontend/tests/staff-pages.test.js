@@ -177,11 +177,11 @@ test('staff circulation page exposes scan-first borrow and return controls', () 
   assert.match(template, /circulation-return-scanner/);
   assert.match(template, /circulation-review-modal/);
   assert.match(template, /circulation-approve-borrow/);
-  assert.match(stylesheet, /#002fa7/);
+  assert.match(stylesheet, /var\(--primary\)/);
   assert.match(stylesheet, /@media/);
 });
 
-test('staff circulation page exposes the borrower profile workflow from the reference design', () => {
+test('staff circulation page exposes the borrower profile workflow in the app shell', () => {
   const pageDirectory = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'circulation');
   const template = fs.readFileSync(path.join(pageDirectory, 'circulation.html'), 'utf8');
   const controller = fs.readFileSync(path.join(pageDirectory, 'circulation.page.js'), 'utf8');

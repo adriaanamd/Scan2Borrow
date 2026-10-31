@@ -42,6 +42,7 @@ final class StaffCirculationControllerTest extends TestCase
         $lookup = $controller->circulationBorrower($this->request('GET', '/api/staff/circulation/borrower', [], ['barcode' => 'STU-001']));
         self::assertSame(200, $lookup->statusCode());
         self::assertStringContainsString('Ada Lovelace', $lookup->toString());
+        self::assertStringContainsString('COPY-001', $lookup->toString());
 
         $borrow = $controller->circulationBorrow($this->request('POST', '/api/staff/circulation/borrow', [
             'csrf' => self::CSRF,
@@ -179,9 +180,14 @@ final class StaffCirculationControllerRepository implements StaffCirculationRepo
                 'role' => 'student',
                 'status' => 'active',
                 'borrowing_status' => 'active',
-                'active_loans' => 0,
+                'active_loans' => 1,
             ],
-            'active_loans' => [],
+            'active_loans' => [[
+                'id' => 55,
+                'copy_barcode' => 'COPY-001',
+                'title' => 'Clean Code',
+                'due_date' => '2026-08-27',
+            ]],
         ];
     }
 

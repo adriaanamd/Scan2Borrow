@@ -1,6 +1,6 @@
 # Scan ID Borrower Lookup Design
 
-**Date:** 2026-10-31  
+**Date:** 2026-10-31
 **Status:** Approved design; implementation pending
 
 ## Problem

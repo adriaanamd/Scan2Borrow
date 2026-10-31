@@ -338,10 +338,20 @@ final readonly class StaffController
         $borrowerId = $this->positiveInt($lookupBorrower['id'] ?? null);
         $details = $borrowerId > 0 ? $this->staff->borrowerDetails($borrowerId) : null;
         $profileBorrower = is_array($details['borrower'] ?? null) ? $details['borrower'] : [];
-        $requestedBooks = array_values(array_filter(
+        $pendingBorrowRequests = array_values(array_filter(
             $this->staff->pendingBorrowings(),
             fn (array $row): bool => $this->positiveInt($row['user_id'] ?? null) === $borrowerId,
         ));
+        $pendingReturnRequests = $this->returnApprovals === null
+            ? []
+            : array_values(array_filter(
+                $this->returnApprovals->pending(),
+                fn (array $row): bool => $this->positiveInt($row['user_id'] ?? null) === $borrowerId,
+            ));
+        $requestedBooks = array_merge(
+            array_map(static fn (array $row): array => array_merge($row, ['request_type' => 'borrow']), $pendingBorrowRequests),
+            array_map(static fn (array $row): array => array_merge($row, ['request_type' => 'return']), $pendingReturnRequests),
+        );
 
         return new JsonResponse(200, ['ok' => true, 'data' => [
             'borrower' => array_merge($profileBorrower, $lookupBorrower),

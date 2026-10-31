@@ -6,6 +6,7 @@ namespace Tests\Unit\StaffCirculation;
 
 use App\Application\Services\ClockInterface;
 use App\Application\Services\CsrfService;
+use App\Application\Services\ReturnApprovalService;
 use App\Application\Services\SessionService;
 use App\Application\StaffCirculation\StaffCirculationBorrowRequest;
 use App\Application\StaffCirculation\StaffCirculationRepositoryInterface;
@@ -17,6 +18,7 @@ use App\Domain\Auth\SessionIdentity;
 use App\Domain\Borrowing\BorrowingPolicy;
 use App\Http\Controllers\StaffController;
 use App\Http\Requests\ServerRequest;
+use App\Infrastructure\Persistence\ReturnApprovalRepositoryInterface;
 use App\Infrastructure\Persistence\StaffRepositoryInterface;
 use App\Infrastructure\Session\SessionStoreInterface;
 use DateTimeImmutable;
@@ -64,7 +66,7 @@ final class StaffCirculationControllerTest extends TestCase
         self::assertSame(19, $repository->returnStaffId);
     }
 
-    public function testBorrowerLookupIncludesProfileHistorySummaryAndOwnPendingRequests(): void
+    public function testBorrowerLookupIncludesProfileHistorySummaryAndOwnBorrowAndReturnRequests(): void
     {
         $store = new StaffCirculationControllerStore(self::CSRF, new Principal(19, Role::LIBRARIAN));
         $staff = $this->createMock(StaffRepositoryInterface::class);
@@ -86,11 +88,21 @@ final class StaffCirculationControllerTest extends TestCase
             ]],
         ]);
         $staff->method('pendingBorrowings')->willReturn([
-            ['id' => 91, 'user_id' => 7, 'title' => 'Algorithms', 'author' => 'Thomas Cormen', 'status' => 'Pending'],
+            ['id' => 91, 'user_id' => 7, 'title' => 'Algorithms', 'author' => 'Thomas Cormen', 'status' => 'Pending', 'due_date' => '2026-11-01'],
             ['id' => 92, 'user_id' => 8, 'title' => 'Other borrower request', 'status' => 'Pending'],
         ]);
+        $returnRepository = $this->createMock(ReturnApprovalRepositoryInterface::class);
+        $returnRepository->method('pending')->willReturn([
+            ['id' => 31, 'user_id' => 7, 'type' => 'borrower_item', 'title' => 'Database Systems', 'return_status' => 'pending', 'due_date' => '2026-10-20', 'requested_at' => '2026-10-30'],
+            ['id' => 32, 'user_id' => 8, 'type' => 'borrower_item', 'title' => 'Other borrower return', 'return_status' => 'pending'],
+        ]);
         $repository = new StaffCirculationControllerRepository();
-        $controller = $this->controller($store, $repository, $staff);
+        $controller = $this->controller(
+            $store,
+            $repository,
+            $staff,
+            new ReturnApprovalService($returnRepository, new StaffCirculationControllerClock(), 20.0),
+        );
 
         $response = $controller->circulationBorrower($this->request('GET', '/api/staff/circulation/borrower', [], ['barcode' => 'STU-001']));
         $payload = json_decode($response->toString(), true);
@@ -98,8 +110,13 @@ final class StaffCirculationControllerTest extends TestCase
         self::assertSame(200, $response->statusCode());
         self::assertSame(1, $payload['data']['summary']['active'] ?? null);
         self::assertSame('Clean Code', $payload['data']['history'][0]['title'] ?? null);
-        self::assertSame(91, $payload['data']['requested_books'][0]['id'] ?? null);
+        self::assertCount(2, $payload['data']['requested_books'] ?? []);
+        self::assertSame('borrow', $payload['data']['requested_books'][0]['request_type'] ?? null);
+        self::assertSame('return', $payload['data']['requested_books'][1]['request_type'] ?? null);
+        self::assertSame('2026-11-01', $payload['data']['requested_books'][0]['due_date'] ?? null);
+        self::assertSame('2026-10-20', $payload['data']['requested_books'][1]['due_date'] ?? null);
         self::assertStringNotContainsString('Other borrower request', $response->toString());
+        self::assertStringNotContainsString('Other borrower return', $response->toString());
     }
 
     public function testBorrowAndReturnRequireStaffRoleAndCsrf(): void
@@ -140,12 +157,14 @@ final class StaffCirculationControllerTest extends TestCase
         StaffCirculationControllerStore $store,
         StaffCirculationControllerRepository $repository,
         ?StaffRepositoryInterface $staff = null,
+        ?ReturnApprovalService $returnApprovals = null,
     ): StaffController
     {
         return new StaffController(
             new SessionService($store),
             $staff ?? $this->createMock(StaffRepositoryInterface::class),
             new CsrfService($store),
+            returnApprovals: $returnApprovals,
             circulation: new StaffCirculationService(
                 $repository,
                 new BorrowingPolicy(3, 7, 30, false),

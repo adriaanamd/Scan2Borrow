@@ -42,10 +42,22 @@ function circulationDocument() {
   [
     'circulation-status',
     'circulation-borrower',
+    'circulation-borrower-course',
+    'circulation-borrower-year',
+    'circulation-borrower-status',
+    'circulation-borrower-fine',
     'circulation-borrow-copy-barcode',
     'circulation-return-copy-barcode',
     'circulation-borrow-copy-list',
     'circulation-return-loans',
+    'circulation-requested-count',
+    'circulation-requested-books',
+    'circulation-history-count',
+    'circulation-history-list',
+    'circulation-summary-active',
+    'circulation-summary-returned',
+    'circulation-summary-overdue',
+    'circulation-summary-fine',
     'circulation-review-modal',
     'circulation-review-items',
     'circulation-approve-borrow',
@@ -64,6 +76,7 @@ test('StaffCirculationService sends repeated barcode fields through FormData', a
   await service.lookupStudent('STU-001');
   await service.borrow({ borrowerBarcode: 'STU-001', bookBarcodes: ['COPY-001', 'COPY-002'], dueDate: '2026-09-04' });
   await service.returnBooks({ borrowerId: 7, loanIds: [55, 56], copyBarcodes: ['COPY-001', 'COPY-002'] });
+  await service.decideBorrowing('approve', 91);
 
   assert.deepEqual(calls[0], { method: 'GET', path: '/scan2borrow/api/staff/circulation/borrower', params: { barcode: 'STU-001' } });
   assert.deepEqual(calls[1].body.values, [
@@ -79,6 +92,11 @@ test('StaffCirculationService sends repeated barcode fields through FormData', a
     ['copy_barcodes[]', 'COPY-001'],
     ['copy_barcodes[]', 'COPY-002'],
   ]);
+  assert.deepEqual(calls[3], {
+    method: 'POST',
+    path: '/scan2borrow/api/staff/borrowing-action',
+    body: { action: 'approve', borrowing_id: 91 },
+  });
 });
 
 test('CirculationPage keeps scanned and manually entered borrow copies in one review flow', async () => {
@@ -111,6 +129,38 @@ test('CirculationPage keeps scanned and manually entered borrow copies in one re
   assert.equal(page.borrowCopies.length, 0);
   page.rejectBorrow();
   assert.equal(calls.length, 1);
+});
+
+test('CirculationPage renders the verified borrower workflow sections from lookup data', async () => {
+  const document = circulationDocument();
+  const service = {
+    lookupStudent: async () => ({ data: {
+      borrower: {
+        id: 7,
+        barcode: 'STU-001',
+        name: 'Ada Lovelace',
+        role: 'student',
+        status: 'active',
+        course: 'Computer Science',
+        year_level: '3',
+        active_loans: 1,
+      },
+      active_loans: [{ id: 55, copy_barcode: 'COPY-001', title: 'Clean Code', due_date: '2026-09-04' }],
+      requested_books: [{ id: 91, title: 'Algorithms', author: 'Thomas Cormen', requested_at: '2026-10-30', status: 'Pending' }],
+      summary: { active: 1, returned: 2, overdue: 0, total_fine: 0 },
+      history: [{ title: 'Clean Code', author: 'Robert C. Martin', status: 'Returned', borrow_date: '2026-08-01', return_date: '2026-08-08' }],
+    } }),
+  };
+  const page = new CirculationPage(document, { service, document, window: {} });
+
+  await page.lookupStudent('STU-001');
+
+  assert.equal(document.getElementById('circulation-borrower-course').textContent, 'Computer Science');
+  assert.equal(document.getElementById('circulation-borrower-year').textContent, '3');
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Algorithms/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Approve/);
+  assert.match(document.getElementById('circulation-history-list').innerHTML, /Clean Code/);
+  assert.equal(document.getElementById('circulation-summary-active').textContent, '1');
 });
 
 test('CirculationPage selects exact active loans for scanned and manual returns', async () => {

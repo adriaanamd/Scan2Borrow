@@ -181,6 +181,27 @@ test('staff circulation page exposes scan-first borrow and return controls', () 
   assert.match(stylesheet, /@media/);
 });
 
+test('staff circulation page exposes the borrower profile workflow from the reference design', () => {
+  const pageDirectory = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'circulation');
+  const template = fs.readFileSync(path.join(pageDirectory, 'circulation.html'), 'utf8');
+  const controller = fs.readFileSync(path.join(pageDirectory, 'circulation.page.js'), 'utf8');
+
+  for (const id of [
+    'circulation-borrower',
+    'circulation-requested-section',
+    'circulation-history-section',
+    'circulation-summary-section',
+  ]) assert.match(template, new RegExp(`id="${id}"`), id);
+  assert.match(template, /Scan barcode/);
+  assert.match(template, /Verify Borrower ID/);
+  assert.match(template, /Borrower Information/);
+  assert.match(template, /Requested Books/);
+  assert.match(template, /Borrowed Books History/);
+  assert.match(template, /Transaction Summary/);
+  assert.match(controller, /data-circulation-request-action="approve"/);
+  assert.match(template, /data-circulation-history-filter="returned"/);
+});
+
 test('admin profile approval stays visible only on the protected admin surface', () => {
   const page = fs.readFileSync(path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'admin-staff', 'admin-staff.page.js'), 'utf8');
   const template = fs.readFileSync(adminTemplate, 'utf8');

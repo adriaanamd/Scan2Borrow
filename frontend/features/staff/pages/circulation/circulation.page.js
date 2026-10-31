@@ -10,6 +10,10 @@ export class CirculationPage {
     this.borrower = null;
     this.returnLoans = [];
     this.borrowCopies = [];
+    this.requestedBooks = [];
+    this.history = [];
+    this.summary = {};
+    this.historyFilter = 'all';
     this.selectedReturnIds = new Set();
     this.borrowerScanner = null;
     this.borrowScanner = null;
@@ -79,6 +83,17 @@ export class CirculationPage {
       this.setMode(modeButton.dataset.circulationMode);
       return;
     }
+    const historyFilter = event.target?.closest?.('[data-circulation-history-filter]');
+    if (historyFilter) {
+      this.historyFilter = historyFilter.dataset.circulationHistoryFilter === 'returned' ? 'returned' : 'all';
+      this.renderHistory();
+      return;
+    }
+    const requestAction = event.target?.closest?.('[data-circulation-request-action]');
+    if (requestAction) {
+      void this.decideBorrowing(requestAction.dataset.circulationRequestAction, requestAction.dataset.circulationRequestId);
+      return;
+    }
     const action = event.target?.closest?.('[data-circulation-action]')?.dataset?.circulationAction;
     if (action === 'review-borrow') this.reviewBorrow();
     if (action === 'approve-borrow') void this.approveBorrow();
@@ -124,9 +139,16 @@ export class CirculationPage {
       const data = response?.data || response || {};
       this.borrower = data.borrower || null;
       this.returnLoans = Array.isArray(data.active_loans) ? data.active_loans : [];
+      this.requestedBooks = Array.isArray(data.requested_books) ? data.requested_books : [];
+      this.history = Array.isArray(data.history) ? data.history : [];
+      this.summary = data.summary && typeof data.summary === 'object' ? data.summary : {};
+      this.historyFilter = 'all';
       this.selectedReturnIds.clear();
       this.borrowCopies = [];
       this.renderBorrower();
+      this.renderRequestedBooks();
+      this.renderHistory();
+      this.renderSummary();
       this.renderBorrowCopies();
       this.renderReturnLoans();
       this.showStatus(`${this.borrower?.name || 'Borrower'} is ready for circulation.`, 'success');
@@ -134,8 +156,14 @@ export class CirculationPage {
     } catch (error) {
       this.borrower = null;
       this.returnLoans = [];
+      this.requestedBooks = [];
+      this.history = [];
+      this.summary = {};
       this.selectedReturnIds.clear();
       this.renderBorrower();
+      this.renderRequestedBooks();
+      this.renderHistory();
+      this.renderSummary();
       this.renderReturnLoans();
       this.showStatus(error?.message || 'Student account could not be loaded.', 'error');
       return null;
@@ -218,6 +246,21 @@ export class CirculationPage {
     }
   }
 
+  async decideBorrowing(action, borrowingId) {
+    const value = String(action || '').trim();
+    const id = Number(borrowingId) || 0;
+    if (!this.borrower || !id || !['approve', 'reject'].includes(value)) return null;
+    try {
+      const response = await this.service.decideBorrowing(value, id);
+      await this.lookupStudent(this.borrower.barcode);
+      this.showStatus(response?.message || (value === 'approve' ? 'Borrow request approved.' : 'Borrow request rejected.'), 'success');
+      return response;
+    } catch (error) {
+      this.showStatus(error?.message || 'Borrowing request could not be updated.', 'error');
+      return null;
+    }
+  }
+
   rejectBorrow() {
     this.borrowCopies = [];
     const modal = this.document.getElementById('circulation-review-modal');
@@ -252,8 +295,15 @@ export class CirculationPage {
     this.borrower = null;
     this.borrowCopies = [];
     this.returnLoans = [];
+    this.requestedBooks = [];
+    this.history = [];
+    this.summary = {};
+    this.historyFilter = 'all';
     this.selectedReturnIds.clear();
     this.renderBorrower();
+    this.renderRequestedBooks();
+    this.renderHistory();
+    this.renderSummary();
     this.renderBorrowCopies();
     this.renderReturnLoans();
     this.showStatus('Circulation session cleared.', 'info');
@@ -265,7 +315,72 @@ export class CirculationPage {
     this.text('circulation-borrower-name', this.borrower?.name || '');
     this.text('circulation-borrower-id', this.borrower?.barcode || '');
     this.text('circulation-borrower-role', this.borrower?.role || '');
-    this.text('circulation-borrower-active', this.borrower?.active_loans ?? this.returnLoans.length);
+    this.text('circulation-borrower-course', this.borrower?.course || this.borrower?.department || '');
+    this.text('circulation-borrower-year', this.borrower?.year_level || this.borrower?.position || '');
+    this.text('circulation-borrower-status', this.borrower?.status || '');
+    this.text('circulation-borrower-active', this.summary.active ?? this.borrower?.active_loans ?? this.returnLoans.length);
+    this.text('circulation-borrower-fine', this.money(this.summary.total_fine));
+  }
+
+  renderRequestedBooks() {
+    const section = this.document.getElementById('circulation-requested-section');
+    if (section) section.hidden = !this.borrower;
+    this.text('circulation-requested-count', this.requestedBooks.length);
+    const list = this.document.getElementById('circulation-requested-books');
+    if (!list) return;
+    list.innerHTML = this.requestedBooks.length
+      ? this.requestedBooks.map((request) => {
+        const id = this.escape(request.id);
+        const title = this.escape(request.title || request.book_title || 'Requested book');
+        const author = this.escape(request.author || '');
+        const requestedAt = this.escape(request.requested_at || request.requested_date || '');
+        const status = this.escape(request.status || 'Pending');
+        return `<article class="circulation-request-card">
+          <div class="circulation-book-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5zM5 5.5v16M9 8h6"/></svg></div>
+          <div class="circulation-request-card__body"><h3>${title}</h3><p>${author ? `By ${author}` : 'Author not provided'}</p><small>${requestedAt ? `Requested: ${requestedAt}` : 'Request date not provided'}</small></div>
+          <span class="circulation-badge circulation-badge--pending">${status}</span>
+          <div class="circulation-request-card__actions"><button type="button" class="circulation-approve" data-circulation-request-action="approve" data-circulation-request-id="${id}">Approve</button><button type="button" class="circulation-reject" data-circulation-request-action="reject" data-circulation-request-id="${id}">Reject</button></div>
+        </article>`;
+      }).join('')
+      : '<p class="circulation-empty">No pending book requests for this borrower.</p>';
+  }
+
+  renderHistory() {
+    const section = this.document.getElementById('circulation-history-section');
+    if (section) section.hidden = !this.borrower;
+    this.text('circulation-history-count', this.history.length);
+    const filters = this.document.querySelectorAll?.('[data-circulation-history-filter]') || [];
+    filters.forEach((button) => {
+      const active = button.dataset.circulationHistoryFilter === this.historyFilter;
+      button.classList?.toggle('is-active', active);
+      button.setAttribute?.('aria-selected', active ? 'true' : 'false');
+    });
+    const list = this.document.getElementById('circulation-history-list');
+    if (!list) return;
+    const rows = this.historyFilter === 'returned'
+      ? this.history.filter((row) => this.isReturned(row))
+      : this.history;
+    list.innerHTML = rows.length
+      ? rows.map((row) => {
+        const title = this.escape(row.title || row.book_title || 'Borrowed book');
+        const author = this.escape(row.author || '');
+        const borrowed = this.escape(row.borrow_date || '');
+        const returned = this.escape(row.return_date || '');
+        const due = this.escape(row.due_date || '');
+        const status = this.escape(row.status || '');
+        const meta = returned ? `Returned: ${returned}` : due ? `Due: ${due}` : 'Return date not provided';
+        return `<article class="circulation-history-card"><div class="circulation-book-mark circulation-book-mark--history" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5zM5 5.5v16M9 8h6"/></svg></div><div class="circulation-history-card__body"><h3>${title}</h3><p>${author ? `By ${author}` : ''}</p><small>${borrowed ? `Borrowed: ${borrowed}` : 'Borrow date not provided'}${meta ? ` · ${meta}` : ''}</small></div><span class="circulation-badge circulation-badge--${this.statusClass(row.status)}">${status || 'Recorded'}</span></article>`;
+      }).join('')
+      : `<p class="circulation-empty">No ${this.historyFilter === 'returned' ? 'returned books' : 'borrowed book history'} for this borrower.</p>`;
+  }
+
+  renderSummary() {
+    const section = this.document.getElementById('circulation-summary-section');
+    if (section) section.hidden = !this.borrower;
+    this.text('circulation-summary-active', this.summary.active ?? 0);
+    this.text('circulation-summary-returned', this.summary.returned ?? 0);
+    this.text('circulation-summary-overdue', this.summary.overdue ?? 0);
+    this.text('circulation-summary-fine', this.money(this.summary.total_fine));
   }
 
   renderBorrowCopies() {
@@ -292,6 +407,23 @@ export class CirculationPage {
   text(id, value) {
     const node = this.document.getElementById(id);
     if (node) node.textContent = String(value ?? '');
+  }
+
+  money(value) {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? `₱${amount.toFixed(2)}` : '₱0.00';
+  }
+
+  isReturned(row) {
+    return Boolean(row?.return_date) || String(row?.status || '').toLowerCase() === 'returned';
+  }
+
+  statusClass(status) {
+    const value = String(status || '').toLowerCase();
+    if (value.includes('overdue')) return 'overdue';
+    if (value.includes('borrow')) return 'borrowed';
+    if (value.includes('return')) return 'returned';
+    return 'neutral';
   }
 
   returnLoanKey(loan) {

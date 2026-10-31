@@ -19,11 +19,11 @@
           <h1 class="topbar-title">Circulation Desk</h1>
           <div class="topbar-user"><span class="user-role">Staff</span></div>
         </header>
-        <div class="content">
+        <div class="content" data-page="staff-circulation">
           <div class="page-head circulation-head">
             <div>
               <p class="circulation-kicker">In-person workflow</p>
-              <h2>Scan, confirm, complete.</h2>
+              <h2>Scan or enter borrower ID</h2>
               <p>Use the borrower’s ID barcode or QR code to handle the desk transaction without searching the student directory.</p>
             </div>
             <div class="circulation-rule" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -37,25 +37,57 @@
           <div id="circulation-status" class="circulation-status" role="status" aria-live="polite">Scan a student ID to begin.</div>
 
           <section id="circulation-borrower" class="circulation-borrower" hidden aria-label="Borrower details">
-            <div class="circulation-borrower__identity">
-              <span class="circulation-borrower__label">Borrower account</span>
-              <h2 id="circulation-borrower-name"></h2>
-              <p><span id="circulation-borrower-id"></span><span class="circulation-separator">·</span><span id="circulation-borrower-role"></span></p>
+            <div class="circulation-section__heading">
+              <div><span class="circulation-section__number">02.</span><h2>Borrower Information</h2></div>
+              <span class="circulation-verified" aria-label="Borrower verified">● Verified</span>
             </div>
-            <dl class="circulation-borrower__metric"><dt>Active loans</dt><dd id="circulation-borrower-active">0</dd></dl>
-            <button type="button" class="circulation-link" data-circulation-action="clear-borrower">Clear borrower</button>
+            <div class="circulation-borrower-card">
+              <div class="circulation-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.5 20c.7-3.2 2.9-5 6.5-5s5.8 1.8 6.5 5"></path></svg></div>
+              <div class="circulation-borrower-card__identity">
+                <span class="circulation-borrower__label">Borrower account</span>
+                <h3 id="circulation-borrower-name"></h3>
+                <p><span id="circulation-borrower-id"></span><span class="circulation-separator">·</span><span id="circulation-borrower-role"></span></p>
+              </div>
+              <dl class="circulation-borrower__metric"><dt>Active loans</dt><dd id="circulation-borrower-active">0</dd></dl>
+              <div class="circulation-borrower__profile-fields">
+                <div><span>Year / Section</span><strong id="circulation-borrower-year"></strong></div>
+                <div><span>Borrower Status</span><strong id="circulation-borrower-status"></strong></div>
+                <div><span>Course / Department</span><strong id="circulation-borrower-course"></strong></div>
+                <div><span>Outstanding Fines</span><strong id="circulation-borrower-fine">₱0.00</strong></div>
+              </div>
+              <button type="button" class="circulation-link" data-circulation-action="clear-borrower">Clear borrower</button>
+            </div>
           </section>
 
           <form id="circulation-borrower-form" class="circulation-id-form">
             <div>
               <label for="circulation-borrower-barcode">Borrower ID barcode or QR value</label>
-              <input id="circulation-borrower-barcode" name="barcode" autocomplete="off" placeholder="Scan or enter student ID" />
+              <input id="circulation-borrower-barcode" name="barcode" autocomplete="off" placeholder="Scan or enter borrower ID" />
             </div>
             <div id="circulation-borrower-scanner" class="circulation-scanner" data-scan-root>
-              <button type="button" class="circulation-camera" data-scan-target="circulation-borrower-barcode">Scan ID with camera</button>
+              <button type="button" class="circulation-camera" data-scan-target="circulation-borrower-barcode" aria-label="Scan barcode with camera">Scan barcode</button>
             </div>
-            <button type="submit" class="circulation-primary">Load borrower</button>
+            <button type="submit" class="circulation-primary">Verify Borrower ID</button>
           </form>
+
+          <section id="circulation-requested-section" class="circulation-section" hidden aria-labelledby="circulation-requested-heading">
+            <div class="circulation-section__heading"><div><span class="circulation-section__number">03.</span><h2 id="circulation-requested-heading">Requested Books</h2></div><span class="circulation-count" id="circulation-requested-count">0</span></div>
+            <p class="circulation-section__description">Review the borrower's pending requests before approving or rejecting them.</p>
+            <div id="circulation-requested-books" class="circulation-request-list"></div>
+          </section>
+
+          <section id="circulation-history-section" class="circulation-section" hidden aria-labelledby="circulation-history-heading">
+            <div class="circulation-section__heading"><div><span class="circulation-section__number">04.</span><h2 id="circulation-history-heading">Borrowed Books History</h2></div><span class="circulation-count" id="circulation-history-count">0</span></div>
+            <div class="circulation-history-tabs" role="tablist" aria-label="Borrowed books history filter"><button type="button" class="is-active" data-circulation-history-filter="all" role="tab" aria-selected="true">All</button><button type="button" data-circulation-history-filter="returned" role="tab" aria-selected="false">Returned</button></div>
+            <div id="circulation-history-list" class="circulation-history-list"></div>
+          </section>
+
+          <section id="circulation-summary-section" class="circulation-section" hidden aria-labelledby="circulation-summary-heading">
+            <div class="circulation-summary"><div class="circulation-section__heading"><div><span class="circulation-section__number">05.</span><h2 id="circulation-summary-heading">Transaction Summary</h2></div></div><div class="circulation-summary__grid"><div><span>Active</span><strong id="circulation-summary-active">0</strong></div><div><span>Returned</span><strong id="circulation-summary-returned">0</strong></div><div><span>Overdue</span><strong id="circulation-summary-overdue">0</strong></div><div><span>Outstanding fines</span><strong id="circulation-summary-fine">₱0.00</strong></div></div></div>
+          </section>
+
+          <section class="circulation-transaction" aria-labelledby="circulation-transaction-heading">
+            <div class="circulation-section__heading"><div><span class="circulation-section__number">06.</span><h2 id="circulation-transaction-heading">Circulation Actions</h2></div></div>
 
           <section id="circulation-borrow-panel" class="circulation-panel" data-mode-panel="borrow" aria-labelledby="circulation-borrow-heading">
             <div class="circulation-panel__heading">
@@ -111,6 +143,8 @@
               <p>Only active loans belonging to the scanned borrower can be returned.</p>
               <button id="circulation-return-submit" type="button" class="circulation-primary" data-circulation-action="submit-return">Process selected returns</button>
             </div>
+          </section>
+
           </section>
 
           <div id="circulation-review-modal" class="circulation-review" hidden role="dialog" aria-modal="true" aria-labelledby="circulation-review-title">

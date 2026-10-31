@@ -23,4 +23,11 @@ export class StaffCirculationService {
     copyBarcodes.forEach((barcode) => body.append('copy_barcodes[]', String(barcode || '').trim()));
     return this.api.post('/scan2borrow/api/staff/circulation/return', body);
   }
+
+  decideBorrowing(action, borrowingId) {
+    return this.api.post('/scan2borrow/api/staff/borrowing-action', {
+      action: String(action || '').trim(),
+      borrowing_id: Number(borrowingId) || 0,
+    });
+  }
 }

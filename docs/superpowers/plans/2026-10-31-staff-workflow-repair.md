@@ -52,7 +52,7 @@ Steps:
 Files:
 
 - `backend/src/Application/Services/BorrowerNotificationService.php`
-- `backend/src/Application/ApplicationFactory.php`
+- `backend/src/Bootstrap/ApplicationFactory.php`
 - `backend/tests/Unit/Mail/BorrowerNotificationServiceTest.php`
 
 Steps:
@@ -87,7 +87,7 @@ Files:
 - `frontend/features/staff/pages/circulation/circulation.html`
 - `frontend/features/staff/pages/circulation/circulation.page.js`
 - `frontend/features/staff/pages/dashboard/staff-dashboard.page.js`
-- `frontend/features/staff/pages/dashboard/staff-dashboard.html` (only if scoped styling is required)
+- `frontend/features/staff/pages/dashboard/dashboard.html` (only if scoped styling is required)
 
 Steps:
 

@@ -261,6 +261,74 @@ test('staff notification and guest review boundaries preserve action payloads', 
   assert.equal(typeof GuestRequestsPage.prototype.bindGuestReview, 'function');
 });
 
+test('staff notify page sends email and SMS actions through the notification service', async () => {
+  const nodes = new Map();
+  const makeNode = () => {
+    const listeners = new Map();
+    return {
+      disabled: false,
+      textContent: '',
+      addEventListener(type, listener) { listeners.set(type, listener); },
+      async click() {
+        return listeners.get('click')?.({ preventDefault() {}, currentTarget: this, target: this });
+      },
+    };
+  };
+  for (const selector of ['#notify-name', '#notify-email', '#notify-contact', '#notify-loans', '#send-email', '#send-sms', '#notify-email-alert', '#notify-sms-alert']) {
+    nodes.set(selector, makeNode());
+  }
+
+  const calls = [];
+  const page = new StaffNotifyPage(
+    { querySelector(selector) { return nodes.get(selector) || null; } },
+    {
+      borrowerService: {
+        async details(id) {
+          assert.equal(id, '7');
+          return { data: { borrower: { id: 7, name: 'Grace Hopper', email: 'grace@example.test', contact_no: '09171234567' }, summary: { active: 2 } } };
+        },
+      },
+      notificationService: {
+        async notify(id, channel) {
+          calls.push([id, channel]);
+          return { ok: true, message: `${channel} notification sent.` };
+        },
+      },
+      window: { location: { search: '?id=7' } },
+    },
+  );
+
+  await page.start();
+  await nodes.get('#send-email').click();
+  await nodes.get('#send-sms').click();
+
+  assert.deepEqual(calls, [[7, 'email'], [7, 'sms']]);
+  assert.equal(nodes.get('#notify-email-alert').textContent, 'email notification sent.');
+  assert.equal(nodes.get('#notify-sms-alert').textContent, 'sms notification sent.');
+});
+
+test('staff notify page disables unavailable notification channels', async () => {
+  const nodes = new Map();
+  const makeNode = () => ({ disabled: false, textContent: '', addEventListener() {} });
+  for (const selector of ['#notify-name', '#notify-email', '#notify-contact', '#notify-loans', '#send-email', '#send-sms', '#notify-email-alert', '#notify-sms-alert']) {
+    nodes.set(selector, makeNode());
+  }
+
+  const page = new StaffNotifyPage(
+    { querySelector(selector) { return nodes.get(selector) || null; } },
+    {
+      borrowerService: { async details() { return { data: { borrower: { id: 7, name: 'Grace Hopper' }, summary: { active: 0 } } }; } },
+      notificationService: { async notify() { throw new Error('should not send'); } },
+      window: { location: { search: '?id=7' } },
+    },
+  );
+
+  await page.start();
+
+  assert.equal(nodes.get('#send-email').disabled, true);
+  assert.equal(nodes.get('#send-sms').disabled, true);
+});
+
 test('guest review waits for the confirmation resubmit before posting', async () => {
   const listeners = {};
   const form = {

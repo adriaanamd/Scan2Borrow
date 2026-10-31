@@ -221,6 +221,28 @@ test('CirculationPage preserves the confirmation service receiver when approving
   assert.equal(confirmation.pending.confirmLabel, 'Approve borrowing');
 });
 
+test('CirculationPage surfaces unavailable-copy errors without rejecting the approve action', async () => {
+  const document = circulationDocument();
+  const page = new CirculationPage(document, {
+    service: {
+      borrow: async () => { throw new Error('Book copy BK-0001 is not available.'); },
+    },
+    document,
+    window: {
+      Scan2BorrowConfirmation: {
+        confirm: async ({ onConfirm }) => onConfirm(),
+      },
+    },
+  });
+  page.borrower = { barcode: 'STU-001', name: 'Ada Lovelace' };
+  page.borrowCopies = [{ barcode: 'BK-0001' }];
+
+  await assert.doesNotReject(() => page.approveBorrow());
+
+  assert.equal(document.getElementById('circulation-status').textContent, 'Book copy BK-0001 is not available.');
+  assert.equal(document.getElementById('circulation-status').dataset.state, 'error');
+});
+
 test('CirculationPage renders the verified borrower workflow sections from lookup data', async () => {
   const document = circulationDocument();
   const service = {

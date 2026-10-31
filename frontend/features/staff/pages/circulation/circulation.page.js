@@ -240,17 +240,21 @@ export class CirculationPage {
     if (!this.borrower || !this.borrowCopies.length) return;
     const proceed = () => this.submitBorrow();
     const confirmation = this.window?.Scan2BorrowConfirmation;
-    if (typeof confirmation?.confirm === 'function') {
-      await confirmation.confirm({
-        title: 'Approve borrowing transaction?',
-        message: `Approve ${this.borrowCopies.length} scanned copy${this.borrowCopies.length === 1 ? '' : 'ies'} for ${this.borrower.name || 'this borrower'}?`,
-        confirmLabel: 'Approve borrowing',
-        confirmClass: 'btn-primary',
-        onConfirm: proceed,
-      });
-      return;
+    try {
+      if (typeof confirmation?.confirm === 'function') {
+        await confirmation.confirm({
+          title: 'Approve borrowing transaction?',
+          message: `Approve ${this.borrowCopies.length} scanned copy${this.borrowCopies.length === 1 ? '' : 'ies'} for ${this.borrower.name || 'this borrower'}?`,
+          confirmLabel: 'Approve borrowing',
+          confirmClass: 'btn-primary',
+          onConfirm: proceed,
+        });
+        return;
+      }
+      await proceed();
+    } catch (error) {
+      this.showStatus(error?.message || 'Borrowing transaction could not be approved.', 'error');
     }
-    await proceed();
   }
 
   async submitBorrow() {

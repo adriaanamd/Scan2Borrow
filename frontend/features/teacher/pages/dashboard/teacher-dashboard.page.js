@@ -17,11 +17,12 @@ export class TeacherDashboardPage {
       classPrefix: "borrower-activity",
     });
     this.cart = new BulkBorrowCart();
+    this.reservationService = new ReservationService({
+      api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+      role: "teacher",
+    });
     this.reservationQueue = new ReservationQueueComponent(document.getElementById("reservationQueue"), {
-      service: new ReservationService({
-        api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
-        role: "teacher",
-      }),
+      service: this.reservationService,
     });
     this.renewalService = new RenewalService({
       api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
@@ -218,11 +219,11 @@ export class TeacherDashboardPage {
       })
       .catch((error) => this.toast(error.message || "Request failed."));
   }
-  toast(message) {
+  toast(message, ok = false) {
     const host = document.getElementById("toast-host");
     if (!host) return;
     const element = document.createElement("div");
-    element.className = "toast show text-white bg-danger border-0";
+    element.className = `toast show text-white bg-${ok ? "success" : "danger"} border-0`;
     element.innerHTML = `<div class="toast-body">${this.escapeHtml(message)}</div>`;
     host.appendChild(element);
     window.setTimeout(() => element.remove(), 3500);
@@ -245,6 +246,7 @@ export class TeacherDashboardPage {
       const input = document.getElementById("bulk-scan-barcode");
       this.lookupAndAdd(input.value.trim()); input.value = "";
     });
+    document.getElementById("borrow-reserve-button")?.addEventListener("click", () => this.reserveUnavailableCopy());
     document.getElementById("bulk-scan-barcode")?.addEventListener("keydown", (event) => {
       if (event.key === "Enter") { event.preventDefault(); document.getElementById("bulk-scan-add").click(); }
     });
@@ -277,14 +279,60 @@ export class TeacherDashboardPage {
     const count = document.getElementById("bulkBorrowCount"); if (count) { count.classList.add("teacher-borrow-cart-count"); count.textContent = String(this.cart.totalQuantity()); }
   }
 
+  clearReservationOption() {
+    const option = document.getElementById("borrow-reservation-option");
+    const button = document.getElementById("borrow-reserve-button");
+    if (option) option.hidden = true;
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Reserve this book";
+      delete button.dataset.titleId;
+    }
+  }
+
+  showReservationOption(copy) {
+    const option = document.getElementById("borrow-reservation-option");
+    const message = document.getElementById("borrow-reservation-message");
+    const button = document.getElementById("borrow-reserve-button");
+    const titleId = Number(copy?.title_id || 0);
+    if (!option || !message || !button || !titleId) return;
+    message.textContent = `"${copy.title || "This book"}" is unavailable. You can reserve it and join the queue.`;
+    button.dataset.titleId = String(titleId);
+    button.disabled = false;
+    button.textContent = "Reserve this book";
+    option.hidden = false;
+  }
+
+  async reserveUnavailableCopy() {
+    const button = document.getElementById("borrow-reserve-button");
+    const titleId = Number(button?.dataset.titleId || 0);
+    if (!button || !titleId) return;
+    button.disabled = true;
+    button.textContent = "Reserving…";
+    try {
+      const response = await this.reservationService.join(titleId);
+      button.textContent = "Reserved";
+      this.toast(response?.data?.message || "You joined the reservation queue.", true);
+      this.reservationQueue.load();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Reserve this book";
+      this.toast(error?.message || "Unable to reserve this book.");
+    }
+  }
+
   lookupAndAdd(barcode) {
     if (!barcode) return;
+    this.clearReservationOption();
     fetch(`/scan2borrow/api/teacher/borrow/lookup?barcode=${encodeURIComponent(barcode)}`, { headers: { "X-Requested-With": "fetch" } })
       .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
       .then(({ ok, payload }) => {
         if (!ok) throw new Error(payload.message || "Book copy not found.");
         const copy = payload.data;
-        if (copy.status !== "Available") throw new Error(`Book copy ${barcode} is not available.`);
+        if (copy.status !== "Available") {
+          this.showReservationOption(copy);
+          throw new Error(`Book copy ${barcode} is not available. You can reserve this title below.`);
+        }
         this.cart.addTitle(copy, 1, barcode);
         this.renderCart();
       })

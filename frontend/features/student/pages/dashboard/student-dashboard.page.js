@@ -17,11 +17,12 @@ export class StudentDashboardPage {
     this.borrowForm = this.$("borrowForm");
     this.returnForm = this.$("returnForm");
     this.cart = new BulkBorrowCart();
+    this.reservationService = new ReservationService({
+      api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
+      role: "student",
+    });
     this.reservationQueue = new ReservationQueueComponent(this.$("reservationQueue"), {
-      service: new ReservationService({
-        api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
-        role: "student",
-      }),
+      service: this.reservationService,
     });
     this.renewalService = new RenewalService({
       api: new ApiClient({ csrf: this.csrf, fetchImpl: window.fetch.bind(window) }),
@@ -390,6 +391,7 @@ export class StudentDashboardPage {
       this.lookupAndAdd(input.value.trim());
       input.value = "";
     });
+    this.$("borrow-reserve-button")?.addEventListener("click", () => this.reserveUnavailableCopy());
     this.$("bulk-scan-barcode")?.addEventListener("keydown", (event) => {
       if (event.key === "Enter") { event.preventDefault(); this.$("bulk-scan-add").click(); }
     });
@@ -425,14 +427,60 @@ export class StudentDashboardPage {
     if (count) count.textContent = String(this.cart.totalQuantity());
   }
 
+  clearReservationOption() {
+    const option = this.$("borrow-reservation-option");
+    const button = this.$("borrow-reserve-button");
+    if (option) option.hidden = true;
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Reserve this book";
+      delete button.dataset.titleId;
+    }
+  }
+
+  showReservationOption(copy) {
+    const option = this.$("borrow-reservation-option");
+    const message = this.$("borrow-reservation-message");
+    const button = this.$("borrow-reserve-button");
+    const titleId = Number(copy?.title_id || 0);
+    if (!option || !message || !button || !titleId) return;
+    message.textContent = `"${copy.title || "This book"}" is unavailable. You can reserve it and join the queue.`;
+    button.dataset.titleId = String(titleId);
+    button.disabled = false;
+    button.textContent = "Reserve this book";
+    option.hidden = false;
+  }
+
+  async reserveUnavailableCopy() {
+    const button = this.$("borrow-reserve-button");
+    const titleId = Number(button?.dataset.titleId || 0);
+    if (!button || !titleId) return;
+    button.disabled = true;
+    button.textContent = "Reserving…";
+    try {
+      const response = await this.reservationService.join(titleId);
+      button.textContent = "Reserved";
+      this.showToast(response?.data?.message || "You joined the reservation queue.", true);
+      this.reservationQueue.load();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Reserve this book";
+      this.showToast(error?.message || "Unable to reserve this book.", false);
+    }
+  }
+
   lookupAndAdd(barcode) {
     if (!barcode) return;
+    this.clearReservationOption();
     fetch(`/scan2borrow/api/student/borrow/lookup?barcode=${encodeURIComponent(barcode)}`, { headers: { "X-Requested-With": "fetch" } })
       .then((response) => response.json().then((payload) => ({ ok: response.ok && payload.ok, payload })))
       .then(({ ok, payload }) => {
         if (!ok) throw new Error(payload.message || "Book copy not found.");
         const copy = payload.data;
-        if (copy.status !== "Available") throw new Error(`Book copy ${barcode} is not available.`);
+        if (copy.status !== "Available") {
+          this.showReservationOption(copy);
+          throw new Error(`Book copy ${barcode} is not available. You can reserve this title below.`);
+        }
         this.cart.addTitle(copy, 1, barcode);
         this.renderCart();
       })

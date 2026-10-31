@@ -85,3 +85,15 @@ test('borrow controllers keep Enter handling and role-specific lookup APIs', () 
     assert.match(controller, /lookupAndAdd\(input\.value\.trim\(\)\)/);
   }
 });
+
+test('dashboard borrow modals expose reservation actions for unavailable scans', () => {
+  for (const surface of surfaces.filter(({ name }) => name.includes('dashboard'))) {
+    const template = read(surface.template);
+    const controller = read(surface.controller);
+
+    assert.match(template, /id="borrow-reservation-option"/, `${surface.name} must include a reservation option`);
+    assert.match(template, /id="borrow-reserve-button"/, `${surface.name} must include a reserve action`);
+    assert.match(controller, /reserveUnavailableCopy\(/, `${surface.name} must handle unavailable scans`);
+    assert.match(controller, /reservationService\.join\(/, `${surface.name} must use the reservation API`);
+  }
+});

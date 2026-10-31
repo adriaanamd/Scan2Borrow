@@ -408,4 +408,3 @@ Expected: git diff --check is clean; feature commits contain only planned files;
 - Placeholder scan: The plan contains no unresolved placeholder markers or incomplete implementation instructions.
 - Type/signature consistency: BorrowerService.lookupByBarcode() is consumed by BorrowerLookupModal; BorrowersPage injects that service into the modal; tests use start, lookup, onShown, onHidden, and destroy consistently.
 - Scope: This is one cohesive frontend enhancement with backend regression coverage; no database or unrelated refactor is included.
-

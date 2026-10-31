@@ -440,18 +440,20 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     {
         if ($this->hasTable('borrowing_transactions')) {
             $statement = $this->pdo->query(
-                "SELECT bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.status, bt.user_id,
+                "SELECT bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.requested_at, bt.status, bt.user_id,
                         u.firstname, u.lastname, u.barcode AS id_barcode, GROUP_CONCAT(DISTINCT t.title) AS title,
+                        GROUP_CONCAT(DISTINCT t.author) AS author,
                         COUNT(bi.id) AS book_count
                  FROM borrowing_transactions bt JOIN borrowing_items bi ON bi.transaction_id = bt.id
                  JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id
                  JOIN users u ON u.id = bt.user_id
                  WHERE bt.approval_status = 'pending' AND bi.return_date IS NULL
-                 GROUP BY bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.status, bt.user_id,
-                          u.firstname, u.lastname, u.barcode, bt.requested_at
+                 GROUP BY bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.requested_at, bt.status, bt.user_id,
+                          u.firstname, u.lastname, u.barcode
                  ORDER BY bt.requested_at ASC, bt.id ASC"
             );
             if ($statement === false) return [];
+            /** @var list<array<string, mixed>> $rows */
             $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$row) $row['borrower'] = trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null));
             unset($row);

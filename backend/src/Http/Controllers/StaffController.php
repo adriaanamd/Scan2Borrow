@@ -334,9 +334,21 @@ final readonly class StaffController
             return new JsonResponse($status, ['ok' => false, 'errors' => [$message !== '' ? $message : 'Student account not found for that ID.']]);
         }
 
+        $lookupBorrower = is_array($result['borrower'] ?? null) ? $result['borrower'] : [];
+        $borrowerId = $this->positiveInt($lookupBorrower['id'] ?? null);
+        $details = $borrowerId > 0 ? $this->staff->borrowerDetails($borrowerId) : null;
+        $profileBorrower = is_array($details['borrower'] ?? null) ? $details['borrower'] : [];
+        $requestedBooks = array_values(array_filter(
+            $this->staff->pendingBorrowings(),
+            fn (array $row): bool => $this->positiveInt($row['user_id'] ?? null) === $borrowerId,
+        ));
+
         return new JsonResponse(200, ['ok' => true, 'data' => [
-            'borrower' => is_array($result['borrower'] ?? null) ? $result['borrower'] : [],
+            'borrower' => array_merge($profileBorrower, $lookupBorrower),
             'active_loans' => is_array($result['active_loans'] ?? null) ? $result['active_loans'] : [],
+            'summary' => is_array($details['summary'] ?? null) ? $details['summary'] : [],
+            'history' => is_array($details['history'] ?? null) ? $details['history'] : [],
+            'requested_books' => $requestedBooks,
         ]]);
     }
 

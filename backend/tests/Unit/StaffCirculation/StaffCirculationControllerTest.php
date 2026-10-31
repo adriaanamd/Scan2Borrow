@@ -64,6 +64,44 @@ final class StaffCirculationControllerTest extends TestCase
         self::assertSame(19, $repository->returnStaffId);
     }
 
+    public function testBorrowerLookupIncludesProfileHistorySummaryAndOwnPendingRequests(): void
+    {
+        $store = new StaffCirculationControllerStore(self::CSRF, new Principal(19, Role::LIBRARIAN));
+        $staff = $this->createMock(StaffRepositoryInterface::class);
+        $staff->method('borrowerDetails')->with(7)->willReturn([
+            'borrower' => [
+                'id' => 7,
+                'barcode' => 'STU-001',
+                'name' => 'Ada Lovelace',
+                'course' => 'Computer Science',
+                'year_level' => '3',
+            ],
+            'summary' => ['active' => 1, 'returned' => 2, 'overdue' => 0, 'total_fine' => 0.0],
+            'history' => [[
+                'title' => 'Clean Code',
+                'author' => 'Robert C. Martin',
+                'status' => 'Returned',
+                'borrow_date' => '2026-08-01',
+                'return_date' => '2026-08-08',
+            ]],
+        ]);
+        $staff->method('pendingBorrowings')->willReturn([
+            ['id' => 91, 'user_id' => 7, 'title' => 'Algorithms', 'author' => 'Thomas Cormen', 'status' => 'Pending'],
+            ['id' => 92, 'user_id' => 8, 'title' => 'Other borrower request', 'status' => 'Pending'],
+        ]);
+        $repository = new StaffCirculationControllerRepository();
+        $controller = $this->controller($store, $repository, $staff);
+
+        $response = $controller->circulationBorrower($this->request('GET', '/api/staff/circulation/borrower', [], ['barcode' => 'STU-001']));
+        $payload = json_decode($response->toString(), true);
+
+        self::assertSame(200, $response->statusCode());
+        self::assertSame(1, $payload['data']['summary']['active'] ?? null);
+        self::assertSame('Clean Code', $payload['data']['history'][0]['title'] ?? null);
+        self::assertSame(91, $payload['data']['requested_books'][0]['id'] ?? null);
+        self::assertStringNotContainsString('Other borrower request', $response->toString());
+    }
+
     public function testBorrowAndReturnRequireStaffRoleAndCsrf(): void
     {
         $borrowerStore = new StaffCirculationControllerStore(self::CSRF, new Principal(7, Role::STUDENT));
@@ -98,11 +136,15 @@ final class StaffCirculationControllerTest extends TestCase
         }
     }
 
-    private function controller(StaffCirculationControllerStore $store, StaffCirculationControllerRepository $repository): StaffController
+    private function controller(
+        StaffCirculationControllerStore $store,
+        StaffCirculationControllerRepository $repository,
+        ?StaffRepositoryInterface $staff = null,
+    ): StaffController
     {
         return new StaffController(
             new SessionService($store),
-            $this->createMock(StaffRepositoryInterface::class),
+            $staff ?? $this->createMock(StaffRepositoryInterface::class),
             new CsrfService($store),
             circulation: new StaffCirculationService(
                 $repository,

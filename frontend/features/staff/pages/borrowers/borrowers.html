@@ -17,6 +17,7 @@
       rel="stylesheet"
     />
     <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/features/staff/pages/borrowers/borrowers.css" rel="stylesheet" />
     <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
     <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
     <script
@@ -38,6 +39,15 @@
             <div>
               <p>Manage students, and monitor their borrowing activity.</p>
             </div>
+            <button
+              id="borrower-lookup-trigger"
+              type="button"
+              class="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#borrower-lookup-modal"
+            >
+              Scan ID
+            </button>
           </div>
 
           <div class="table-card">
@@ -112,6 +122,52 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div
+            id="borrower-lookup-modal"
+            class="modal fade"
+            tabindex="-1"
+            aria-labelledby="borrower-lookup-modal-title"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+              <div class="modal-content borrower-lookup-modal__content">
+                <div class="modal-header">
+                  <h2 class="modal-title h5" id="borrower-lookup-modal-title">Scan borrower ID</h2>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="borrower-lookup-form">
+                    <label class="form-label" for="borrower-lookup-barcode">Borrower ID barcode</label>
+                    <div class="input-group">
+                      <input id="borrower-lookup-barcode" class="form-control" autocomplete="off" placeholder="Scan or enter ID" />
+                      <button id="borrower-lookup-submit" class="btn btn-primary" type="submit">Load borrower</button>
+                    </div>
+                    <div id="borrower-lookup-scanner" class="borrower-lookup-scanner" data-scan-root>
+                      <button id="borrower-lookup-camera" type="button" class="btn btn-outline-primary" data-scan-target="borrower-lookup-barcode">Scan ID with camera</button>
+                    </div>
+                  </form>
+                  <div id="borrower-lookup-status" class="borrower-lookup-status" role="status" aria-live="polite">Scan or enter a borrower ID to begin.</div>
+                  <section id="borrower-lookup-result" class="borrower-lookup-result" hidden aria-labelledby="borrower-lookup-result-title">
+                    <div class="borrower-lookup-result__identity">
+                      <p class="borrower-lookup-result__label">Borrower</p>
+                      <h3 id="borrower-lookup-result-title"><span id="borrower-lookup-name"></span></h3>
+                      <p><span id="borrower-lookup-id"></span><span aria-hidden="true"> · </span><span id="borrower-lookup-role"></span><span aria-hidden="true"> · </span><span id="borrower-lookup-status-value"></span></p>
+                    </div>
+                    <p class="borrower-lookup-result__count"><strong id="borrower-lookup-active"></strong> active loans</p>
+                    <ul id="borrower-lookup-loans" class="borrower-lookup-loans"></ul>
+                    <div class="borrower-lookup-result__actions">
+                      <a id="borrower-lookup-details" class="btn btn-outline-primary" href="#" hidden>View borrower</a>
+                      <a id="borrower-lookup-circulation" class="btn btn-primary" href="/scan2borrow/staff/circulation">Open circulation</a>
+                    </div>
+                  </section>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

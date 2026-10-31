@@ -1,0 +1,108 @@
+#borrower-lookup-modal .borrower-lookup-modal__content {
+  background: #f7f7f8;
+  border: 1px solid #002fa7;
+  border-radius: 0;
+  box-shadow: none;
+  color: #111;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+#borrower-lookup-modal .modal-header {
+  background: #fff;
+  border-bottom: 1px solid #002fa7;
+  color: #002fa7;
+}
+
+#borrower-lookup-modal .modal-title,
+#borrower-lookup-modal .borrower-lookup-result__label,
+#borrower-lookup-modal .borrower-lookup-result__count {
+  color: #002fa7;
+}
+
+#borrower-lookup-modal .borrower-lookup-scanner {
+  margin-top: 10px;
+}
+
+#borrower-lookup-modal .borrower-lookup-status {
+  border-left: 4px solid #002fa7;
+  margin-top: 16px;
+  padding: 10px 12px;
+}
+
+#borrower-lookup-modal .borrower-lookup-status[data-state="error"] {
+  border-left-color: #b00020;
+  color: #b00020;
+}
+
+#borrower-lookup-modal .borrower-lookup-result {
+  border-top: 1px solid #002fa7;
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+#borrower-lookup-modal .borrower-lookup-result__identity {
+  border-left: 4px solid #002fa7;
+  padding-left: 12px;
+}
+
+#borrower-lookup-modal .borrower-lookup-result__label {
+  font-size: .75rem;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+#borrower-lookup-modal .borrower-lookup-result__identity h3,
+#borrower-lookup-modal .borrower-lookup-result__identity p {
+  margin-bottom: 4px;
+}
+
+#borrower-lookup-modal .borrower-lookup-loans {
+  border-top: 1px solid #c8c8c8;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+#borrower-lookup-modal .borrower-lookup-loans li {
+  border-bottom: 1px solid #c8c8c8;
+  display: grid;
+  gap: 4px 12px;
+  grid-template-columns: 1fr auto;
+  padding: 12px 0;
+}
+
+#borrower-lookup-modal .borrower-lookup-loans li span,
+#borrower-lookup-modal .borrower-lookup-loans li time {
+  color: #555;
+  font-size: .86rem;
+}
+
+#borrower-lookup-modal .borrower-lookup-loans li time {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  text-align: right;
+}
+
+#borrower-lookup-modal .borrower-lookup-empty {
+  color: #555;
+  display: block;
+}
+
+#borrower-lookup-modal .borrower-lookup-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+  #borrower-lookup-modal .borrower-lookup-loans li {
+    grid-template-columns: 1fr;
+  }
+
+  #borrower-lookup-modal .borrower-lookup-loans li time {
+    grid-column: 1;
+    grid-row: auto;
+    text-align: left;
+  }
+}

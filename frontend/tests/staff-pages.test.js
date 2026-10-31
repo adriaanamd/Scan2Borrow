@@ -19,6 +19,7 @@ const staffDashboardSource = path.resolve(testsDirectory, '..', 'features', 'sta
 const adminTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'admin-staff', 'admin-staff.html');
 const dashboardTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'dashboard', 'dashboard.html');
 const guestRequestsTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'guest-requests', 'guest-requests.html');
+const borrowersTemplate = path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'borrowers', 'borrowers.html');
 
 test('staff dashboard model normalizes stats, overview, and pending approval rows', () => {
   const model = normalizeStaffDashboard({
@@ -132,6 +133,18 @@ test('staff navigation exposes the copy history page', () => {
   assert.match(navbar, /Copy History/);
   assert.match(navbar, /staff\/circulation/);
   assert.match(navbar, /Circulation/);
+});
+
+test('staff borrowers page exposes scan ID lookup modal controls', () => {
+  const template = fs.readFileSync(borrowersTemplate, 'utf8');
+  assert.match(template, /id="borrower-lookup-trigger"/);
+  assert.match(template, /data-bs-target="#borrower-lookup-modal"/);
+  assert.match(template, /id="borrower-lookup-modal"/);
+  assert.match(template, /id="borrower-lookup-form"/);
+  assert.match(template, /id="borrower-lookup-scanner"/);
+  assert.match(template, /id="borrower-lookup-result"/);
+  assert.match(template, /View borrower/);
+  assert.match(template, /Open circulation/);
 });
 
 test('staff circulation page exposes scan-first borrow and return controls', () => {

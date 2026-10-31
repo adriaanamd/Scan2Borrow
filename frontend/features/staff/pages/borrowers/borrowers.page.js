@@ -1,11 +1,34 @@
+import { BorrowerLookupModal } from '../../components/borrower-lookup-modal/borrower-lookup-modal.component.js';
+
 export class BorrowersPage {
-  constructor(root = globalThis.document, { service, window = globalThis.window } = {}) {
+  constructor(root = globalThis.document, {
+    service,
+    window = globalThis.window,
+    lookupModalFactory = (modalRoot, options) => new BorrowerLookupModal(modalRoot, options),
+  } = {}) {
     this.root = root;
     this.service = service;
     this.window = window;
+    this.lookupModalFactory = lookupModalFactory;
+    this.lookupModal = null;
   }
 
-  start() { return this.load(); }
+  start() {
+    const modalRoot = this.root.getElementById?.('borrower-lookup-modal');
+    if (modalRoot) {
+      this.lookupModal = this.lookupModalFactory(modalRoot, {
+        service: this.service,
+        trigger: this.root.getElementById?.('borrower-lookup-trigger'),
+        document: this.root,
+        window: this.window,
+      }).start();
+    }
+    return this.load();
+  }
+
+  async destroy() {
+    await this.lookupModal?.destroy?.();
+  }
 
   async load() {
     const search = new URLSearchParams(this.window.location.search).get('search') || '';

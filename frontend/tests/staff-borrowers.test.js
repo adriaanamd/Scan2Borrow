@@ -96,3 +96,37 @@ test('staff borrower empty state spans the complete table width', () => {
   assert.match(body.innerHTML, /colspan="10"/);
   assert.match(body.innerHTML, /No borrowers found\./);
 });
+
+test('staff borrowers page constructs and destroys the barcode lookup modal', async () => {
+  const body = { innerHTML: '' };
+  const modalRoot = {};
+  const trigger = {};
+  const document = {
+    getElementById(id) {
+      if (id === 'borrower-lookup-modal') return modalRoot;
+      if (id === 'borrower-lookup-trigger') return trigger;
+      return null;
+    },
+    querySelector(selector) { return selector === 'table tbody' ? body : null; },
+  };
+  const service = { search: async () => ({ data: { borrowers: [] } }) };
+  const window = { location: { search: '' } };
+  let factoryArgs;
+  let destroyed = false;
+  const lookupModalFactory = (root, options) => {
+    factoryArgs = { root, options };
+    return {
+      start() { return this; },
+      async destroy() { destroyed = true; },
+    };
+  };
+  const page = new BorrowersPage(document, { service, window, lookupModalFactory });
+
+  await page.start();
+  await page.destroy();
+
+  assert.equal(factoryArgs.root, modalRoot);
+  assert.equal(factoryArgs.options.service, service);
+  assert.equal(factoryArgs.options.trigger, trigger);
+  assert.equal(destroyed, true);
+});

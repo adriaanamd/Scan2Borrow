@@ -33,6 +33,36 @@ test('staff dashboard model normalizes stats, overview, and pending approval row
   assert.deepEqual(model.overview.loan_status, { Borrowed: 3 });
 });
 
+test('staff dashboard top borrower rows render the borrower profile photo beside the ID', () => {
+  const previousDocument = globalThis.document;
+  const createElement = (tagName) => ({
+    tagName,
+    className: '',
+    textContent: '',
+    children: [],
+    append(...nodes) { this.children.push(...nodes); },
+    appendChild(node) { this.children.push(node); },
+  });
+  globalThis.document = { createElement };
+
+  try {
+    const page = Object.create(StaffDashboardPage.prototype);
+    const row = page.createTopBorrowerRow({
+      name: 'Grace Hopper',
+      barcode: 'STU-1',
+      photo: 'uploads/profile/grace.jpg',
+      borrowing_count: 4,
+    }, 0);
+
+    const photo = row.children[1];
+    assert.equal(photo.className, 'overview-borrower-photo');
+    assert.equal(photo.children[0].src, '/scan2borrow/uploads/profile/grace.jpg');
+    assert.equal(photo.children[0].alt, 'Grace Hopper profile photo');
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
 test('staff services preserve dashboard polling and approval action fields', async () => {
   const calls = [];
   const api = {

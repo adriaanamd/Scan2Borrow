@@ -15,11 +15,13 @@ test('BorrowerService preserves search, detail, photo, and notification payload 
   await service.details(7);
   await service.updatePhoto(7, 'photo-data');
   await service.notify(7, 'email');
+  await service.lookupByBarcode('  STU-001  ');
   assert.deepEqual(calls, [
     { method: 'GET', path: '/scan2borrow/api/staff/borrowers', params: { search: 'Lee' } },
     { method: 'GET', path: '/scan2borrow/api/staff/borrower', params: { id: 7 } },
     { method: 'POST', path: '/scan2borrow/api/staff/borrower/photo', body: { user_id: 7, photo_data: 'photo-data' } },
     { method: 'POST', path: '/scan2borrow/api/staff/notify', body: { user_id: 7, channel: 'email' } },
+    { method: 'GET', path: '/scan2borrow/api/staff/circulation/borrower', params: { barcode: 'STU-001' } },
   ]);
 });
 

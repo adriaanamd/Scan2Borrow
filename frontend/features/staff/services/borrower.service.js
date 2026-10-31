@@ -5,6 +5,12 @@ export class BorrowerService {
 
   details(id) { return this.api.get('/scan2borrow/api/staff/borrower', { id }); }
 
+  lookupByBarcode(barcode) {
+    return this.api.get('/scan2borrow/api/staff/circulation/borrower', {
+      barcode: String(barcode || '').trim(),
+    });
+  }
+
   updatePhoto(userId, photoData) { return this.api.post('/scan2borrow/api/staff/borrower/photo', { user_id: userId, photo_data: photoData }); }
 
   notify(userId, channel) { return this.api.post('/scan2borrow/api/staff/notify', { user_id: userId, channel }); }

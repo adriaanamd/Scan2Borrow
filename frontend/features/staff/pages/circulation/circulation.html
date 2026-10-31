@@ -42,7 +42,7 @@
               <span class="circulation-verified" aria-label="Borrower verified">● Verified</span>
             </div>
             <div class="circulation-borrower-card">
-              <div class="circulation-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.3"></circle><path d="M5.5 20c.7-3.2 2.9-5 6.5-5s5.8 1.8 6.5 5"></path></svg></div>
+              <div id="circulation-borrower-photo" class="circulation-avatar" aria-label="Borrower profile photo"></div>
               <div class="circulation-borrower-card__identity">
                 <span class="circulation-borrower__label">Borrower account</span>
                 <h3 id="circulation-borrower-name"></h3>
@@ -161,6 +161,7 @@
         </div>
       </main>
     </div>
+    <script src="/scan2borrow/frontend/assets/js/core/media.js" defer></script>
     <script type="module" src="/scan2borrow/frontend/features/staff/pages/circulation/entry.js"></script>
     <script src="/scan2borrow/frontend/assets/js/core/icons.js" defer></script>
   </body>

@@ -349,6 +349,16 @@ export class CirculationPage {
   renderBorrower() {
     const panel = this.document.getElementById('circulation-borrower');
     if (panel) panel.hidden = !this.borrower;
+    const avatar = this.document.getElementById('circulation-borrower-photo');
+    if (avatar) {
+      const name = String(this.borrower?.name || '').trim();
+      const nameParts = name.split(/\s+/).filter(Boolean);
+      const initials = `${this.borrower?.firstname?.[0] || nameParts[0]?.[0] || ''}${this.borrower?.lastname?.[0] || nameParts.at(-1)?.[0] || ''}`.toUpperCase();
+      const photo = this.media(this.borrower?.photo || '');
+      avatar.innerHTML = photo
+        ? `<img src="${this.escape(photo)}" alt="Borrower profile photo" />`
+        : `<span aria-hidden="true">${this.escape(initials || '--')}</span>`;
+    }
     this.text('circulation-borrower-name', this.borrower?.name || '');
     this.text('circulation-borrower-id', this.borrower?.barcode || '');
     this.text('circulation-borrower-role', this.borrower?.role || '');
@@ -486,6 +496,19 @@ export class CirculationPage {
     node.textContent = String(message || '');
     node.dataset.state = state;
     node.hidden = !message;
+  }
+
+  media(value) {
+    const resolver = this.window?.Scan2BorrowMedia?.resolve || globalThis.Scan2BorrowMedia?.resolve;
+    if (typeof resolver === 'function') return resolver(value);
+
+    const normalized = String(value ?? '').trim().replace(/\\/g, '/');
+    if (!normalized) return '';
+    if (/^(data:image\/|blob:|https?:\/\/|\/\/)/i.test(normalized)) return normalized;
+    if (normalized.toLowerCase().startsWith('/scan2borrow/')) return normalized;
+    if (normalized.toLowerCase().startsWith('/uploads/')) return `/scan2borrow${normalized}`;
+    if (normalized.toLowerCase().startsWith('uploads/')) return `/scan2borrow/${normalized}`;
+    return normalized.startsWith('/') ? normalized : `/scan2borrow/${normalized}`;
   }
 
   escape(value) {

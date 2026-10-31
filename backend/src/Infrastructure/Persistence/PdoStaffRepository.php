@@ -441,7 +441,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         if ($this->hasTable('borrowing_transactions')) {
             $statement = $this->pdo->query(
                 "SELECT bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.requested_at, bt.status, bt.user_id,
-                        u.firstname, u.lastname, u.barcode AS id_barcode, GROUP_CONCAT(DISTINCT t.title) AS title,
+                        u.firstname, u.lastname, u.barcode AS id_barcode, u.photo AS borrower_photo, GROUP_CONCAT(DISTINCT t.title) AS title,
                         GROUP_CONCAT(DISTINCT t.author) AS author,
                         COUNT(bi.id) AS book_count
                  FROM borrowing_transactions bt JOIN borrowing_items bi ON bi.transaction_id = bt.id
@@ -449,7 +449,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                  JOIN users u ON u.id = bt.user_id
                  WHERE bt.approval_status = 'pending' AND bi.return_date IS NULL
                  GROUP BY bt.id, bt.transaction_code, bt.borrow_date, bt.due_date, bt.requested_at, bt.status, bt.user_id,
-                          u.firstname, u.lastname, u.barcode
+                          u.firstname, u.lastname, u.barcode, u.photo
                  ORDER BY bt.requested_at ASC, bt.id ASC"
             );
             if ($statement === false) return [];
@@ -461,7 +461,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
         $statement = $this->pdo->query(
             "SELECT br.id, br.transaction_code, br.borrow_date, br.due_date, br.status, br.user_id, br.book_id,
-                    u.firstname, u.lastname, u.barcode AS id_barcode,
+                    u.firstname, u.lastname, u.barcode AS id_barcode, u.photo AS borrower_photo,
                     b.title, b.author, b.barcode AS book_barcode, b.cover_file
              FROM borrowing br JOIN users u ON u.id = br.user_id JOIN books b ON b.id = br.book_id
              WHERE br.approval_status = 'pending' AND br.return_date IS NULL ORDER BY br.requested_at ASC, br.id ASC"

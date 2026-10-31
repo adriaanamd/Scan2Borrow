@@ -188,6 +188,8 @@
   justify-content: center;
   width: 3rem;
 }
+.circulation-avatar { overflow: hidden; font-size: 1rem; font-weight: 800; }
+.circulation-avatar img { display: block; height: 100%; object-fit: cover; width: 100%; }
 .circulation-camera svg,
 .circulation-scan-icon svg,
 .circulation-avatar svg,

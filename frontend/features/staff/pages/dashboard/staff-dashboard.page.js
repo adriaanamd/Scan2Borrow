@@ -685,14 +685,29 @@ export class StaffDashboardPage {
 
   approvalCard(row) {
     const cover = this.media(row.cover_file || "");
+    const borrowerPhoto = this.media(row.borrower_photo || "");
+    const borrowerName = row.borrower || "Borrower";
+    const borrowerInitials = borrowerName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
+    const borrowerPhotoMarkup = borrowerPhoto
+      ? `<img src="${this.escape(borrowerPhoto)}" alt="Borrower profile photo" />`
+      : `<span aria-hidden="true">${this.escape(borrowerInitials || "--")}</span>`;
     return `<div class="approval-card mb-3">
       <div class="infos">
         <div class="image">${cover ? `<img src="${this.escape(cover)}" alt="Book cover" />` : '<div class="no-photo">No Photo</div>'}</div>
         <div class="info">
-          <div class="approval-card__identity">
-            <p class="approval-card__borrower">${this.escape(row.borrower || "Borrower")}</p>
+          <div class="approval-card__borrower-profile">
+            <div class="approval-card__borrower-photo">${borrowerPhotoMarkup}</div>
+            <div class="approval-card__identity">
+            <p class="approval-card__borrower">${this.escape(borrowerName)}</p>
             <p class="approval-card__book-title">${this.escape(row.title || "Book")}</p>
             <p class="function">by ${this.escape(row.author || "—")} | Barcode: ${this.escape(row.book_barcode || "—")}</p>
+            </div>
           </div>
           <div class="details" style="font-size: .95rem; color: rgba(156, 163, 175, 1); margin-top: 6px">
             <p style="margin: 0"><strong>Student:</strong> ${this.escape(row.borrower)}</p>

@@ -232,12 +232,12 @@ final class PdoStaffRepositoryTest extends TestCase
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, barcode TEXT, firstname TEXT, lastname TEXT, role TEXT, department TEXT, position TEXT, course TEXT, year_level TEXT, status TEXT)');
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, barcode TEXT, firstname TEXT, lastname TEXT, role TEXT, department TEXT, position TEXT, course TEXT, year_level TEXT, photo TEXT, status TEXT)');
         $pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT, author TEXT, category_name TEXT, created_at TEXT)');
         $pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode TEXT, floor_no TEXT, section_name TEXT, shelf_no TEXT, status TEXT, deleted_at TEXT)');
         $pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, status TEXT, requested_at TEXT)');
         $pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date TEXT, status TEXT, fine_amount NUMERIC)');
-        $pdo->exec("INSERT INTO users VALUES (1, 'STU-1', 'Grace', 'Hopper', 'student', 'IT', NULL, 'CS', '4', 'active')");
+        $pdo->exec("INSERT INTO users VALUES (1, 'STU-1', 'Grace', 'Hopper', 'student', 'IT', NULL, 'CS', '4', NULL, 'active')");
         $pdo->exec("INSERT INTO book_titles VALUES (1, 'Clean Code', 'Martin', 'Computer Science', '2026-08-01')");
         $pdo->exec("INSERT INTO book_copies VALUES (1, 1, 'COPY-1', '2', 'IT', 'A1', 'Borrowed', NULL), (2, 1, 'COPY-2', '2', 'IT', 'A1', 'Borrowed', NULL), (3, 1, 'COPY-3', '2', 'IT', 'A1', 'Available', NULL)");
         $pdo->exec("INSERT INTO borrowing_transactions VALUES (1, 'TX-BULK', 1, 'approved', '2026-08-20', '2026-08-27', 'Borrowed', '2026-08-20')");

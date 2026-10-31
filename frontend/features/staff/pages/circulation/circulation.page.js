@@ -91,7 +91,15 @@ export class CirculationPage {
     }
     const requestAction = event.target?.closest?.('[data-circulation-request-action]');
     if (requestAction) {
-      void this.decideBorrowing(requestAction.dataset.circulationRequestAction, requestAction.dataset.circulationRequestId);
+      const card = requestAction.closest?.('[data-circulation-request-card]');
+      const note = card?.querySelector?.('[data-circulation-return-note]')?.value || '';
+      void this.decideRequest(
+        requestAction.dataset.circulationRequestType,
+        requestAction.dataset.circulationRequestAction,
+        requestAction.dataset.circulationRequestId,
+        requestAction.dataset.circulationReturnType,
+        note,
+      );
       return;
     }
     const action = event.target?.closest?.('[data-circulation-action]')?.dataset?.circulationAction;
@@ -261,6 +269,35 @@ export class CirculationPage {
     }
   }
 
+  async decideRequest(requestType, action, requestId, returnType = '', note = '') {
+    if (requestType === 'return') {
+      return this.decideReturnRequest(action, returnType, requestId, note);
+    }
+
+    return this.decideBorrowing(action, requestId);
+  }
+
+  async decideReturnRequest(action, returnType, returnId, note = '') {
+    const value = String(action || '').trim();
+    const type = String(returnType || '').trim();
+    const id = Number(returnId) || 0;
+    const decisionNote = String(note || '').trim();
+    if (!this.borrower || !id || !['approve', 'reject'].includes(value) || !type) return null;
+    if (value === 'reject' && !decisionNote) {
+      this.showStatus('Enter a reason before rejecting the return request.', 'error');
+      return null;
+    }
+    try {
+      const response = await this.service.decideReturn(value, type, id, decisionNote);
+      await this.lookupStudent(this.borrower.barcode);
+      this.showStatus(response?.message || (value === 'approve' ? 'Return approved.' : 'Return rejected.'), 'success');
+      return response;
+    } catch (error) {
+      this.showStatus(error?.message || 'Return request could not be updated.', 'error');
+      return null;
+    }
+  }
+
   rejectBorrow() {
     this.borrowCopies = [];
     const modal = this.document.getElementById('circulation-review-modal');
@@ -331,18 +368,29 @@ export class CirculationPage {
     list.innerHTML = this.requestedBooks.length
       ? this.requestedBooks.map((request) => {
         const id = this.escape(request.id);
+        const requestType = request.request_type === 'return' ? 'return' : 'borrow';
+        const isReturnRequest = requestType === 'return';
         const title = this.escape(request.title || request.book_title || 'Requested book');
         const author = this.escape(request.author || '');
         const requestedAt = this.escape(request.requested_at || request.requested_date || '');
-        const status = this.escape(request.status || 'Pending');
-        return `<article class="circulation-request-card">
-          <div class="circulation-book-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5zM5 5.5v16M9 8h6"/></svg></div>
-          <div class="circulation-request-card__body"><h3>${title}</h3><p>${author ? `By ${author}` : 'Author not provided'}</p><small>${requestedAt ? `Requested: ${requestedAt}` : 'Request date not provided'}</small></div>
-          <span class="circulation-badge circulation-badge--pending">${status}</span>
-          <div class="circulation-request-card__actions"><button type="button" class="circulation-approve" data-circulation-request-action="approve" data-circulation-request-id="${id}">Approve</button><button type="button" class="circulation-reject" data-circulation-request-action="reject" data-circulation-request-id="${id}">Reject</button></div>
-        </article>`;
+        const dueDate = this.escape(request.due_date || 'Not set');
+        const returnDate = this.escape(request.return_date || (isReturnRequest ? 'Pending verification' : 'Not returned'));
+        const status = isReturnRequest ? 'Return verification pending' : 'Pending borrow request';
+        const note = isReturnRequest
+          ? '<label class="circulation-request-card__note"><span>Decision note</span><input type="text" maxlength="500" placeholder="Required when rejecting" data-circulation-return-note="' + id + '" /></label>'
+          : '';
+        const approveLabel = isReturnRequest ? 'Approve return' : 'Approve';
+        const rejectLabel = isReturnRequest ? 'Reject return' : 'Reject';
+        const returnType = this.escape(request.type || '');
+        return '<article class="circulation-request-card" data-circulation-request-card>' +
+          '<div class="circulation-book-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5zM5 5.5v16M9 8h6"/></svg></div>' +
+          '<div class="circulation-request-card__body"><h3>' + title + '</h3><p>' + (author ? 'By ' + author : 'Author not provided') + '</p><small>' + (requestedAt ? 'Requested: ' + requestedAt : 'Request date not provided') + '</small><div class="circulation-request-card__dates"><span><strong>Due date:</strong> ' + dueDate + '</span><span><strong>Return date:</strong> ' + returnDate + '</span></div></div>' +
+          '<span class="circulation-badge circulation-badge--pending">' + status + '</span>' +
+          note +
+          '<div class="circulation-request-card__actions"><button type="button" class="circulation-approve" data-circulation-request-action="approve" data-circulation-request-type="' + requestType + '" data-circulation-return-type="' + returnType + '" data-circulation-request-id="' + id + '">' + approveLabel + '</button><button type="button" class="circulation-reject" data-circulation-request-action="reject" data-circulation-request-type="' + requestType + '" data-circulation-return-type="' + returnType + '" data-circulation-request-id="' + id + '">' + rejectLabel + '</button></div>' +
+          '</article>';
       }).join('')
-      : '<p class="circulation-empty">No pending book requests for this borrower.</p>';
+      : '<p class="circulation-empty">No pending borrow or return requests for this borrower.</p>';
   }
 
   renderHistory() {

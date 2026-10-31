@@ -77,6 +77,7 @@ test('StaffCirculationService sends repeated barcode fields through FormData', a
   await service.borrow({ borrowerBarcode: 'STU-001', bookBarcodes: ['COPY-001', 'COPY-002'], dueDate: '2026-09-04' });
   await service.returnBooks({ borrowerId: 7, loanIds: [55, 56], copyBarcodes: ['COPY-001', 'COPY-002'] });
   await service.decideBorrowing('approve', 91);
+  await service.decideReturn('approve', 'borrower_item', 31);
 
   assert.deepEqual(calls[0], { method: 'GET', path: '/scan2borrow/api/staff/circulation/borrower', params: { barcode: 'STU-001' } });
   assert.deepEqual(calls[1].body.values, [
@@ -96,6 +97,11 @@ test('StaffCirculationService sends repeated barcode fields through FormData', a
     method: 'POST',
     path: '/scan2borrow/api/staff/borrowing-action',
     body: { action: 'approve', borrowing_id: 91 },
+  });
+  assert.deepEqual(calls[4], {
+    method: 'POST',
+    path: '/scan2borrow/api/staff/return-action',
+    body: { action: 'approve', type: 'borrower_item', id: 31, note: '' },
   });
 });
 
@@ -146,7 +152,10 @@ test('CirculationPage renders the verified borrower workflow sections from looku
         active_loans: 1,
       },
       active_loans: [{ id: 55, copy_barcode: 'COPY-001', title: 'Clean Code', due_date: '2026-09-04' }],
-      requested_books: [{ id: 91, title: 'Algorithms', author: 'Thomas Cormen', requested_at: '2026-10-30', status: 'Pending' }],
+      requested_books: [
+        { id: 91, request_type: 'borrow', title: 'Algorithms', author: 'Thomas Cormen', requested_at: '2026-10-30', due_date: '2026-11-01', status: 'Pending' },
+        { id: 31, request_type: 'return', type: 'borrower_item', title: 'Database Systems', author: 'A. Author', requested_at: '2026-10-30', due_date: '2026-10-20', return_status: 'pending' },
+      ],
       summary: { active: 1, returned: 2, overdue: 0, total_fine: 0 },
       history: [{ title: 'Clean Code', author: 'Robert C. Martin', status: 'Returned', borrow_date: '2026-08-01', return_date: '2026-08-08' }],
     } }),
@@ -158,6 +167,13 @@ test('CirculationPage renders the verified borrower workflow sections from looku
   assert.equal(document.getElementById('circulation-borrower-course').textContent, 'Computer Science');
   assert.equal(document.getElementById('circulation-borrower-year').textContent, '3');
   assert.match(document.getElementById('circulation-requested-books').innerHTML, /Algorithms/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Database Systems/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Pending borrow request/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Return verification pending/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Due date:<\/strong> 2026-11-01/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Return date:<\/strong> Not returned/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Due date:<\/strong> 2026-10-20/);
+  assert.match(document.getElementById('circulation-requested-books').innerHTML, /Return date:<\/strong> Pending verification/);
   assert.match(document.getElementById('circulation-requested-books').innerHTML, /Approve/);
   assert.match(document.getElementById('circulation-history-list').innerHTML, /Clean Code/);
   assert.equal(document.getElementById('circulation-summary-active').textContent, '1');

@@ -30,4 +30,13 @@ export class StaffCirculationService {
       borrowing_id: Number(borrowingId) || 0,
     });
   }
+
+  decideReturn(action, type, returnId, note = '') {
+    return this.api.post('/scan2borrow/api/staff/return-action', {
+      action: String(action || '').trim(),
+      type: String(type || '').trim(),
+      id: Number(returnId) || 0,
+      note: String(note || '').trim(),
+    });
+  }
 }

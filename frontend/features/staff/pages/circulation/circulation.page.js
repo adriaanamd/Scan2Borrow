@@ -23,6 +23,8 @@ export class CirculationPage {
     this.boundBorrowerSubmit = (event) => this.onBorrowerSubmit(event);
     this.boundBorrowSubmit = (event) => this.onBorrowSubmit(event);
     this.boundReturnSubmit = (event) => this.onReturnSubmit(event);
+    this.boundStaticAction = (event) => this.onStaticAction(event);
+    this.staticActionButtons = [];
     this.bound = false;
   }
 
@@ -34,6 +36,7 @@ export class CirculationPage {
       this.document.getElementById('circulation-borrower-form')?.addEventListener('submit', this.boundBorrowerSubmit);
       this.document.getElementById('circulation-borrow-form')?.addEventListener('submit', this.boundBorrowSubmit);
       this.document.getElementById('circulation-return-form')?.addEventListener('submit', this.boundReturnSubmit);
+      this.bindStaticActions();
     }
     this.createScanners();
     this.setMode(this.mode);
@@ -74,6 +77,22 @@ export class CirculationPage {
     const input = this.document.getElementById('circulation-return-book-barcode');
     this.addReturnCopy(input?.value || '');
     if (input) input.value = '';
+  }
+
+  bindStaticActions() {
+    this.staticActionButtons = Array.from(this.document.querySelectorAll?.('[data-circulation-action]') || []);
+    this.staticActionButtons.forEach((button) => button.addEventListener?.('click', this.boundStaticAction));
+  }
+
+  onStaticAction(event) {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    const action = event.currentTarget?.dataset?.circulationAction;
+    if (action === 'review-borrow') this.reviewBorrow();
+    if (action === 'approve-borrow') void this.approveBorrow();
+    if (action === 'reject-borrow') this.rejectBorrow();
+    if (action === 'clear-borrower') this.clearSession();
+    if (action === 'submit-return') void this.submitReturn();
   }
 
   onClick(event) {
@@ -522,6 +541,8 @@ export class CirculationPage {
       this.document.getElementById('circulation-borrower-form')?.removeEventListener?.('submit', this.boundBorrowerSubmit);
       this.document.getElementById('circulation-borrow-form')?.removeEventListener?.('submit', this.boundBorrowSubmit);
       this.document.getElementById('circulation-return-form')?.removeEventListener?.('submit', this.boundReturnSubmit);
+      this.staticActionButtons.forEach((button) => button.removeEventListener?.('click', this.boundStaticAction));
+      this.staticActionButtons = [];
       this.bound = false;
     }
     return Promise.all([

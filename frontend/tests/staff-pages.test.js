@@ -78,20 +78,12 @@ test('staff dashboard exposes librarian-approved return review fields and endpoi
   assert.match(template, /Returns awaiting verification/);
 });
 
-test('staff dashboard exposes return approvals as a separate action', () => {
+test('staff dashboard does not expose approval shortcut buttons', () => {
   const template = fs.readFileSync(dashboardTemplate, 'utf8');
-  assert.match(template, /id="return-approvals-trigger"/);
-  assert.match(template, /data-bs-target="#returnApprovalModal"/);
-  assert.match(template, />\s*Return Approvals\s*</);
-  assert.match(template, /id="returnApprovalModal"/);
-  assert.match(template, /id="return-approvals-count"/);
-
-  const borrowModalStart = template.indexOf('id="approvalModal"');
-  const returnModalStart = template.indexOf('id="returnApprovalModal"');
-  assert.ok(borrowModalStart >= 0);
-  assert.ok(returnModalStart > borrowModalStart);
-  const borrowModal = template.slice(borrowModalStart, returnModalStart);
-  assert.doesNotMatch(borrowModal, /class="return-approval-section"|id="returnApprovalList"/);
+  assert.doesNotMatch(template, /id="pending-approvals-trigger"/);
+  assert.doesNotMatch(template, /id="return-approvals-trigger"/);
+  assert.doesNotMatch(template, /<button[^>]*data-bs-target="#approvalModal"/);
+  assert.doesNotMatch(template, /<button[^>]*data-bs-target="#returnApprovalModal"/);
 });
 
 test('approval cards prioritize the borrower name over the book title', () => {

@@ -599,7 +599,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         return $rows;
     }
 
-    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, category_borrowing_activity: array{months: list<array{month: string, label: string}>, series: list<array{name: string, counts: list<int>}>}, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>} */
+    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, category_borrowing_activity: array{months: list<array{month: string, label: string}>, series: list<array{name: string, counts: list<int>}>}, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, photo: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>} */
     private function dashboardOverview(): array
     {
         $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
@@ -694,16 +694,16 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
         $topBorrowersStatement = $this->pdo->prepare(
             $normalized
-            ? "SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(bi.id) AS borrowing_count
+            ? "SELECT u.id, u.barcode, u.firstname, u.lastname, u.photo, COUNT(bi.id) AS borrowing_count
                FROM users u JOIN borrowing_transactions bt ON bt.user_id = u.id
                JOIN borrowing_items bi ON bi.transaction_id = bt.id
                WHERE u.role IN ('student', 'teacher')
-               GROUP BY u.id, u.barcode, u.firstname, u.lastname
+               GROUP BY u.id, u.barcode, u.firstname, u.lastname, u.photo
                ORDER BY borrowing_count DESC, u.lastname ASC, u.firstname ASC LIMIT 10"
-            : 'SELECT u.id, u.barcode, u.firstname, u.lastname, COUNT(br.id) AS borrowing_count '
+            : 'SELECT u.id, u.barcode, u.firstname, u.lastname, u.photo, COUNT(br.id) AS borrowing_count '
             . 'FROM users u JOIN borrowing br ON br.user_id = u.id '
             . "WHERE u.role IN ('student', 'teacher') "
-            . 'GROUP BY u.id, u.barcode, u.firstname, u.lastname '
+            . 'GROUP BY u.id, u.barcode, u.firstname, u.lastname, u.photo '
             . 'ORDER BY borrowing_count DESC, u.lastname ASC, u.firstname ASC LIMIT 10'
         );
         $topBorrowersStatement->execute();
@@ -715,6 +715,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 'id' => is_numeric($row['id'] ?? null) ? (int) $row['id'] : 0,
                 'name' => trim($this->string($row['firstname'] ?? null) . ' ' . $this->string($row['lastname'] ?? null)),
                 'barcode' => $this->string($row['barcode'] ?? null),
+                'photo' => $this->string($row['photo'] ?? null),
                 'borrowing_count' => is_numeric($row['borrowing_count'] ?? null) ? (int) $row['borrowing_count'] : 0,
             ];
         }

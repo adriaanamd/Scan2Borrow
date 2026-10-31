@@ -653,9 +653,10 @@ export class StaffDashboardPage {
       : '<span class="text-muted">No photo supplied</span>';
     return `<article class="return-approval-card mb-3">
       <div class="d-flex justify-content-between gap-3 flex-wrap">
-        <div>
-          <h6 class="mb-1">${this.escape(row.title || "Book")}</h6>
-          <p class="small text-muted mb-2">${this.escape(row.borrower || "Borrower")} · Barcode: ${this.escape(row.book_barcode || "—")}</p>
+        <div class="return-approval-card__identity">
+          <h4 class="return-approval-card__borrower mb-1">${this.escape(row.borrower || "Borrower")}</h4>
+          <p class="return-approval-card__book-title mb-1">${this.escape(row.title || "Book")}</p>
+          <p class="small text-muted mb-2">Barcode: ${this.escape(row.book_barcode || "—")}</p>
           <p class="small mb-1"><strong>Due:</strong> ${this.escape(this.date(row.due_date) || "—")}</p>
           <p class="small mb-2"><strong>Requested:</strong> ${this.escape(row.requested_at || "—")}</p>
           <span class="badge bg-warning text-dark">${this.escape(row.return_status || "pending") === "pending" ? "Return Verification Pending" : this.escape(row.return_status)}</span>
@@ -688,7 +689,11 @@ export class StaffDashboardPage {
       <div class="infos">
         <div class="image">${cover ? `<img src="${this.escape(cover)}" alt="Book cover" />` : '<div class="no-photo">No Photo</div>'}</div>
         <div class="info">
-          <div><p class="name">${this.escape(row.title)}</p><p class="function">by ${this.escape(row.author || "—")} | Barcode: ${this.escape(row.book_barcode)}</p></div>
+          <div class="approval-card__identity">
+            <p class="approval-card__borrower">${this.escape(row.borrower || "Borrower")}</p>
+            <p class="approval-card__book-title">${this.escape(row.title || "Book")}</p>
+            <p class="function">by ${this.escape(row.author || "—")} | Barcode: ${this.escape(row.book_barcode || "—")}</p>
+          </div>
           <div class="details" style="font-size: .95rem; color: rgba(156, 163, 175, 1); margin-top: 6px">
             <p style="margin: 0"><strong>Student:</strong> ${this.escape(row.borrower)}</p>
             <p style="margin: 0"><strong>Quantity:</strong> ${Number(row.book_count || 1)} copy/copies</p>

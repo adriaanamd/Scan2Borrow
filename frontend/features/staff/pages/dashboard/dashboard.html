@@ -660,23 +660,36 @@
                       display: block;
                     }
                     .approval-card .info {
-                      height: 7rem;
+                      min-width: 0;
                       flex: 1;
                       display: flex;
                       flex-direction: column;
-                      justify-content: space-between;
+                      justify-content: flex-start;
                     }
-                    .approval-card .name {
-                      font-size: 1.125rem;
-                      line-height: 1.5rem;
-                      font-weight: 600;
+                    .approval-card__identity {
+                      min-width: 0;
+                    }
+                    .approval-card__borrower {
+                      font-size: 1.45rem;
+                      line-height: 1.25;
+                      font-weight: 800;
                       color: #fff;
+                      margin: 0 0 0.25rem;
+                      overflow-wrap: anywhere;
+                    }
+                    .approval-card__book-title {
+                      font-size: 0.95rem;
+                      line-height: 1.35;
+                      font-weight: 600;
+                      color: rgba(209, 213, 219, 1);
                       margin: 0;
+                      overflow-wrap: anywhere;
                     }
                     .approval-card .function {
                       font-size: 0.8rem;
                       color: rgba(156, 163, 175, 1);
-                      margin: 0;
+                      margin: 0.2rem 0 0;
+                      overflow-wrap: anywhere;
                     }
                     .approval-card .stats {
                       width: 100%;
@@ -730,6 +743,24 @@
                       border-radius: 0.75rem;
                       padding: 1rem;
                       background: #f8fafc;
+                    }
+                    .return-approval-card__identity {
+                      min-width: 0;
+                      flex: 1 1 16rem;
+                    }
+                    .return-approval-card__borrower {
+                      font-size: 1.35rem;
+                      line-height: 1.25;
+                      font-weight: 800;
+                      color: #0f172a;
+                      overflow-wrap: anywhere;
+                    }
+                    .return-approval-card__book-title {
+                      font-size: 0.95rem;
+                      line-height: 1.35;
+                      font-weight: 600;
+                      color: #475569;
+                      overflow-wrap: anywhere;
                     }
                     .return-evidence {
                       min-width: 8rem;

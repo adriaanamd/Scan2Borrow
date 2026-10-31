@@ -79,13 +79,13 @@ Interfaces:
 - Consumes: existing BorrowerService({ api }).
 - Produces: lookupByBarcode(barcode), which trims input and calls /scan2borrow/api/staff/circulation/borrower.
 
-- [ ] Step 1: Write the failing test.
+- [x] Step 1: Write the failing test.
 
 In the existing service contract test, call await service.lookupByBarcode('  STU-001  '); and append this expected call:
 
     { method: 'GET', path: '/scan2borrow/api/staff/circulation/borrower', params: { barcode: 'STU-001' } }
 
-- [ ] Step 2: Run the test and verify the expected failure.
+- [x] Step 2: Run the test and verify the expected failure.
 
 Run:
 
@@ -93,7 +93,7 @@ Run:
 
 Expected: TypeError: service.lookupByBarcode is not a function.
 
-- [ ] Step 3: Implement the minimal method.
+- [x] Step 3: Implement the minimal method.
 
 Add this method to BorrowerService after details:
 
@@ -103,11 +103,11 @@ Add this method to BorrowerService after details:
       });
     }
 
-- [ ] Step 4: Run the focused test and verify it passes.
+- [x] Step 4: Run the focused test and verify it passes.
 
 Run the same command. Expected: every test in staff-borrowers.test.js passes with zero failures.
 
-- [ ] Step 5: Commit only this task’s files.
+- [x] Step 5: Commit only this task’s files.
 
     git add -- frontend/features/staff/services/borrower.service.js frontend/tests/staff-borrowers.test.js
     git commit -m "feat: add staff borrower barcode lookup service"
@@ -128,7 +128,7 @@ Interfaces:
 
 The component queries these exact IDs: borrower-lookup-form, borrower-lookup-barcode, borrower-lookup-scanner, borrower-lookup-status, borrower-lookup-result, borrower-lookup-name, borrower-lookup-id, borrower-lookup-role, borrower-lookup-status-value, borrower-lookup-active, borrower-lookup-loans, borrower-lookup-details, and borrower-lookup-circulation.
 
-- [ ] Step 1: Write the failing tests.
+- [x] Step 1: Write the failing tests.
 
 Create borrowerLookupFixture() with nodes exposing hidden, disabled, value, textContent, innerHTML, dataset, href, focus(), addEventListener(), and removeEventListener(). Add tests for these exact behaviors:
 
@@ -210,7 +210,7 @@ Create borrowerLookupFixture() with nodes exposing hidden, disabled, value, text
       assert.equal(destroyed, true);
     });
 
-- [ ] Step 2: Run the test and verify the missing-feature failure.
+- [x] Step 2: Run the test and verify the missing-feature failure.
 
 Run:
 
@@ -218,7 +218,7 @@ Run:
 
 Expected: the import fails because the new component file does not exist.
 
-- [ ] Step 3: Implement the component.
+- [x] Step 3: Implement the component.
 
 Implement BorrowerLookupModal with these exact rules:
 
@@ -232,11 +232,11 @@ Implement BorrowerLookupModal with these exact rules:
 8. escape() replaces &, <, >, double quote, and apostrophe before using loan values in innerHTML.
 9. destroy() removes all three listeners and awaits onHidden().
 
-- [ ] Step 4: Run the focused component test and verify it passes.
+- [x] Step 4: Run the focused component test and verify it passes.
 
 Run the same Node command. Expected: all four modal tests pass with zero failures.
 
-- [ ] Step 5: Commit only the component task.
+- [x] Step 5: Commit only the component task.
 
     git add -- frontend/features/staff/components/borrower-lookup-modal/borrower-lookup-modal.component.js frontend/tests/borrower-lookup-modal.test.js
     git commit -m "feat: add borrower lookup modal component"
@@ -256,19 +256,19 @@ Interfaces:
 - Consumes: BorrowerLookupModal and BorrowerService.lookupByBarcode().
 - Produces: the /staff/students Scan ID trigger, Bootstrap modal, and BorrowersPage.destroy().
 
-- [ ] Step 1: Write failing page/template tests.
+- [x] Step 1: Write failing page/template tests.
 
 Add a template test that reads borrowers.html and asserts it contains id="borrower-lookup-trigger", data-bs-target="#borrower-lookup-modal", id="borrower-lookup-modal", id="borrower-lookup-form", id="borrower-lookup-scanner", id="borrower-lookup-result", View borrower, and Open circulation.
 
 Add a page-boundary test with a fake document, service, and lookupModalFactory spy. Call await page.start() and assert the factory receives the page service and trigger, then await page.destroy() and assert the returned modal’s destroy() ran.
 
-- [ ] Step 2: Run the focused tests and verify they fail.
+- [x] Step 2: Run the focused tests and verify they fail.
 
     node --test frontend/tests/staff-borrowers.test.js frontend/tests/staff-pages.test.js
 
 Expected: the new template assertions fail because the markup is absent and the page-boundary test fails because no modal is constructed.
 
-- [ ] Step 3: Wire BorrowersPage.
+- [x] Step 3: Wire BorrowersPage.
 
 Import BorrowerLookupModal, accept lookupModalFactory with default (root, options) => new BorrowerLookupModal(root, options), and add this logic before load():
 
@@ -285,7 +285,7 @@ Import BorrowerLookupModal, accept lookupModalFactory with default (root, option
 
 Add async destroy() { await this.lookupModal?.destroy?.(); }. Leave directory search and row rendering unchanged.
 
-- [ ] Step 4: Add the trigger, modal markup, and stylesheet link.
+- [x] Step 4: Add the trigger, modal markup, and stylesheet link.
 
 Add a Scan ID button using data-bs-toggle="modal" and data-bs-target="#borrower-lookup-modal" beside the directory search controls. Add an accessible modal containing:
 
@@ -304,17 +304,17 @@ Add a Scan ID button using data-bs-toggle="modal" and data-bs-target="#borrower-
 
 The camera button must not have data-scan-submit; the decoded callback owns lookup submission. Link borrowers.css after style.css.
 
-- [ ] Step 5: Add Swiss-scoped styling.
+- [x] Step 5: Add Swiss-scoped styling.
 
 Create borrowers.css with a flat modal surface: background #f7f7f8, border 1px solid #002fa7, border-radius 0, box-shadow none, and font-family "Helvetica Neue", Arial, sans-serif. Use #002fa7 for header/rules and 1px #c8c8c8 rules for loan rows. Use a responsive single-column loan row below 480px; add no gradients, grain, or decorative shadows.
 
-- [ ] Step 6: Run the focused frontend tests and verify they pass.
+- [x] Step 6: Run the focused frontend tests and verify they pass.
 
     node --test frontend/tests/staff-borrowers.test.js frontend/tests/staff-pages.test.js frontend/tests/borrower-lookup-modal.test.js
 
 Expected: every selected test passes with zero failures.
 
-- [ ] Step 7: Commit the Borrowers integration.
+- [x] Step 7: Commit the Borrowers integration.
 
     git add -- frontend/features/staff/pages/borrowers/borrowers.page.js frontend/features/staff/pages/borrowers/borrowers.html frontend/features/staff/pages/borrowers/borrowers.css frontend/tests/staff-borrowers.test.js frontend/tests/staff-pages.test.js
     git commit -m "feat: add scan id borrower lookup to staff directory"
@@ -330,7 +330,7 @@ Interfaces:
 - Consumes: existing StaffController::circulationBorrower() and its repository test double.
 - Produces: regression coverage proving a staff lookup serializes active-loan data without adding an endpoint.
 
-- [ ] Step 1: Add the contract assertion and fixture data.
+- [x] Step 1: Add the contract assertion and fixture data.
 
 After the existing Ada Lovelace assertion, add:
 
@@ -347,13 +347,13 @@ Change the fixture active_loans from [] to:
 
 Set the fixture borrower’s active_loans count to 1.
 
-- [ ] Step 2: Run the focused backend test.
+- [x] Step 2: Run the focused backend test.
 
     C:\xampp\php\php.exe backend\vendor\bin\phpunit --configuration=backend\phpunit.xml backend\tests\Unit\StaffCirculation\StaffCirculationControllerTest.php
 
 Expected: the focused controller test passes, proving the existing production path already returns active loans. Do not add a new backend endpoint.
 
-- [ ] Step 3: Commit the backend contract test.
+- [x] Step 3: Commit the backend contract test.
 
     git add -- backend/tests/Unit/StaffCirculation/StaffCirculationControllerTest.php
     git commit -m "test: cover active loans in staff borrower lookup"
@@ -364,7 +364,7 @@ Files:
 
 - Verify only; no new files.
 
-- [ ] Step 1: Run the complete frontend gate.
+- [x] Step 1: Run the complete frontend gate.
 
     npm test
 
@@ -382,7 +382,7 @@ Expected: PHPUnit exits 0 with zero failures/errors.
 
 Expected: PHPStan exits 0 with no errors.
 
-- [ ] Step 4: Check whitespace, scope, and dirty user changes.
+- [x] Step 4: Check whitespace, scope, and dirty user changes.
 
     git diff --check
     git status --short --branch

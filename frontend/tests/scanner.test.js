@@ -95,6 +95,35 @@ test('scanner callbacks receive decoded values after the camera stops', async ()
   assert.equal(decoded[0].input.value, 'STU-001');
 });
 
+test('scanner announces barcode scanning after the camera starts', async () => {
+  const views = new Map();
+  const document = {
+    getElementById(id) { return views.get(id) || null; },
+    createElement() { return { id: '', innerHTML: '', parentNode: null }; },
+  };
+  const input = {
+    value: '',
+    form: null,
+    parentNode: { parentNode: { appendChild(view) { views.set(view.id, view); } } },
+    focus() {},
+  };
+  const button = { disabled: false, textContent: 'Scan barcode', hasAttribute: () => false };
+  const scanner = new BarcodeScannerComponent({ id: 'barcode-scanner', addEventListener() {}, removeEventListener() {} }, {
+    document,
+    window: { Html5Qrcode: function Html5Qrcode() {} },
+    scannerFactory: () => ({
+      start() { return Promise.resolve(); },
+      stop() { return Promise.resolve(); },
+    }),
+  });
+
+  scanner.startScanner(input, false, button);
+  await Promise.resolve();
+
+  assert.equal(button.textContent, 'Scanning for barcode...');
+  assert.equal(button.disabled, true);
+});
+
 test('legacy scanner contains no browser dialog calls', () => {
   const source = fs.readFileSync('frontend/assets/js/core/scanner.js', 'utf8');
   const browserDialogCall = new RegExp('\\b' + 'alert' + '\\s*\\(');

@@ -89,7 +89,9 @@ export class BarcodeScannerComponent {
         });
       },
       () => {},
-    ).catch((error) => {
+    ).then(() => {
+      if (this.button === button) button.textContent = 'Scanning for barcode...';
+    }).catch((error) => {
       this.finishScan();
       this.showError('Unable to access camera: ' + error);
     });

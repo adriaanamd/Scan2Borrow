@@ -76,6 +76,10 @@ export class TeacherDashboardPage {
       user.department ? ` · ${user.department}` : "",
       user.position ? ` · ${user.position}` : "",
     ].join("");
+    document.getElementById("teacher-department").textContent =
+      user.department || "Not specified";
+    document.getElementById("teacher-position").textContent =
+      user.position || "Not specified";
     this.renderProfilePhoto(user);
     document.getElementById("teacher-barcode").textContent = user.barcode || "";
     document.getElementById("active-count").textContent = String(

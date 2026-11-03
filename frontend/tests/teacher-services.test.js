@@ -44,6 +44,42 @@ test('teacher pages expose dashboard and settings feature boundaries', () => {
   assert.equal(typeof TeacherSettingsPage.prototype.render, 'function');
 });
 
+test('teacher dashboard renders department and position in the profile panel', () => {
+  const elements = new Map([
+    ['teacher-name', { textContent: '' }],
+    ['current-user-name', { textContent: '' }],
+    ['teacher-meta', { textContent: '' }],
+    ['teacher-barcode', { textContent: '' }],
+    ['active-count', { textContent: '' }],
+    ['overdue-count', { textContent: '' }],
+    ['fine-total', { textContent: '' }],
+    ['on-time-rate', { textContent: '' }],
+    ['teacher-department', { textContent: '' }],
+    ['teacher-position', { textContent: '' }],
+  ]);
+  const page = Object.create(TeacherDashboardPage.prototype);
+  page.renderProfilePhoto = () => {};
+  page.renderRecentActivity = () => {};
+  page.renderLoans = () => {};
+  page.loadRenewals = () => {};
+  page.renderBarcode = () => {};
+  const previousDocument = globalThis.document;
+  globalThis.document = { getElementById: (id) => elements.get(id) || null };
+
+  try {
+    page.render({
+      user: { name: 'Lee', barcode: 'T-1', department: 'Library', position: 'Faculty' },
+      stats: {},
+      current_loans: [],
+    });
+  } finally {
+    globalThis.document = previousDocument;
+  }
+
+  assert.equal(elements.get('teacher-department').textContent, 'Library');
+  assert.equal(elements.get('teacher-position').textContent, 'Faculty');
+});
+
 test('teacher dashboard renders the approved profile photo in the hero avatar', () => {
   const avatar = {
     innerHTML: '',

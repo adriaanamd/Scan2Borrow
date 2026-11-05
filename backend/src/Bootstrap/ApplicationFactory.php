@@ -43,6 +43,7 @@ use App\Http\Controllers\GuestAuthController;
 use App\Http\Controllers\GuestBorrowingController;
 use App\Http\Controllers\GuestDetailsController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\StaffReservationController;
@@ -58,6 +59,7 @@ use App\Http\Routing\BookRouteTable;
 use App\Http\Routing\RecommendationRouteTable;
 use App\Http\Routing\BarcodePrintRouteTable;
 use App\Http\Routing\CopyHistoryRouteTable;
+use App\Http\Routing\CourseRouteTable;
 use App\Http\Routing\BorrowerRouteTable;
 use App\Http\Routing\GuestRouteTable;
 use App\Http\Routing\PageRouteTable;
@@ -76,6 +78,7 @@ use App\Infrastructure\Persistence\PdoBarcodePrintRepository;
 use App\Infrastructure\Persistence\PdoAuditEventRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use App\Infrastructure\Persistence\PdoBorrowingRepository;
+use App\Infrastructure\Persistence\PdoCourseRepository;
 use App\Infrastructure\Persistence\PdoReturnApprovalRepository;
 use App\Infrastructure\Persistence\PdoStaffCirculationRepository;
 use App\Infrastructure\Persistence\PdoGuestIdentityRepository;
@@ -101,9 +104,11 @@ final class ApplicationFactory
         $sessions = new SessionService(new NativeSessionStore());
         $csrf = new CsrfService(new NativeSessionStore());
         $otp = new OtpService(new PdoOtpRepository($pdo), new SystemClock(), SmsSenderFactory::create(), new SmtpEmailSender());
+        $courseRepository = new PdoCourseRepository($pdo);
+        $courseService = new \App\Application\Services\CourseService($courseRepository);
         $registrationAccounts = new PdoRegistrationAccountRepository($pdo);
         $registration = new RegistrationController(
-            new RegistrationService(new \App\Application\Validators\RegistrationValidator(), $registrationAccounts, $otp),
+            new RegistrationService(new \App\Application\Validators\RegistrationValidator(), $registrationAccounts, $otp, $courseRepository),
             new RegistrationCompletionService($otp, $registrationAccounts, new LocalPhotoStorage(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads', '/scan2borrow/uploads')),
             $otp,
             $sessions,
@@ -220,6 +225,7 @@ final class ApplicationFactory
             $csrf,
             new GuestProfileCompletionService($otp, $visitorDetails),
         );
+        $courseController = new CourseController($sessions, $csrf, $courseService);
         $staffRepository = new \App\Infrastructure\Persistence\PdoStaffRepository($pdo, $auditRepository);
         $staffController = new StaffController(
             $sessions,
@@ -255,6 +261,7 @@ final class ApplicationFactory
             (new RenewalRouteTable())->routes($renewalController),
             (new StaffRenewalRouteTable())->routes($staffRenewalController),
             (new GuestRouteTable())->routes($guestBorrowing, $guestDetails, $guestAuth),
+            (new CourseRouteTable())->routes($courseController),
             (new StaffRouteTable())->routes($staffController, $apiDocumentationController),
         ));
         $policy = new AuthorizationPolicy();

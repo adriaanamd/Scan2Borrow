@@ -599,7 +599,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         return $rows;
     }
 
-    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, category_borrowing_activity: array{months: list<array{month: string, label: string}>, series: list<array{name: string, counts: list<int>}>}, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, recent_activity: list<array<string, mixed>>} */
+    /** @return array{borrowing_activity: list<array{month: string, label: string, count: int}>, category_borrowing_activity: array{months: list<array{month: string, label: string}>, series: list<array{name: string, counts: list<int>}>}, loan_status: array{available: int, borrowed: int, overdue: int, pending: int}, category_breakdown: list<array{name: string, count: int}>, top_genres: list<array{name: string, count: int}>, top_borrowers: list<array{id: int, name: string, barcode: string, borrowing_count: int}>, top_course_borrowers: list<array{rank: int, course: string, borrower_count: int}>, recent_activity: list<array<string, mixed>>} */
     private function dashboardOverview(): array
     {
         $firstMonth = (new \DateTimeImmutable('first day of this month'))->modify('-11 months');
@@ -719,6 +719,8 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             ];
         }
 
+        $topCourseBorrowers = $this->topCourseBorrowers($normalized);
+
         return [
             'borrowing_activity' => array_values($months),
             'category_borrowing_activity' => [
@@ -764,8 +766,72 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                    ORDER BY count DESC, name ASC LIMIT 5"
             ),
             'top_borrowers' => $topBorrowers,
+            'top_course_borrowers' => $topCourseBorrowers,
             'recent_activity' => $this->recentTransactions(10),
         ];
+    }
+
+    /** @return list<array{rank: int, course: string, borrower_count: int}> */
+    private function topCourseBorrowers(bool $normalized): array
+    {
+        if (!$this->hasTable('courses')) {
+            return [];
+        }
+
+        $statement = $this->pdo->query(
+            $normalized
+            ? "SELECT c.name AS course,
+                    COUNT(DISTINCT CASE WHEN bi.id IS NOT NULL THEN u.id END) AS borrower_count
+               FROM courses c
+               LEFT JOIN users u
+                 ON u.role = 'student'
+                AND (
+                    LOWER(TRIM(u.course)) = LOWER(TRIM(c.name))
+                    OR (LOWER(TRIM(c.name)) = 'bsit' AND LOWER(TRIM(u.course)) = 'bachelor of science in information technology')
+                    OR (LOWER(TRIM(c.name)) = 'bsa' AND LOWER(TRIM(u.course)) = 'bachelor of science in accountancy')
+                )
+               LEFT JOIN borrowing_transactions bt
+                 ON bt.user_id = u.id
+                AND bt.approval_status = 'approved'
+                AND bt.borrow_date IS NOT NULL
+               LEFT JOIN borrowing_items bi ON bi.transaction_id = bt.id
+               GROUP BY c.id, c.name
+               ORDER BY borrower_count DESC, c.name ASC
+               LIMIT 5"
+            : "SELECT c.name AS course,
+                    COUNT(DISTINCT br.user_id) AS borrower_count
+               FROM courses c
+               LEFT JOIN users u
+                 ON u.role = 'student'
+                AND (
+                    LOWER(TRIM(u.course)) = LOWER(TRIM(c.name))
+                    OR (LOWER(TRIM(c.name)) = 'bsit' AND LOWER(TRIM(u.course)) = 'bachelor of science in information technology')
+                    OR (LOWER(TRIM(c.name)) = 'bsa' AND LOWER(TRIM(u.course)) = 'bachelor of science in accountancy')
+                )
+               LEFT JOIN borrowing br
+                 ON br.user_id = u.id
+                AND br.approval_status = 'approved'
+                AND br.borrow_date IS NOT NULL
+               GROUP BY c.id, c.name
+               ORDER BY borrower_count DESC, c.name ASC
+               LIMIT 5"
+        );
+        if ($statement === false) {
+            return [];
+        }
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $result = [];
+        foreach ($rows as $index => $row) {
+            $result[] = [
+                'rank' => $index + 1,
+                'course' => $this->string($row['course'] ?? null),
+                'borrower_count' => is_numeric($row['borrower_count'] ?? null) ? (int) $row['borrower_count'] : 0,
+            ];
+        }
+
+        return $result;
     }
 
     /** @return list<array{name: string, count: int}> */

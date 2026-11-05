@@ -3,5 +3,9 @@ export class AdminStaffService {
 
   list(search = '') { return this.api.get('/scan2borrow/api/admin/staff', { bsearch: search }); }
 
+  courses() { return this.api.get('/scan2borrow/api/admin/courses', {}); }
+
+  addCourse(name) { return this.api.post('/scan2borrow/api/admin/courses', { name }); }
+
   action(action, userId, values = {}) { return this.api.post('/scan2borrow/api/admin/staff-action', { ...values, action, user_id: userId }); }
 }

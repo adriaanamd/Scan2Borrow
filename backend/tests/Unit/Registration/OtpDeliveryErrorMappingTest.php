@@ -18,7 +18,9 @@ use App\Domain\Registration\OtpRecord;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Requests\ServerRequest;
 use App\Infrastructure\Persistence\OtpRepositoryInterface;
+use App\Infrastructure\Persistence\CourseRepositoryInterface;
 use App\Infrastructure\Persistence\RegistrationAccountRepositoryInterface;
+use App\Domain\Course\Course;
 use App\Infrastructure\Session\SessionStoreInterface;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
@@ -73,7 +75,7 @@ final class OtpDeliveryErrorMappingTest extends TestCase
         );
         $otp = new OtpService($repository, $clock, new ErrorMappingSmsSender(), new ErrorMappingEmailSender(false));
         $controller = new RegistrationController(
-            new RegistrationService(new RegistrationValidator(), new ErrorMappingAccountRepository(), $otp),
+            new RegistrationService(new RegistrationValidator(), new ErrorMappingAccountRepository(), $otp, new ErrorMappingCourseRepository()),
             new RegistrationCompletionService($otp, new ErrorMappingAccountRepository(), new ErrorMappingPhotoStorage()),
             $otp,
             new \App\Application\Services\SessionService($store),
@@ -99,7 +101,7 @@ final class OtpDeliveryErrorMappingTest extends TestCase
         $accounts = new ErrorMappingAccountRepository();
 
         return new RegistrationController(
-            new RegistrationService(new RegistrationValidator(), $accounts, $otp),
+            new RegistrationService(new RegistrationValidator(), $accounts, $otp, new ErrorMappingCourseRepository()),
             new RegistrationCompletionService($otp, $accounts, new ErrorMappingPhotoStorage()),
             $otp,
             new \App\Application\Services\SessionService($store),
@@ -115,6 +117,25 @@ final class OtpDeliveryErrorMappingTest extends TestCase
         $GLOBALS['_POST'] = $body;
 
         return ServerRequest::fromGlobals();
+    }
+}
+
+final class ErrorMappingCourseRepository implements CourseRepositoryInterface
+{
+    /** @return list<Course> */
+    public function all(): array
+    {
+        return [new Course(1, 'BSIT', '2026-11-05 00:00:00')];
+    }
+
+    public function existsByName(string $name): bool
+    {
+        return true;
+    }
+
+    public function create(string $name): Course
+    {
+        return new Course(1, $name, '2026-11-05 00:00:00');
     }
 }
 

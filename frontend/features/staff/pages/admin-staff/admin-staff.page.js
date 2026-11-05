@@ -1,7 +1,7 @@
 export class AdminStaffPage {
-  constructor(root = globalThis.document, { service, profileService, window = globalThis.window } = {}) { this.root = root; this.service = service; this.profileService = profileService; this.window = window; this.profileChanges = []; this.selectedProfileChange = null; }
+  constructor(root = globalThis.document, { service, profileService, window = globalThis.window } = {}) { this.root = root; this.service = service; this.profileService = profileService; this.window = window; this.profileChanges = []; this.selectedProfileChange = null; this.courses = []; }
 
-  start() { return this.load(); }
+  start() { this.bindTabs(); this.bindCourseForm(); return this.load(); }
 
   async load() {
     const search = new URLSearchParams(this.window.location.search).get('bsearch') || '';
@@ -16,7 +16,56 @@ export class AdminStaffPage {
         this.showFeedback('error', error.message || 'Could not load profile change requests.');
       }
     }
+    if (this.service?.courses) {
+      try {
+        const courseResponse = await this.service.courses();
+        this.renderCourses(courseResponse?.data?.courses || []);
+      } catch (error) {
+        this.showFeedback('error', error.message || 'Could not load courses.');
+      }
+    }
     return response;
+  }
+
+  bindTabs() {
+    this.root.querySelectorAll?.('[data-admin-tab]').forEach((button) => {
+      if (button.dataset.bound) return;
+      button.dataset.bound = 'true';
+      button.addEventListener('click', () => this.switchTab(button.dataset.adminTab));
+    });
+  }
+
+  switchTab(tab) {
+    this.root.querySelectorAll?.('[data-admin-panel]').forEach((panel) => {
+      const active = panel.dataset.adminPanel === tab;
+      panel.hidden = !active;
+      panel.classList.toggle('d-none', !active);
+    });
+    this.root.querySelectorAll?.('[data-admin-tab]').forEach((button) => {
+      const active = button.dataset.adminTab === tab;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+
+  bindCourseForm() {
+    const form = this.root.querySelector?.('#course-form');
+    if (!form || form.dataset.bound) return;
+    form.dataset.bound = 'true';
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = form.querySelector('[name="name"]');
+      const name = input?.value?.trim() || '';
+      try {
+        await this.service?.addCourse(name);
+        if (input) input.value = '';
+        const response = await this.service?.courses();
+        this.renderCourses(response?.data?.courses || []);
+        this.showFeedback('success', 'Course added successfully.');
+      } catch (error) {
+        this.showFeedback('error', error.message || 'Could not save the course.');
+      }
+    });
   }
 
   render(data) {
@@ -36,6 +85,15 @@ export class AdminStaffPage {
 
   borrowerRows(rows) {
     return rows.length ? rows.map((row) => `<tr><td><code class="staff-management__barcode">${this.escape(row.barcode)}</code></td><td><strong>${this.escape(row.name)}</strong></td><td class="text-muted">${this.escape(row.course || '')}</td><td><button class="btn btn-primary btn-sm staff-management__promote-action" data-promote-user="${this.escape(row.id)}" data-name="${this.escape(row.name)}" data-bs-toggle="modal" data-bs-target="#promoteModal">Promote to librarian</button></td></tr>`).join('') : '<tr><td colspan="4" class="text-center text-muted">No borrowers found.</td></tr>';
+  }
+
+  renderCourses(rows = []) {
+    this.courses = rows;
+    const body = this.root.querySelector?.('#courses-body');
+    if (!body) return;
+    body.innerHTML = rows.length
+      ? rows.map((row) => `<tr><td><strong>${this.escape(row.name)}</strong></td><td class="text-muted small">${this.escape(row.created_at || '')}</td></tr>`).join('')
+      : '<tr><td colspan="2" class="text-center text-muted">No courses have been added.</td></tr>';
   }
 
   bindAdminActions() {

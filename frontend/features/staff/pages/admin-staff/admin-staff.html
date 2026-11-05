@@ -49,6 +49,12 @@
           <div class="alert alert-success d-none staff-management__feedback" role="status" aria-live="polite"></div>
           <div class="alert alert-danger d-none staff-management__feedback" role="alert" aria-live="assertive"></div>
 
+          <div class="staff-management__tabs" role="tablist" aria-label="Administration sections">
+            <button type="button" class="staff-management__tab is-active" data-admin-tab="accounts" role="tab" aria-selected="true" aria-controls="admin-panel-accounts">Staff Accounts</button>
+            <button type="button" class="staff-management__tab" data-admin-tab="college-settings" role="tab" aria-selected="false" aria-controls="admin-panel-college-settings">College Settings</button>
+          </div>
+
+          <div id="admin-panel-accounts" data-admin-panel="accounts">
           <div class="table-card mb-4 staff-management__section staff-management__section--accounts">
             <div class="staff-management__section-heading">
               <div>
@@ -128,6 +134,32 @@
                 <thead><tr><th>Requester</th><th>Role</th><th>Submitted</th><th>Changes</th><th>Action</th></tr></thead>
                 <tbody id="profile-change-requests-body"><tr><td colspan="5" class="text-center text-muted py-4">No pending profile change requests.</td></tr></tbody>
               </table>
+            </div>
+          </div>
+          </div>
+
+          <div id="admin-panel-college-settings" data-admin-panel="college-settings" hidden>
+            <div class="table-card mb-4 staff-management__section staff-management__section--college">
+              <div class="staff-management__section-heading">
+                <div>
+                  <div class="section-title mb-1"><span class="dot"></span> College Settings</div>
+                  <p class="staff-management__section-description mb-0">Manage the courses available during student registration and used in dashboard reporting.</p>
+                </div>
+                <span class="staff-management__section-label">Course catalog</span>
+              </div>
+              <form id="course-form" class="staff-management__course-form">
+                <div>
+                  <label class="form-label" for="course-name">Course name</label>
+                  <input id="course-name" name="name" class="form-control" type="text" maxlength="120" placeholder="e.g. BSIT" required />
+                </div>
+                <button class="btn btn-primary" type="submit">Add course</button>
+              </form>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle staff-management__table">
+                  <thead><tr><th>Course</th><th>Added</th></tr></thead>
+                  <tbody id="courses-body"><tr><td colspan="2" class="staff-management__loading text-center text-muted">Loading courses…</td></tr></tbody>
+                </table>
+              </div>
             </div>
           </div>
 

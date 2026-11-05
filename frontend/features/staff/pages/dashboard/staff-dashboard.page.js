@@ -37,6 +37,8 @@ export class StaffDashboardPage {
     this.api = new StaffDashboardApi();
     this.borrowApprovalCount = 0;
     this.returnApprovalCount = 0;
+    this.notificationRefreshId = null;
+    this.dashboardRefreshId = null;
   }
 
   start() {
@@ -82,7 +84,12 @@ export class StaffDashboardPage {
       this.renderApprovals(data.pending || []);
       this.renderReturnApprovals(data.return_approvals || []);
       this.renderOverview(data.overview || {}, data.recent || []);
-      window.setInterval(() => this.refreshNotifications(), 5000);
+      if (this.notificationRefreshId === null) {
+        this.notificationRefreshId = window.setInterval(() => this.refreshNotifications(), 5000);
+      }
+      if (this.dashboardRefreshId === null) {
+        this.dashboardRefreshId = window.setInterval(() => this.dashboard(), 30000);
+      }
     } catch (error) {
       this.showError(error);
     }
@@ -98,6 +105,9 @@ export class StaffDashboardPage {
         : {};
     const borrowers = Array.isArray(overview.top_borrowers)
       ? overview.top_borrowers
+      : [];
+    const courseBorrowers = Array.isArray(overview.top_course_borrowers)
+      ? overview.top_course_borrowers
       : [];
     const categories = Array.isArray(overview.category_breakdown)
       ? overview.category_breakdown
@@ -120,6 +130,7 @@ export class StaffDashboardPage {
     this.renderCategories(categories);
     this.renderGenres(genres);
     this.renderTopBorrowers(borrowers);
+    this.renderTopCourseBorrowers(courseBorrowers);
     this.renderRecentActivity(recent);
   }
 
@@ -528,6 +539,52 @@ export class StaffDashboardPage {
     });
   }
 
+  renderTopCourseBorrowers(rows) {
+    const list = this.root.querySelector('#overview-course-borrowers-list');
+    if (!list) return;
+    const documentRef = this.root.ownerDocument || document;
+    list.replaceChildren();
+    const courses = (Array.isArray(rows) ? rows : []).slice(0, 5);
+    if (!courses.length) {
+      const empty = documentRef.createElement('li');
+      empty.className = 'overview-empty';
+      empty.textContent = 'No course borrowing records yet.';
+      list.appendChild(empty);
+      return;
+    }
+
+    const maximum = Math.max(1, ...courses.map((row) => this.nonNegativeInteger(row.borrower_count)));
+    courses.forEach((row, index) => {
+      const count = this.nonNegativeInteger(row.borrower_count);
+      const item = documentRef.createElement('li');
+      item.className = 'overview-course-borrower-row';
+
+      const rank = documentRef.createElement('span');
+      rank.className = 'overview-course-borrower-rank';
+      rank.textContent = String(Number(row.rank) || index + 1).padStart(2, '0');
+
+      const details = documentRef.createElement('div');
+      details.className = 'overview-course-borrower-details';
+      const name = documentRef.createElement('span');
+      name.className = 'overview-course-borrower-name';
+      name.textContent = String(row.course || 'Unnamed course');
+      const track = documentRef.createElement('span');
+      track.className = 'overview-course-borrower-track';
+      const bar = documentRef.createElement('span');
+      bar.className = 'overview-course-borrower-bar';
+      bar.style.width = `${Math.round((count / maximum) * 100)}%`;
+      track.appendChild(bar);
+      details.append(name, track);
+
+      const total = documentRef.createElement('span');
+      total.className = 'overview-course-borrower-count';
+      total.textContent = `${count} ${count === 1 ? 'borrower' : 'borrowers'}`;
+
+      item.append(rank, details, total);
+      list.appendChild(item);
+    });
+  }
+
   renderTopBorrowersModal(borrowers) {
     const modal = document.getElementById("overview-borrowers-modal");
     const list = document.getElementById("overview-borrowers-modal-list");
@@ -748,6 +805,17 @@ export class StaffDashboardPage {
       this.renderReturnApprovals(response.data?.returns || []);
     } catch {
       // Return polling is independent from borrowing approval polling.
+    }
+  }
+
+  destroy() {
+    if (this.notificationRefreshId !== null) {
+      window.clearInterval(this.notificationRefreshId);
+      this.notificationRefreshId = null;
+    }
+    if (this.dashboardRefreshId !== null) {
+      window.clearInterval(this.dashboardRefreshId);
+      this.dashboardRefreshId = null;
     }
   }
 
@@ -1424,6 +1492,10 @@ export class StaffDashboardPage {
 if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", () => {
     const root = document.querySelector("[data-page=staff-dashboard]");
-    if (root) new StaffDashboardPage(root).start();
+    if (root) {
+      const page = new StaffDashboardPage(root);
+      page.start();
+      window.addEventListener("beforeunload", () => page.destroy(), { once: true });
+    }
   });
 }

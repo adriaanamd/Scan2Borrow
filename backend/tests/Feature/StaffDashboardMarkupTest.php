@@ -21,6 +21,8 @@ final class StaffDashboardMarkupTest extends TestCase
             'overview-status-ring',
             'overview-status-legend',
             'overview-borrowers-list',
+            'Top 5 Course Borrowers',
+            'overview-course-borrowers-list',
             'overview-categories',
             'overview-genres',
             'overview-recent',

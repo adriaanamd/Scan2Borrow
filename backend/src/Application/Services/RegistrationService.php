@@ -7,6 +7,7 @@ namespace App\Application\Services;
 use App\Application\DTO\RegistrationRequest;
 use App\Application\DTO\RegistrationResult;
 use App\Application\Validators\RegistrationValidator;
+use App\Infrastructure\Persistence\CourseRepositoryInterface;
 use App\Infrastructure\Persistence\RegistrationUserRepositoryInterface;
 
 final class RegistrationService
@@ -15,6 +16,7 @@ final class RegistrationService
         private readonly RegistrationValidator $validator,
         private readonly RegistrationUserRepositoryInterface $users,
         private readonly RegistrationOtpInterface $otp,
+        private readonly CourseRepositoryInterface $courses,
     ) {
     }
 
@@ -23,6 +25,10 @@ final class RegistrationService
         $validationError = $this->validator->firstError($request);
         if ($validationError !== null) {
             return RegistrationResult::failure($validationError);
+        }
+
+        if ($request->role === 'student' && !$this->courses->existsByName($request->course)) {
+            return RegistrationResult::failure('Please select a course from the course list.');
         }
 
         if ($this->users->existsByBarcode($request->barcode)) {

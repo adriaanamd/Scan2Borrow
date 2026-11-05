@@ -81,6 +81,16 @@ test('RegistrationPage preserves preselected role and details step', () => {
   assert.equal(role.value, 'teacher');
 });
 
+test('RegistrationPage loads student courses from the public catalog endpoint', () => {
+  const source = readFileSync(new URL('../features/auth/pages/register/register.page.js', import.meta.url), 'utf8');
+  const template = readFileSync(new URL('../features/auth/pages/register/register.html', import.meta.url), 'utf8');
+  assert.equal(typeof RegistrationPage.prototype.loadCourses, 'function');
+  assert.match(source, /\/scan2borrow\/api\/courses/);
+  assert.match(source, /data\.courses/);
+  assert.match(template, /name="course"/);
+  assert.doesNotMatch(template, /Bachelor of Science in Information Technology/);
+});
+
 test('RegistrationPage selects and validates the OTP delivery channel', async () => {
   let submit;
   let emailInputListener;

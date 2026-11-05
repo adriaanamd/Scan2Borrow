@@ -17,6 +17,7 @@ export function normalizeStaffDashboard(value = {}) {
       category_borrowing_activity: { ...(value.overview?.category_borrowing_activity || {}) },
       loan_status: { ...(value.overview?.loan_status || {}) },
       top_borrowers: Array.isArray(value.overview?.top_borrowers) ? value.overview.top_borrowers.map((row) => ({ ...row })) : [],
+      top_course_borrowers: Array.isArray(value.overview?.top_course_borrowers) ? value.overview.top_course_borrowers.map((row) => ({ ...row })) : [],
       category_breakdown: Array.isArray(value.overview?.category_breakdown) ? value.overview.category_breakdown.map((row) => ({ ...row })) : [],
       top_genres: Array.isArray(value.overview?.top_genres) ? value.overview.top_genres.map((row) => ({ ...row })) : [],
       recent_activity: Array.isArray(value.overview?.recent_activity) ? value.overview.recent_activity.map((row) => ({ ...row })) : [],

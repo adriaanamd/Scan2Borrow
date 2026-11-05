@@ -21,6 +21,7 @@ final class InstallSchemaContractTest extends TestCase
             'INSERT INTO `books`',
             'INSERT INTO `book_titles`',
             'INSERT INTO `book_copies`',
+            'INSERT INTO `courses`',
             'INSERT INTO `borrowing_transactions`',
             'INSERT INTO `borrowing_items`',
             'CREATE TABLE `book_title_keywords`',
@@ -29,6 +30,7 @@ final class InstallSchemaContractTest extends TestCase
             'CREATE TABLE `reservations`',
             'CREATE TABLE `renewal_requests`',
             'CREATE TABLE `audit_events`',
+            'CREATE TABLE `courses`',
         ] as $marker) {
             self::assertStringContainsString($marker, $sql, "Installer missing marker: {$marker}");
         }
@@ -42,7 +44,7 @@ final class InstallSchemaContractTest extends TestCase
             'sms_logs', 'otp_codes', 'return_notifications', 'audit_log',
             'profile_change_requests', 'barcode_print_batches',
             'barcode_print_batch_items', 'reservations', 'renewal_requests',
-            'audit_events',
+            'audit_events', 'courses',
         ] as $table) {
             self::assertStringContainsString(
                 "CREATE TABLE `{$table}`",
@@ -86,6 +88,27 @@ final class InstallSchemaContractTest extends TestCase
         self::assertIsString($readme);
         self::assertStringContainsString('sql/install.sql', $readme);
         self::assertStringContainsString('existing database', strtolower($readme));
+        self::assertStringContainsString('upgrade_courses.sql', $readme);
+    }
+
+    public function testCourseUpgradeMigrationIsIdempotentAndSeedsTheCatalog(): void
+    {
+        $path = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'sql' . DIRECTORY_SEPARATOR . 'upgrade_courses.sql';
+        self::assertFileExists($path);
+        $sql = file_get_contents($path);
+        self::assertIsString($sql);
+        self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `courses`', $sql);
+        foreach ([
+            'BSIT',
+            'BSEd Major in Science',
+            'BSEd Major in English',
+            'BEeD',
+            'BSBA Major in Financial Management',
+            'BSBA Major in Human Resources Management',
+            'BSA',
+        ] as $course) {
+            self::assertStringContainsString($course, $sql);
+        }
     }
 
     private function readInstallSql(): string

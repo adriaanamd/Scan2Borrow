@@ -55,6 +55,48 @@
   color: var(--staff-red);
 }
 
+.staff-management__tabs {
+  align-items: center;
+  border-bottom: 1px solid var(--staff-rule);
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.staff-management__tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--staff-muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  padding: 0.7rem 0.1rem 0.8rem;
+}
+
+.staff-management__tab:hover,
+.staff-management__tab:focus-visible,
+.staff-management__tab.is-active {
+  color: var(--staff-blue);
+}
+
+.staff-management__tab.is-active {
+  border-bottom-color: var(--staff-blue);
+}
+
+.staff-management__course-form {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 1.1rem 1.25rem;
+}
+
+.staff-management__course-form .form-label {
+  color: var(--staff-ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .staff-management__section {
   border: 1px solid var(--staff-rule);
   border-radius: 0.65rem;
@@ -190,6 +232,10 @@
 }
 
 @media (max-width: 720px) {
+  .staff-management__course-form {
+    grid-template-columns: 1fr;
+  }
+
   .staff-management__section-heading {
     display: block;
   }

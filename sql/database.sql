@@ -18,7 +18,24 @@ DROP TABLE IF EXISTS `borrowing`;
 DROP TABLE IF EXISTS `book_copies`;
 DROP TABLE IF EXISTS `book_titles`;
 DROP TABLE IF EXISTS `books`;
+DROP TABLE IF EXISTS `courses`;
 DROP TABLE IF EXISTS `users`;
+
+CREATE TABLE `courses` (
+    `id`         INT AUTO_INCREMENT PRIMARY KEY,
+    `name`       VARCHAR(120) NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_courses_name` (`name`)
+) ENGINE=InnoDB;
+
+INSERT INTO `courses` (`name`) VALUES
+    ('BSIT'),
+    ('BSEd Major in Science'),
+    ('BSEd Major in English'),
+    ('BEeD'),
+    ('BSBA Major in Financial Management'),
+    ('BSBA Major in Human Resources Management'),
+    ('BSA');
 
 CREATE TABLE `users` (
     `id`            INT AUTO_INCREMENT PRIMARY KEY,

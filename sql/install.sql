@@ -41,6 +41,7 @@ DROP TABLE IF EXISTS `borrowing`;
 DROP TABLE IF EXISTS `book_copies`;
 DROP TABLE IF EXISTS `book_titles`;
 DROP TABLE IF EXISTS `books`;
+DROP TABLE IF EXISTS `courses`;
 DROP TABLE IF EXISTS `users`;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -48,6 +49,24 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ============================================================================
 -- Final table definitions
 -- ============================================================================
+
+-- ---- Course catalog --------------------------------------------------------
+
+CREATE TABLE `courses` (
+    `id`         INT AUTO_INCREMENT PRIMARY KEY,
+    `name`       VARCHAR(120) NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_courses_name` (`name`)
+) ENGINE=InnoDB;
+
+INSERT INTO `courses` (`name`) VALUES
+    ('BSIT'),
+    ('BSEd Major in Science'),
+    ('BSEd Major in English'),
+    ('BEeD'),
+    ('BSBA Major in Financial Management'),
+    ('BSBA Major in Human Resources Management'),
+    ('BSA');
 
 -- ---- Users (borrowers + staff) ---------------------------------------------
 

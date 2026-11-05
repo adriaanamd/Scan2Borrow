@@ -19,6 +19,7 @@ final class PdoStaffRepositoryTest extends TestCase
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->exec('CREATE TABLE books (id INTEGER PRIMARY KEY, barcode TEXT, title TEXT, author TEXT, category_name TEXT, status TEXT, deleted_at TEXT, floor_no TEXT, section_name TEXT, shelf_no TEXT, created_at TEXT, cover_file TEXT)');
         $this->pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, barcode TEXT, firstname TEXT, lastname TEXT, department TEXT, position TEXT, course TEXT, year_level TEXT, email TEXT, contact_no TEXT, photo TEXT, role TEXT, password_hash TEXT, status TEXT)');
+        $this->pdo->exec('CREATE TABLE courses (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
         $this->pdo->exec('CREATE TABLE borrowing (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, book_id INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, return_date TEXT, status TEXT, fine_amount NUMERIC, requested_at TEXT, approved_at TEXT, approved_by INTEGER)');
         $this->pdo->exec('CREATE TABLE visitor_borrowing (id INTEGER PRIMARY KEY, visitor_id INTEGER, book_id INTEGER, due_date TEXT, request_status TEXT, verification_photo TEXT, requested_at TEXT)');
         $this->pdo->exec('CREATE TABLE visitors (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT, visitor_number TEXT, photo TEXT, id_barcode TEXT)');
@@ -27,6 +28,7 @@ final class PdoStaffRepositoryTest extends TestCase
         $this->pdo->exec("INSERT INTO books (id, barcode, title, author, category_name, status, floor_no, section_name, shelf_no, created_at) VALUES (1, 'BK-1', 'Clean Code', 'Martin', 'Computer Science', 'Available', '2', 'IT', 'A1', '2026-08-01')");
         $this->pdo->exec("INSERT INTO users VALUES (1, 'STAFF-1', 'Ada', 'Lovelace', 'Library', 'Librarian', NULL, NULL, 'ada@example.test', '09170000000', NULL, 'librarian', NULL, 'active')");
         $this->pdo->exec("INSERT INTO users VALUES (2, 'STU-1', 'Grace', 'Hopper', 'IT', NULL, 'CS', '4', 'grace@example.test', '09171111111', 'uploads/profile/grace.jpg', 'student', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO courses (id, name) VALUES (1, 'CS'), (2, 'BSA')");
         $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES (1, 'TX-1', 2, 1, 'pending', '2026-08-20', '2026-08-27', NULL, 'Pending', 0)");
     }
 
@@ -89,6 +91,23 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame(4, $overview['top_borrowers'][0]['borrowing_count']);
         self::assertSame('STU-1', $overview['top_borrowers'][0]['barcode']);
         self::assertLessThanOrEqual(10, count($overview['top_borrowers']));
+    }
+
+    public function testLegacyDashboardRanksDistinctCourseBorrowersAndExcludesPendingRows(): void
+    {
+        $this->pdo->exec("INSERT INTO users VALUES (3, 'STU-2', 'Katherine', 'Johnson', 'Science', NULL, 'CS', '3', 'katherine@example.test', '09172222222', NULL, 'student', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO users VALUES (4, 'TEACH-1', 'Alan', 'Turing', 'Science', NULL, 'CS', '', 'alan@example.test', '09173333333', NULL, 'teacher', NULL, 'active')");
+        $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES
+            (2, 'TX-2', 2, 1, 'approved', '2026-08-01', '2026-08-08', '2026-08-08', 'Returned', 0),
+            (3, 'TX-3', 2, 1, 'approved', '2026-08-02', '2026-08-09', NULL, 'Borrowed', 0),
+            (4, 'TX-4', 3, 1, 'approved', '2026-08-03', '2026-08-10', NULL, 'Borrowed', 0),
+            (5, 'TX-5', 3, 1, 'pending', '2026-08-04', '2026-08-11', NULL, 'Pending', 0),
+            (6, 'TX-6', 4, 1, 'approved', '2026-08-05', '2026-08-12', NULL, 'Borrowed', 0)");
+
+        $top = (new PdoStaffRepository($this->pdo))->dashboard()['overview']['top_course_borrowers'];
+
+        self::assertSame(['rank' => 1, 'course' => 'CS', 'borrower_count' => 2], $top[0]);
+        self::assertSame(['rank' => 2, 'course' => 'BSA', 'borrower_count' => 0], $top[1]);
     }
 
     public function testDashboardOverviewHandlesEmptyBorrowingData(): void
@@ -251,5 +270,48 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame(2, $dashboard['overview']['loan_status']['borrowed']);
         self::assertSame(2, (int) $dashboard['recent'][0]['quantity']);
         self::assertSame(2, $dashboard['overview']['top_borrowers'][0]['borrowing_count']);
+    }
+
+    public function testNormalizedDashboardRanksDistinctStudentCourseBorrowers(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, barcode TEXT, firstname TEXT, lastname TEXT, role TEXT, department TEXT, position TEXT, course TEXT, year_level TEXT, photo TEXT, status TEXT)');
+        $pdo->exec('CREATE TABLE courses (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
+        $pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT, author TEXT, category_name TEXT, created_at TEXT)');
+        $pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode TEXT, floor_no TEXT, section_name TEXT, shelf_no TEXT, status TEXT, deleted_at TEXT)');
+        $pdo->exec('CREATE TABLE borrowing_transactions (id INTEGER PRIMARY KEY, transaction_code TEXT, user_id INTEGER, approval_status TEXT, borrow_date TEXT, due_date TEXT, status TEXT, requested_at TEXT)');
+        $pdo->exec('CREATE TABLE borrowing_items (id INTEGER PRIMARY KEY, transaction_id INTEGER, copy_id INTEGER, return_date TEXT, status TEXT, fine_amount NUMERIC)');
+        $pdo->exec("INSERT INTO courses (id, name) VALUES (1, 'BSIT'), (2, 'BSA'), (3, 'BEeD')");
+        $pdo->exec("INSERT INTO users VALUES
+            (1, 'STU-1', 'Grace', 'Hopper', 'student', 'IT', NULL, 'Bachelor of Science in Information Technology', '4', NULL, 'active'),
+            (2, 'STU-2', 'Katherine', 'Johnson', 'student', 'IT', NULL, 'BSIT', '3', NULL, 'active'),
+            (3, 'TEACH-1', 'Alan', 'Turing', 'teacher', 'IT', NULL, 'BSIT', '', NULL, 'active')");
+        $pdo->exec("INSERT INTO book_titles VALUES (1, 'Clean Code', 'Martin', 'Computer Science', '2026-08-01')");
+        $pdo->exec("INSERT INTO book_copies VALUES
+            (1, 1, 'COPY-1', '2', 'IT', 'A1', 'Borrowed', NULL),
+            (2, 1, 'COPY-2', '2', 'IT', 'A1', 'Borrowed', NULL),
+            (3, 1, 'COPY-3', '2', 'IT', 'A1', 'Borrowed', NULL),
+            (4, 1, 'COPY-4', '2', 'IT', 'A1', 'Reserved', NULL),
+            (5, 1, 'COPY-5', '2', 'IT', 'A1', 'Borrowed', NULL)");
+        $pdo->exec("INSERT INTO borrowing_transactions VALUES
+            (1, 'TX-1', 1, 'approved', '2026-08-20', '2026-08-27', 'Borrowed', '2026-08-20'),
+            (2, 'TX-2', 1, 'approved', '2026-08-21', '2026-08-28', 'Borrowed', '2026-08-21'),
+            (3, 'TX-3', 2, 'approved', '2026-08-22', '2026-08-29', 'Borrowed', '2026-08-22'),
+            (4, 'TX-4', 2, 'pending', '2026-08-23', '2026-08-30', 'Pending', '2026-08-23'),
+            (5, 'TX-5', 3, 'approved', '2026-08-24', '2026-08-31', 'Borrowed', '2026-08-24')");
+        $pdo->exec("INSERT INTO borrowing_items VALUES
+            (1, 1, 1, NULL, 'Borrowed', 0),
+            (2, 1, 2, NULL, 'Borrowed', 0),
+            (3, 2, 3, NULL, 'Borrowed', 0),
+            (4, 3, 4, NULL, 'Borrowed', 0),
+            (5, 4, 5, NULL, 'Pending', 0)");
+
+        $top = (new PdoStaffRepository($pdo))->dashboard()['overview']['top_course_borrowers'];
+
+        self::assertSame(['rank' => 1, 'course' => 'BSIT', 'borrower_count' => 2], $top[0]);
+        self::assertSame(2, $top[1]['rank']);
+        self::assertSame('BEeD', $top[1]['course']);
+        self::assertSame(0, $top[1]['borrower_count']);
     }
 }

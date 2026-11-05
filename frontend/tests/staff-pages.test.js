@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeStaffDashboard } from '../features/staff/models/index.js';
-import { StaffApprovalService, StaffDashboardService } from '../features/staff/services/index.js';
+import { AdminStaffService, StaffApprovalService, StaffDashboardService } from '../features/staff/services/index.js';
 import { OverviewChartComponent } from '../features/staff/components/overview-chart/overview-chart.component.js';
 import { StaffDashboardPage } from '../features/staff/pages/dashboard/staff-dashboard.page.js';
 import { InventoryService } from '../features/staff/services/inventory.service.js';
@@ -31,6 +31,7 @@ test('staff dashboard model normalizes stats, overview, and pending approval row
   assert.equal(model.stats.pending_approvals, 2);
   assert.equal(model.pending[0].status, 'Pending');
   assert.deepEqual(model.overview.loan_status, { Borrowed: 3 });
+  assert.deepEqual(model.overview.top_course_borrowers, []);
 });
 
 test('staff services preserve dashboard polling and approval action fields', async () => {
@@ -51,6 +52,24 @@ test('staff services preserve dashboard polling and approval action fields', asy
   ]);
 });
 
+test('admin staff service exposes the College Settings course endpoints', async () => {
+  const calls = [];
+  const service = new AdminStaffService({
+    api: {
+      get: async (path, params) => { calls.push({ method: 'GET', path, params }); return { ok: true, data: { courses: [] } }; },
+      post: async (path, body) => { calls.push({ method: 'POST', path, body }); return { ok: true, data: { course: { name: 'BSIT' } } }; },
+    },
+  });
+
+  await service.courses();
+  await service.addCourse('BSIT');
+
+  assert.deepEqual(calls, [
+    { method: 'GET', path: '/scan2borrow/api/admin/courses', params: {} },
+    { method: 'POST', path: '/scan2borrow/api/admin/courses', body: { name: 'BSIT' } },
+  ]);
+});
+
 test('overview chart component exposes all staff dashboard visualization boundaries', () => {
   for (const method of ['renderActivity', 'renderCategoryTrend', 'renderStatus', 'renderCategories', 'renderGenres', 'renderTopBorrowers', 'renderRecentActivity']) {
     assert.equal(typeof OverviewChartComponent.prototype[method], 'function', method);
@@ -61,9 +80,17 @@ test('overview chart component exposes all staff dashboard visualization boundar
 
 test('staff dashboard exposes a feature-owned controller with approval and overview boundaries', () => {
   assert.equal(StaffDashboardPage.name, 'StaffDashboardPage');
-  for (const method of ['dashboard', 'renderOverview', 'renderApprovals', 'renderReturnApprovals', 'submitBorrowing', 'submitReturn']) {
+  for (const method of ['dashboard', 'renderOverview', 'renderTopCourseBorrowers', 'renderApprovals', 'renderReturnApprovals', 'submitBorrowing', 'submitReturn']) {
     assert.equal(typeof StaffDashboardPage.prototype[method], 'function', method);
   }
+});
+
+test('staff dashboard exposes the live course borrower ranking surface', () => {
+  const template = fs.readFileSync(dashboardTemplate, 'utf8');
+  const styles = fs.readFileSync(path.resolve(testsDirectory, '..', 'assets', 'css', 'admin-overview.css'), 'utf8');
+  assert.match(template, /Top 5 Course Borrowers/);
+  assert.match(template, /overview-course-borrowers-list/);
+  assert.match(styles, /overview-course-borrowers-panel/);
 });
 
 test('staff dashboard exposes librarian-approved return review fields and endpoint', () => {
@@ -238,6 +265,16 @@ test('admin profile approval stays visible only on the protected admin surface',
   assert.match(page, /safePhotoPath/);
   assert.match(template, /Only administrators can approve/);
   assert.match(template, /profile-change-review-note/);
+});
+
+test('admin page exposes a separate College Settings course tab', () => {
+  const template = fs.readFileSync(adminTemplate, 'utf8');
+  const page = fs.readFileSync(path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'admin-staff', 'admin-staff.page.js'), 'utf8');
+  assert.match(template, /College Settings/);
+  assert.match(template, /id="course-form"/);
+  assert.match(template, /id="course-name"/);
+  assert.match(template, /id="courses-body"/);
+  assert.match(page, /renderCourses/);
 });
 
 test('approval and guest rejection templates use shared confirmation metadata', () => {

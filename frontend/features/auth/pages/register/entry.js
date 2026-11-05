@@ -4,7 +4,7 @@ import { RegistrationPage } from './register.page.js';
 
 export function boot(document = globalThis.document, window = globalThis.window) {
   const context = createPageContext({ document, window });
-  return new RegistrationPage(document, { auth: new AuthService({ api: context.api, window }), document, window }).start();
+  return new RegistrationPage(document, { api: context.api, auth: new AuthService({ api: context.api, window }), document, window }).start();
 }
 
 if (typeof document !== 'undefined') boot();

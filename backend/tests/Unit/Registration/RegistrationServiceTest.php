@@ -8,6 +8,8 @@ use App\Application\DTO\RegistrationRequest;
 use App\Application\Services\RegistrationService;
 use App\Application\Services\RegistrationOtpInterface;
 use App\Application\Validators\RegistrationValidator;
+use App\Domain\Course\Course;
+use App\Infrastructure\Persistence\CourseRepositoryInterface;
 use App\Infrastructure\Persistence\RegistrationUserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -20,6 +22,7 @@ final class RegistrationServiceTest extends TestCase
             new RegistrationValidator(),
             new FakeRegistrationUserRepository(),
             $otp,
+            new FakeRegistrationCourseRepository(),
         );
 
         $result = $service->begin(new RegistrationRequest(
@@ -36,7 +39,7 @@ final class RegistrationServiceTest extends TestCase
     {
         $repository = new FakeRegistrationUserRepository();
         $repository->existing = true;
-        $service = new RegistrationService(new RegistrationValidator(), $repository, new FakeRegistrationOtp());
+        $service = new RegistrationService(new RegistrationValidator(), $repository, new FakeRegistrationOtp(), new FakeRegistrationCourseRepository());
 
         $result = $service->begin(new RegistrationRequest(
             '2024001', 'Juan', '', 'Cruz', 'student', otpChannel: 'phone', course: 'BSIT', yearLevel: '3', contactNo: '09170000001',
@@ -44,6 +47,25 @@ final class RegistrationServiceTest extends TestCase
 
         self::assertFalse($result->successful());
         self::assertSame('This Barcode ID is already registered.', $result->message());
+    }
+
+    public function testUnknownStudentCourseIsRejectedBeforeOtpStarts(): void
+    {
+        $otp = new FakeRegistrationOtp();
+        $service = new RegistrationService(
+            new RegistrationValidator(),
+            new FakeRegistrationUserRepository(),
+            $otp,
+            new FakeRegistrationCourseRepository(false),
+        );
+
+        $result = $service->begin(new RegistrationRequest(
+            '2024005', 'Ada', '', 'Lovelace', 'student', otpChannel: 'phone', course: 'Unknown Course', yearLevel: '1', contactNo: '09170000005',
+        ));
+
+        self::assertFalse($result->successful());
+        self::assertSame('Please select a course from the course list.', $result->message());
+        self::assertSame('', $otp->barcode);
     }
 }
 
@@ -73,5 +95,28 @@ final class FakeRegistrationOtp implements RegistrationOtpInterface
         $this->payload = $payload;
 
         return '123456';
+    }
+}
+
+final class FakeRegistrationCourseRepository implements CourseRepositoryInterface
+{
+    public function __construct(private readonly bool $exists = true)
+    {
+    }
+
+    /** @return list<Course> */
+    public function all(): array
+    {
+        return [new Course(1, 'BSIT', '2026-11-05 00:00:00')];
+    }
+
+    public function existsByName(string $name): bool
+    {
+        return $this->exists;
+    }
+
+    public function create(string $name): Course
+    {
+        return new Course(1, $name, '2026-11-05 00:00:00');
     }
 }

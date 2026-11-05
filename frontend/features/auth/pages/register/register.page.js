@@ -3,6 +3,7 @@ export class RegistrationPage {
     document = globalThis.document,
     window = globalThis.window,
     navigator = globalThis.navigator,
+    api = null,
     auth,
     formDataFactory = (form) => new FormData(form),
   }) {
@@ -10,12 +11,14 @@ export class RegistrationPage {
     this.document = document;
     this.window = window;
     this.navigator = navigator;
+    this.api = api;
     this.auth = auth;
     this.formDataFactory = formDataFactory;
     this.form = document.getElementById('reg-form');
     this.role = document.getElementById('role_select');
     this.emailInput = document.querySelector?.('input[name="email"]');
     this.phoneInput = document.querySelector?.('input[name="contact_no"]');
+    this.courseSelect = document.querySelector?.('select[name="course"]');
     this.otpChannelInputs = [...(document.querySelectorAll?.('input[name="otp_channel"]') || [])];
     this.currentStep = 'role';
     this.listeners = [];
@@ -40,7 +43,33 @@ export class RegistrationPage {
   }
 
   start() {
+    this.loadCourses();
     return this;
+  }
+
+  async loadCourses() {
+    if (!this.courseSelect || !this.api) return;
+    try {
+      const response = await this.api.get('/scan2borrow/api/courses', {});
+      const courses = Array.isArray(response?.data?.courses) ? response.data.courses : [];
+      const selected = this.courseSelect.value;
+      this.courseSelect.replaceChildren();
+      const placeholder = this.document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'Select Course';
+      this.courseSelect.appendChild(placeholder);
+      courses.forEach((course) => {
+        const option = this.document.createElement('option');
+        option.value = String(course.name || '');
+        option.textContent = String(course.name || '');
+        this.courseSelect.appendChild(option);
+      });
+      this.courseSelect.value = courses.some((course) => course.name === selected) ? selected : '';
+      this.courseSelect.disabled = false;
+    } catch {
+      this.courseSelect.disabled = true;
+      this.message('form-error', 'Unable to load the course list. Please try again.');
+    }
   }
 
   listen(target, eventName, callback) {
@@ -85,6 +114,7 @@ export class RegistrationPage {
     this.document.querySelectorAll('.teacher-only').forEach((field) => {
       field.classList.toggle('d-none', !isTeacher);
     });
+    if (this.courseSelect) this.courseSelect.required = isStudent;
     this.document.querySelectorAll('.registration-role-choice').forEach((choice) => {
       const selected = choice.dataset.role === this.role?.value;
       choice.classList.toggle('is-selected', selected);

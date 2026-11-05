@@ -39,6 +39,7 @@ final class StaffDashboardContractTest extends TestCase
             'borrowing_activity' => [['month' => '2026-08', 'label' => 'Aug', 'count' => 2]],
             'loan_status' => ['available' => 4, 'borrowed' => 2, 'overdue' => 1, 'pending' => 1],
             'top_borrowers' => [['id' => 7, 'name' => 'Grace Hopper', 'barcode' => 'STU-1', 'borrowing_count' => 4]],
+            'top_course_borrowers' => [['rank' => 1, 'course' => 'BSIT', 'borrower_count' => 4]],
         ];
         $repository = new class($overview) implements StaffRepositoryInterface {
             /** @param array<string, mixed> $overview */

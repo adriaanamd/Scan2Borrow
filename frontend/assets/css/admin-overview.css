@@ -32,7 +32,8 @@
   grid-template-areas:
     "activity status"
     "category-trend categories"
-    "genres borrowers";
+    "genres borrowers"
+    "course-borrowers course-borrowers";
   grid-template-columns: minmax(0, 1.45fr) minmax(20rem, .85fr);
 }
 
@@ -51,6 +52,7 @@
 .overview-categories-panel { grid-area: categories; }
 .overview-borrowers-panel { grid-area: borrowers; }
 .overview-genres-panel { grid-area: genres; }
+.overview-course-borrowers-panel { grid-area: course-borrowers; font-family: "Helvetica Neue", Arial, sans-serif; }
 
 .overview-panel-heading {
   align-items: baseline;
@@ -62,6 +64,7 @@
 }
 
 .overview-panel-heading h3 { font-size: .92rem; font-weight: 780; margin: 0; }
+.overview-panel-kicker { color: var(--muted); font-size: .72rem; margin: .25rem 0 0; }
 .overview-panel-link { background: transparent; border: 0; color: var(--primary); cursor: pointer; font-size: .72rem; font-weight: 750; padding: 0; text-decoration: none; white-space: nowrap; }
 .overview-panel-link:hover, .overview-panel-link:focus-visible { color: var(--primary-dark); text-decoration: underline; }
 
@@ -114,6 +117,15 @@
 .overview-genre-row { align-items: center; border-bottom: 1px solid var(--border); display: grid; gap: .7rem; grid-template-columns: 1.7rem minmax(0, 1fr) auto; padding: .55rem 0; }
 .overview-genre-row:last-child { border-bottom: 0; }
 .overview-genre-name { font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.overview-course-borrowers-list { list-style: none; margin: 0; padding: 0; }
+.overview-course-borrower-row { align-items: center; border-bottom: 1px solid #d9d9d9; display: grid; gap: 1rem; grid-template-columns: 2.25rem minmax(0, 1fr) auto; padding: .78rem 0; }
+.overview-course-borrower-row:last-child { border-bottom: 0; }
+.overview-course-borrower-rank { color: #002fa7; font-size: .78rem; font-variant-numeric: tabular-nums; font-weight: 800; }
+.overview-course-borrower-details { display: grid; gap: .45rem; min-width: 0; }
+.overview-course-borrower-name { color: #171717; font-size: .86rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.overview-course-borrower-track { background: #e7e7e7; display: block; height: .28rem; overflow: hidden; }
+.overview-course-borrower-bar { background: #002fa7; display: block; height: 100%; min-width: 0; }
+.overview-course-borrower-count { color: #171717; font-size: .78rem; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
 .overview-recent-panel { margin-top: 1rem; }
 .overview-recent-table { margin-bottom: 0; }
 .overview-recent-table th { color: var(--muted); font-size: .68rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
@@ -121,7 +133,7 @@
 .overview-empty { align-items: center; color: var(--muted); display: flex; font-size: .85rem; height: 100%; justify-content: center; min-height: 5rem; text-align: center; }
 
 @media (max-width: 991.98px) {
-  .admin-overview-grid { grid-template-areas: "activity" "status" "category-trend" "categories" "borrowers" "genres"; grid-template-columns: minmax(0, 1fr); }
+  .admin-overview-grid { grid-template-areas: "activity" "status" "category-trend" "categories" "borrowers" "genres" "course-borrowers"; grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 575.98px) {

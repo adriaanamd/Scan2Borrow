@@ -124,6 +124,119 @@ test('scanner announces barcode scanning after the camera starts', async () => {
   assert.equal(button.disabled, true);
 });
 
+function scannerNode() {
+  return {
+    children: [],
+    listeners: {},
+    classList: { add() {}, remove() {} },
+    addEventListener(name, listener) { this.listeners[name] = listener; },
+    removeEventListener(name, listener) {
+      if (this.listeners[name] === listener) delete this.listeners[name];
+    },
+    setAttribute(name, value) { this[name] = value; },
+    append(...children) { this.children.push(...children); },
+    click() { this.clicked = true; },
+  };
+}
+
+function makeNativeScannerFixture({ scanner, navigator = {}, fileInput = null, toastService = null } = {}) {
+  const root = scannerNode();
+  root.id = 'native-scanner';
+  const input = {
+    value: '',
+    form: null,
+    parentNode: { parentNode: { appendChild() {} } },
+    focus() {},
+  };
+  const nativeInput = fileInput || scannerNode();
+  const nativeButton = scannerNode();
+  const view = scannerNode();
+  const document = {
+    head: { appendChild() {} },
+    getElementById(id) {
+      if (id === 'barcode-input') return input;
+      if (id === 'native-scanner-view') return view;
+      return null;
+    },
+    createElement(tag) {
+      if (tag === 'input') return nativeInput;
+      if (tag === 'button') return nativeButton;
+      return view;
+    },
+  };
+  const createdScanner = scanner || {
+    start() { return Promise.resolve(); },
+    stop() { return Promise.resolve(); },
+    scanFile() { return Promise.resolve(' B-7 '); },
+  };
+  const component = new BarcodeScannerComponent(root, {
+    document,
+    window: { Html5Qrcode: function Html5Qrcode() {} },
+    navigator,
+    scannerFactory: () => createdScanner,
+    toastService: toastService || { show() {} },
+  });
+  const trigger = {
+    disabled: false,
+    textContent: 'Scan barcode',
+    getAttribute: () => 'barcode-input',
+    hasAttribute: () => false,
+  };
+  return { component, input, nativeInput, nativeButton, trigger };
+}
+
+test('scanner uses a native rear-camera input when live camera is unavailable', async () => {
+  const fixture = makeNativeScannerFixture({ navigator: {} });
+
+  await fixture.component.onClick({ target: { closest: () => fixture.trigger }, preventDefault() {} });
+
+  assert.equal(fixture.nativeInput.accept, 'image/*');
+  assert.equal(fixture.nativeInput.capture, 'environment');
+  assert.equal(fixture.nativeInput.clicked, true);
+});
+
+test('scanner sends a native image through scanFile and the existing callback path', async () => {
+  const decoded = [];
+  const fileInput = scannerNode();
+  fileInput.files = [{ name: 'barcode.jpg' }];
+  fileInput.value = 'selected';
+  const fixture = makeNativeScannerFixture({
+    navigator: {},
+    fileInput,
+  });
+  fixture.component.onDecoded = (value) => decoded.push(value);
+  await fixture.component.onClick({ target: { closest: () => fixture.trigger }, preventDefault() {} });
+
+  await fixture.component.handleNativeFile({ target: fileInput });
+
+  assert.equal(fixture.input.value, 'B-7');
+  assert.deepEqual(decoded, ['B-7']);
+  assert.equal(fileInput.value, '');
+});
+
+test('scanner keeps the native retry available when image decoding fails', async () => {
+  const notifications = [];
+  const fileInput = scannerNode();
+  fileInput.files = [{ name: 'blurred.jpg' }];
+  fileInput.value = 'selected';
+  const fixture = makeNativeScannerFixture({
+    navigator: {},
+    fileInput,
+    scanner: {
+      scanFile: () => Promise.reject(new Error('No barcode found')),
+      stop() { return Promise.resolve(); },
+    },
+    toastService: { show(message, type) { notifications.push({ message, type }); } },
+  });
+  await fixture.component.onClick({ target: { closest: () => fixture.trigger }, preventDefault() {} });
+
+  await fixture.component.handleNativeFile({ target: fileInput });
+
+  assert.deepEqual(notifications, [{ message: 'No barcode found', type: 'danger' }]);
+  assert.equal(fileInput.value, '');
+  assert.equal(fixture.nativeButton.hidden, false);
+});
+
 test('legacy scanner contains no browser dialog calls', () => {
   const source = fs.readFileSync('frontend/assets/js/core/scanner.js', 'utf8');
   const browserDialogCall = new RegExp('\\b' + 'alert' + '\\s*\\(');

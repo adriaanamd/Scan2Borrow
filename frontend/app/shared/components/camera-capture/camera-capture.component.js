@@ -11,6 +11,9 @@ export class CameraCaptureComponent {
     startId = 'btn-start',
     captureId = 'btn-capture',
     retakeId = 'btn-retake',
+    fileInputId = 'camera-file',
+    nativeButtonId = 'btn-native-camera',
+    fileReaderFactory = () => new FileReader(),
   } = {}) {
     this.root = root;
     this.document = document;
@@ -24,6 +27,9 @@ export class CameraCaptureComponent {
     this.startButton = document.getElementById(startId);
     this.captureButton = document.getElementById(captureId);
     this.retakeButton = document.getElementById(retakeId);
+    this.fileInput = document.getElementById(fileInputId);
+    this.nativeButton = document.getElementById(nativeButtonId);
+    this.fileReaderFactory = fileReaderFactory;
     this.stream = null;
     this.listeners = [];
     this.beforeUnload = () => this.stop();
@@ -42,9 +48,9 @@ export class CameraCaptureComponent {
   }
 
   stop() {
-    if (!this.stream) return;
-    this.stream.getTracks().forEach((track) => track.stop());
+    this.stream?.getTracks?.().forEach((track) => track.stop());
     this.stream = null;
+    if (this.video) this.video.srcObject = null;
   }
 
   reset() {
@@ -55,6 +61,7 @@ export class CameraCaptureComponent {
       this.preview.src = '';
     }
     if (this.field) this.field.value = '';
+    if (this.fileInput) this.fileInput.value = '';
     this.startButton?.classList.remove('d-none');
     this.captureButton?.classList.add('d-none');
     this.retakeButton?.classList.add('d-none');
@@ -63,7 +70,8 @@ export class CameraCaptureComponent {
 
   start() {
     if (!this.navigator.mediaDevices?.getUserMedia) {
-      this.setMessage('Camera not supported.');
+      this.setMessage('Live camera unavailable. Use the phone camera instead.');
+      this.openNativeCapture();
       return Promise.resolve();
     }
     return this.navigator.mediaDevices
@@ -71,13 +79,78 @@ export class CameraCaptureComponent {
       .then((stream) => {
         this.stop();
         this.stream = stream;
+        if (this.video) {
+          this.video.autoplay = true;
+          this.video.muted = true;
+          this.video.playsInline = true;
+        }
         this.video.srcObject = stream;
         this.video.play?.().catch?.(() => {});
         this.startButton?.classList.add('d-none');
         this.captureButton?.classList.remove('d-none');
         this.setMessage('Position yourself, then capture.');
       })
-      .catch(() => this.setMessage('Could not access the camera.'));
+      .catch(() => this.setMessage('Could not access live camera. Use the phone camera instead.'));
+  }
+
+  openNativeCapture() {
+    this.fileInput?.click?.();
+  }
+
+  applyPhoto(dataUrl, message = 'Photo captured.') {
+    if (!dataUrl || !this.field || !this.preview) return;
+    this.field.value = dataUrl;
+    this.preview.src = dataUrl;
+    this.preview.classList.remove('d-none');
+    this.video?.classList.add('d-none');
+    this.stop();
+    this.startButton?.classList.add('d-none');
+    this.captureButton?.classList.add('d-none');
+    this.retakeButton?.classList.remove('d-none');
+    this.setMessage(message);
+  }
+
+  handleFileChange(event) {
+    const input = event?.target || this.fileInput;
+    const file = input?.files?.[0];
+    if (!file) return Promise.resolve(null);
+
+    return new Promise((resolve) => {
+      let reader;
+      try {
+        reader = this.fileReaderFactory();
+      } catch {
+        this.setMessage('Unable to read the photo. Try again.');
+        if (input) input.value = '';
+        resolve(null);
+        return;
+      }
+      if (!reader?.readAsDataURL) {
+        this.setMessage('Unable to read the photo. Try again.');
+        if (input) input.value = '';
+        resolve(null);
+        return;
+      }
+      reader.onload = (loadEvent) => {
+        const dataUrl = loadEvent?.target?.result;
+        if (typeof dataUrl === 'string' && dataUrl) this.applyPhoto(dataUrl);
+        else this.setMessage('Unable to read the photo. Try again.');
+        if (input) input.value = '';
+        resolve(typeof dataUrl === 'string' && dataUrl ? dataUrl : null);
+      };
+      reader.onerror = () => {
+        this.setMessage('Unable to read the photo. Try again.');
+        if (input) input.value = '';
+        resolve(null);
+      };
+      try {
+        reader.readAsDataURL(file);
+      } catch {
+        this.setMessage('Unable to read the photo. Try again.');
+        if (input) input.value = '';
+        resolve(null);
+      }
+    });
   }
 
   capture() {
@@ -91,14 +164,7 @@ export class CameraCaptureComponent {
     this.canvas.height = height;
     this.canvas.getContext('2d').drawImage(this.video, 0, 0, width, height);
     const data = this.canvas.toDataURL('image/jpeg', 0.85);
-    this.field.value = data;
-    this.preview.src = data;
-    this.preview.classList.remove('d-none');
-    this.video.classList.add('d-none');
-    this.stop();
-    this.captureButton?.classList.add('d-none');
-    this.retakeButton?.classList.remove('d-none');
-    this.setMessage('Photo captured.');
+    this.applyPhoto(data);
   }
 
   retake() {
@@ -107,10 +173,11 @@ export class CameraCaptureComponent {
   }
 
   bindEvents() {
-    if (!this.startButton || !this.captureButton || !this.retakeButton) return;
     this.listen(this.startButton, 'click', () => this.start());
     this.listen(this.captureButton, 'click', () => this.capture());
     this.listen(this.retakeButton, 'click', () => this.retake());
+    this.listen(this.fileInput, 'change', (event) => this.handleFileChange(event));
+    this.listen(this.nativeButton, 'click', () => this.openNativeCapture());
   }
 
   destroy() {

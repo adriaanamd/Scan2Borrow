@@ -2,17 +2,17 @@ export class RegistrationPage {
   constructor(root, {
     document = globalThis.document,
     window = globalThis.window,
-    navigator = globalThis.navigator,
     api = null,
     auth,
+    camera = null,
     formDataFactory = (form) => new FormData(form),
   }) {
     this.root = root;
     this.document = document;
     this.window = window;
-    this.navigator = navigator;
     this.api = api;
     this.auth = auth;
+    this.camera = camera;
     this.formDataFactory = formDataFactory;
     this.form = document.getElementById('reg-form');
     this.role = document.getElementById('role_select');
@@ -22,9 +22,7 @@ export class RegistrationPage {
     this.otpChannelInputs = [...(document.querySelectorAll?.('input[name="otp_channel"]') || [])];
     this.currentStep = 'role';
     this.listeners = [];
-    this.cameraCleanup = null;
     this.bindRoleSelection();
-    this.bindCamera();
     this.listen(this.form, 'submit', (event) => this.submit(event));
     this.otpChannelInputs.forEach((input) => this.listen(input, 'change', () => this.syncOtpChannel()));
     this.listen(this.emailInput, 'input', () => this.syncOtpChannel());
@@ -164,74 +162,6 @@ export class RegistrationPage {
     }
   }
 
-  bindCamera() {
-    const video = this.document.getElementById('cam');
-    const canvas = this.document.getElementById('snap');
-    const preview = this.document.getElementById('preview');
-    const field = this.document.getElementById('photo_data');
-    const message = this.document.getElementById('cam-msg');
-    const start = this.document.getElementById('btn-start');
-    const capture = this.document.getElementById('btn-capture');
-    const retake = this.document.getElementById('btn-retake');
-    if (!video || !canvas || !preview || !field || !message || !start || !capture || !retake) return;
-
-    let stream = null;
-    const stop = () => {
-      if (!stream) return;
-      stream.getTracks().forEach((track) => track.stop());
-      stream = null;
-    };
-    this.listen(start, 'click', () => {
-      if (!this.navigator.mediaDevices?.getUserMedia) {
-        message.textContent = 'Camera not supported on this browser.';
-        return;
-      }
-      message.textContent = 'Starting camera...';
-      this.navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-        .then((nextStream) => {
-          stream = nextStream;
-          video.srcObject = stream;
-          video.classList.remove('d-none');
-          preview.classList.add('d-none');
-          start.classList.add('d-none');
-          capture.classList.remove('d-none');
-          retake.classList.add('d-none');
-          message.textContent = 'Position your face in the frame, then Capture.';
-        })
-        .catch(() => {
-          message.textContent = 'Could not access the camera. Please allow camera permission.';
-        });
-    });
-    this.listen(capture, 'click', () => {
-      if (!stream) return;
-      const width = video.videoWidth || 320;
-      const height = video.videoHeight || 240;
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-      field.value = canvas.toDataURL('image/jpeg', 0.85);
-      preview.src = field.value;
-      preview.classList.remove('d-none');
-      video.classList.add('d-none');
-      capture.classList.add('d-none');
-      retake.classList.remove('d-none');
-      stop();
-      message.textContent = 'Photo captured. Click Retake to redo.';
-    });
-    this.listen(retake, 'click', () => {
-      field.value = '';
-      preview.classList.add('d-none');
-      retake.classList.add('d-none');
-      start.classList.remove('d-none');
-      start.click();
-    });
-    this.cameraCleanup = () => {
-      stop();
-      this.window.removeEventListener?.('beforeunload', stop);
-    };
-    this.window.addEventListener?.('beforeunload', stop);
-  }
-
   async submit(event) {
     event.preventDefault();
     try {
@@ -255,6 +185,6 @@ export class RegistrationPage {
 
   destroy() {
     this.listeners.splice(0).forEach((remove) => remove());
-    this.cameraCleanup?.();
+    this.camera?.destroy?.();
   }
 }

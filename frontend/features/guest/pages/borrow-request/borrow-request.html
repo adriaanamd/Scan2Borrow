@@ -173,6 +173,7 @@
                   />
                 </div>
                 <div class="d-flex gap-2 justify-content-center my-3">
+                  <input id="camera-file" type="file" accept="image/*" capture="user" class="d-none" aria-label="Take photo with phone camera" />
                   <button
                     type="button"
                     id="start"
@@ -191,6 +192,9 @@
                     class="btn btn-outline-secondary d-none"
                   >
                     Retake
+                  </button>
+                  <button type="button" id="btn-native-camera" class="btn btn-outline-secondary">
+                    Use phone camera
                   </button>
                 </div>
                 <button

@@ -91,6 +91,19 @@ test('RegistrationPage loads student courses from the public catalog endpoint', 
   assert.doesNotMatch(template, /Bachelor of Science in Information Technology/);
 });
 
+test('photo pages expose native camera fallbacks', () => {
+  for (const template of [
+    '../features/auth/pages/register/register.html',
+    '../features/auth/pages/guest-registration/guest-registration.html',
+    '../features/guest/pages/borrow-request/borrow-request.html',
+    '../features/guest/pages/return/return.html',
+  ]) {
+    const source = readFileSync(new URL(template, import.meta.url), 'utf8');
+    assert.match(source, /id="camera-file"[^>]*accept="image\/\*"[^>]*capture="user"/);
+    assert.match(source, /id="btn-native-camera"/);
+  }
+});
+
 test('RegistrationPage selects and validates the OTP delivery channel', async () => {
   let submit;
   let emailInputListener;

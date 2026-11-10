@@ -145,6 +145,42 @@ test('CirculationPage keeps scanned and manually entered borrow copies in one re
   assert.equal(calls.length, 1);
 });
 
+test('CirculationPage consumes a library aide handoff and preloads the borrow draft', async () => {
+  const document = circulationDocument();
+  document.querySelectorAll = () => [];
+  const calls = [];
+  let removedKey = '';
+  const storage = {
+    getItem(key) {
+      return key === 'scan2borrow.circulation.handoff'
+        ? JSON.stringify({ borrowerBarcode: 'STU-001', copyBarcodes: ['COPY-001', 'COPY-002'] })
+        : null;
+    },
+    removeItem(key) { removedKey = key; },
+  };
+  const service = {
+    lookupStudent: async (barcode) => {
+      calls.push(barcode);
+      return { data: {
+        borrower: { id: 7, barcode, name: 'Ada Lovelace', role: 'student' },
+        active_loans: [],
+      } };
+    },
+  };
+  const page = new CirculationPage(document, {
+    service,
+    document,
+    window: { sessionStorage: storage },
+  });
+
+  page.start();
+  await page.handoffPromise;
+
+  assert.deepEqual(calls, ['STU-001']);
+  assert.deepEqual(page.borrowCopies, [{ barcode: 'COPY-001' }, { barcode: 'COPY-002' }]);
+  assert.equal(removedKey, 'scan2borrow.circulation.handoff');
+});
+
 test('CirculationPage binds the desk checkout form and approval button to the transaction flow', async () => {
   const document = circulationDocument();
   const formListeners = new Map();

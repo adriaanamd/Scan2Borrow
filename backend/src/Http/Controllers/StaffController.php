@@ -176,7 +176,8 @@ final readonly class StaffController
             $this->queryString($request, 'type'),
             $this->queryString($request, 'from'),
             $this->queryString($request, 'to'),
-        )]);
+            $this->queryString($request, 'category'),
+        ), 'categories' => $this->staff->reportCategories()]);
     }
 
     public function exportReport(ServerRequest $request): ResponseInterface
@@ -188,6 +189,7 @@ final readonly class StaffController
             $this->queryString($request, 'type'),
             $this->queryString($request, 'from'),
             $this->queryString($request, 'to'),
+            $this->queryString($request, 'category'),
         );
         $lines = [];
         $headers = is_array($report['headers'] ?? null) ? $report['headers'] : [];

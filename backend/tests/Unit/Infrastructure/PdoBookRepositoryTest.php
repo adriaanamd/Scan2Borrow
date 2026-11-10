@@ -167,6 +167,34 @@ final class PdoBookRepositoryTest extends TestCase
         self::assertSame(4, (int) $this->pdo->query('SELECT COUNT(*) FROM book_copies WHERE title_id = 1 AND deleted_at IS NULL')->fetchColumn());
     }
 
+    public function testNormalizedUpdateCreatesNewCopiesAsAvailableWhenExistingCopyIsBorrowed(): void
+    {
+        $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL, created_at DATETIME)');
+        $this->pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY AUTOINCREMENT, title_id INTEGER NOT NULL, barcode VARCHAR(50) NOT NULL, accession_no VARCHAR(50), floor_no VARCHAR(20), section_name VARCHAR(80), shelf_no VARCHAR(20), row_no VARCHAR(20), due_date DATE, return_date DATE, status VARCHAR(20) NOT NULL, deleted_at DATETIME)');
+        $this->pdo->exec("INSERT INTO book_titles (id, title, author, category_name, quantity) VALUES (1, 'Clean Code', 'Robert Martin', 'Computer Science', 2)");
+        $this->pdo->exec("INSERT INTO book_copies (id, title_id, barcode, accession_no, due_date, return_date, status) VALUES (11, 1, 'COPY-1', 'ACC-1', '2026-11-12', NULL, 'Borrowed'), (12, 1, 'COPY-2', 'ACC-2', NULL, NULL, 'Available')");
+
+        (new PdoBookRepository($this->pdo))->update(
+            1,
+            new BookMutationRequest(title: 'Clean Code', quantity: 3, status: 'Borrowed'),
+        );
+
+        self::assertSame(3, (int) $this->pdo->query('SELECT quantity FROM book_titles WHERE id = 1')->fetchColumn());
+        self::assertSame(3, (int) $this->pdo->query('SELECT COUNT(*) FROM book_copies WHERE title_id = 1 AND deleted_at IS NULL')->fetchColumn());
+
+        $borrowed = $this->pdo->query("SELECT status, due_date, return_date FROM book_copies WHERE id = 11")->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($borrowed);
+        self::assertSame('Borrowed', $borrowed['status']);
+        self::assertSame('2026-11-12', $borrowed['due_date']);
+        self::assertNull($borrowed['return_date']);
+
+        $newCopy = $this->pdo->query('SELECT status, due_date, return_date FROM book_copies WHERE title_id = 1 ORDER BY id DESC LIMIT 1')->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($newCopy);
+        self::assertSame('Available', $newCopy['status']);
+        self::assertNull($newCopy['due_date']);
+        self::assertNull($newCopy['return_date']);
+    }
+
     public function testNormalizedCreateGeneratesUniqueIdentifiersForEveryRequestedCopy(): void
     {
         $this->pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn VARCHAR(30), title VARCHAR(200) NOT NULL, author VARCHAR(150), publisher VARCHAR(150), description TEXT, cover_file VARCHAR(255), category_name VARCHAR(100), quantity INTEGER NOT NULL, created_at DATETIME)');

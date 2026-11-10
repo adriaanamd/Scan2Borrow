@@ -452,9 +452,9 @@ final class PdoBookRepository implements BookRepositoryInterface, BookAdministra
                         'section_name' => $request->sectionName !== '' ? $request->sectionName : null,
                         'shelf_no' => $request->shelfNo !== '' ? $request->shelfNo : null,
                         'row_no' => $request->rowNo !== '' ? $request->rowNo : null,
-                        'due_date' => $request->dueDate !== '' ? $request->dueDate : null,
-                        'return_date' => $request->returnDate !== '' ? $request->returnDate : null,
-                        'status' => $request->status,
+                        'due_date' => null,
+                        'return_date' => null,
+                        'status' => 'Available',
                     ]);
                     $this->recordCopyAudit(
                         (int) $this->pdo->lastInsertId(),

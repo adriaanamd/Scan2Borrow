@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf" content="" />
+    <title>Library Aide Desk | Scan2Borrow</title>
+    <link rel="icon" type="image/png" href="/scan2borrow/public/favicon.png" />
+    <link href="/scan2borrow/frontend/assets/css/style.css" rel="stylesheet" />
+    <link href="/scan2borrow/frontend/features/staff/pages/aide-dashboard/aide-dashboard.css" rel="stylesheet" />
+    <script src="/scan2borrow/frontend/assets/js/core/confirmation.js" defer></script>
+    <script src="/scan2borrow/frontend/assets/js/core/app-navbar.js" defer></script>
+  </head>
+  <body data-app-page="staff-aide-dashboard">
+    <div class="app">
+      <aside class="sidebar" data-app-navbar data-navbar-role="session"></aside>
+      <main class="main aide-dashboard">
+        <header class="topbar">
+          <h1 class="topbar-title">Library Aide Desk</h1>
+          <div class="topbar-user"><span class="user-role">Library Aide</span></div>
+        </header>
+
+        <div class="content" data-page="staff-aide-dashboard">
+          <section class="aide-dashboard__masthead" aria-labelledby="aide-dashboard-title">
+            <div>
+              <p class="aide-dashboard__eyebrow">OPERATIONS / LIBRARY DESK</p>
+              <h2 id="aide-dashboard-title">A clear desk for every handoff.</h2>
+              <p class="aide-dashboard__lede">Scan a borrower, stage the copies, then move the transaction to the circulation desk for confirmation.</p>
+            </div>
+            <a class="aide-dashboard__primary-link" href="/scan2borrow/staff/circulation">Open circulation desk <span aria-hidden="true">&#8594;</span></a>
+          </section>
+
+          <section class="aide-dashboard__stats" aria-label="Library desk status">
+            <article class="aide-stat-card">
+              <span class="aide-stat-card__label">Available copies</span>
+              <strong data-aide-stat="available-copies" class="aide-stat-card__value">—</strong>
+              <span class="aide-stat-card__note">Ready to lend</span>
+            </article>
+            <article class="aide-stat-card">
+              <span class="aide-stat-card__label">Pending requests</span>
+              <strong data-aide-stat="pending-requests" class="aide-stat-card__value">—</strong>
+              <span class="aide-stat-card__note">Needs desk review</span>
+            </article>
+            <article class="aide-stat-card">
+              <span class="aide-stat-card__label">Active borrowers</span>
+              <strong data-aide-stat="active-borrowers" class="aide-stat-card__value">—</strong>
+              <span class="aide-stat-card__note">Current borrower accounts</span>
+            </article>
+            <article class="aide-stat-card aide-stat-card--alert">
+              <span class="aide-stat-card__label">Overdue items</span>
+              <strong data-aide-stat="overdue-items" class="aide-stat-card__value">—</strong>
+              <span class="aide-stat-card__note">Follow up when ready</span>
+            </article>
+          </section>
+
+          <section class="aide-dashboard__grid">
+            <article class="aide-panel aide-panel--scan" data-aide-scan-lane aria-labelledby="scan-lane-title">
+              <div class="aide-panel__heading">
+                <div>
+                  <p class="aide-dashboard__eyebrow">FAST CHECKOUT</p>
+                  <h3 id="scan-lane-title">Prepare a circulation handoff</h3>
+                </div>
+                <span class="aide-panel__index">01</span>
+              </div>
+              <div class="aide-scan-steps" aria-label="Checkout steps">
+                <span data-aide-scan-step="borrower" class="aide-scan-step is-active"><b>01</b>Borrower</span>
+                <span data-aide-scan-step="copies" class="aide-scan-step"><b>02</b>Copies</span>
+                <span data-aide-scan-step="confirm" class="aide-scan-step"><b>03</b>Confirm</span>
+              </div>
+              <form data-aide-scan-form class="aide-scan-form">
+                <label for="aide-borrower-barcode">Borrower ID</label>
+                <div class="aide-scan-form__row">
+                  <input id="aide-borrower-barcode" name="borrower_barcode" autocomplete="off" placeholder="Scan or enter borrower barcode" />
+                  <button type="button" data-aide-scan-next class="aide-button aide-button--dark">Continue</button>
+                </div>
+                <label for="aide-copy-barcodes">Copy barcodes <span>(optional for handoff)</span></label>
+                <textarea id="aide-copy-barcodes" name="copy_barcodes" rows="2" placeholder="One barcode per line"></textarea>
+                <p data-aide-scan-status class="aide-inline-status" role="status">Scan a borrower ID to begin.</p>
+                <a data-aide-open-circulation class="aide-button aide-button--blue" href="/scan2borrow/staff/circulation">Continue at circulation desk <span aria-hidden="true">&#8594;</span></a>
+              </form>
+            </article>
+
+            <article class="aide-panel" aria-labelledby="activity-title">
+              <div class="aide-panel__heading">
+                <div>
+                  <p class="aide-dashboard__eyebrow">LIVE QUEUE</p>
+                  <h3 id="activity-title">Pending activity</h3>
+                </div>
+                <a href="/scan2borrow/staff/notify" class="aide-panel__text-link">View notifications <span aria-hidden="true">&#8594;</span></a>
+              </div>
+              <div data-aide-activity class="aide-activity" aria-live="polite">
+                <p class="aide-state aide-state--loading">Loading desk activity...</p>
+              </div>
+            </article>
+          </section>
+
+          <section class="aide-dashboard__quick-links" aria-labelledby="quick-links-title">
+            <div>
+              <p class="aide-dashboard__eyebrow">DESK SHORTCUTS</p>
+              <h3 id="quick-links-title">Keep the line moving</h3>
+            </div>
+            <div class="aide-quick-links">
+              <a href="/scan2borrow/staff/circulation"><span>01</span>Circulation</a>
+              <a href="/scan2borrow/staff/students"><span>02</span>Borrowers</a>
+              <a href="/scan2borrow/staff/books"><span>03</span>Inventory</a>
+              <a href="/scan2borrow/staff/reports"><span>04</span>Reports</a>
+            </div>
+          </section>
+          <p data-aide-error class="aide-state aide-state--error" hidden></p>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/scan2borrow/frontend/features/staff/pages/aide-dashboard/entry.js"></script>
+  </body>
+</html>

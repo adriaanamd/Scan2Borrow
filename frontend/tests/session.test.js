@@ -9,12 +9,20 @@ test('SessionService loads and caches session identity', async () => {
       return selector === 'meta[name="csrf"]' ? { content: 'csrf-token' } : null;
     },
   };
-  const api = { get: async () => ({ ok: true, data: { role: 'student', name: 'Ada' } }) };
+  const api = { get: async () => ({ ok: true, data: { role: 'student', name: 'Ada', access_profile: null } }) };
   const session = new SessionService({ api, document });
 
-  assert.deepEqual(await session.load(), { role: 'student', name: 'Ada' });
-  assert.deepEqual(session.current(), { role: 'student', name: 'Ada' });
+  assert.deepEqual(await session.load(), { role: 'student', name: 'Ada', access_profile: null });
+  assert.deepEqual(session.current(), { role: 'student', name: 'Ada', access_profile: null });
   assert.equal(session.csrf(), 'csrf-token');
+});
+
+test('SessionService preserves the library aide access profile', async () => {
+  const api = { get: async () => ({ ok: true, data: { role: 'admin', access_profile: 'library_aide' } }) };
+  const session = new SessionService({ api, document: { querySelector: () => null } });
+
+  assert.deepEqual(await session.load(), { role: 'admin', access_profile: 'library_aide' });
+  assert.equal(session.current().access_profile, 'library_aide');
 });
 
 test('SessionGuard redirects expired protected sessions', async () => {

@@ -88,6 +88,43 @@ test('aide dashboard renders live stats and an explicit empty activity state', (
   assert.equal(activity.innerHTML, '<p class="aide-state">No pending activity.</p>');
 });
 
+test('aide dashboard persists staged circulation data before navigation', () => {
+  const values = new Map();
+  const storage = {
+    setItem(key, value) { values.set(key, value); },
+  };
+  const borrower = { value: 'STU-001' };
+  const copies = { value: 'COPY-001\nCOPY-002' };
+  const status = { textContent: '' };
+  const link = { href: '/scan2borrow/staff/circulation' };
+  const page = Object.create(AideDashboardPage.prototype);
+  page.root = {
+    querySelector(selector) {
+      if (selector === '#aide-borrower-barcode') return borrower;
+      if (selector === '#aide-copy-barcodes') return copies;
+      if (selector === '[data-aide-scan-status]') return status;
+      return null;
+    },
+  };
+  page.window = { sessionStorage: storage, location: { href: '' } };
+
+  page.onClick({
+    target: {
+      closest(selector) {
+        return selector === '[data-aide-open-circulation]' ? link : null;
+      },
+    },
+    preventDefault() {},
+  });
+
+  assert.ok(values.has('scan2borrow.circulation.handoff'));
+  assert.deepEqual(JSON.parse(values.get('scan2borrow.circulation.handoff')), {
+    borrowerBarcode: 'STU-001',
+    copyBarcodes: ['COPY-001', 'COPY-002'],
+  });
+  assert.equal(page.window.location.href, link.href);
+});
+
 test('inventory controls mark destructive mutations as system-admin-only', () => {
   const template = fs.readFileSync(path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'inventory', 'inventory.html'), 'utf8');
   const source = fs.readFileSync(path.resolve(testsDirectory, '..', 'features', 'staff', 'pages', 'inventory', 'inventory.page.js'), 'utf8');

@@ -1,4 +1,5 @@
 import { normalizeStaffDashboard } from '../../models/dashboard.model.js';
+import { saveCirculationHandoff } from '../../services/circulation-handoff.service.js';
 
 export class AideDashboardPage {
   constructor(root = globalThis.document, { dashboardService, notificationService, document = root, window = globalThis.window } = {}) {
@@ -73,20 +74,46 @@ export class AideDashboardPage {
 
   onClick(event) {
     const next = event.target?.closest?.('[data-aide-scan-next]');
-    if (!next) return;
+    if (next) {
+      const borrower = this.root.querySelector?.('#aide-borrower-barcode')?.value?.trim() || '';
+      const copies = this.copyBarcodes();
+      const status = this.root.querySelector?.('[data-aide-scan-status]');
+      if (!borrower) {
+        if (status) status.textContent = 'Scan or enter a borrower ID first.';
+        return;
+      }
+      this.root.querySelectorAll?.('[data-aide-scan-step]').forEach((step) => step.classList.toggle('is-active', step.dataset.aideScanStep === 'copies'));
+      this.renderScanReview(copies);
+      if (status) status.textContent = 'Borrower staged. Add copy barcodes or continue at the circulation desk.';
+      return;
+    }
+
+    const handoff = event.target?.closest?.('[data-aide-open-circulation]');
+    if (!handoff) return;
+    event.preventDefault?.();
     const borrower = this.root.querySelector?.('#aide-borrower-barcode')?.value?.trim() || '';
-    const copies = (this.root.querySelector?.('#aide-copy-barcodes')?.value || '')
+    const status = this.root.querySelector?.('[data-aide-scan-status]');
+    if (!borrower) {
+      if (status) status.textContent = 'Scan or enter a borrower ID before continuing to circulation.';
+      return;
+    }
+    const saved = saveCirculationHandoff(this.window?.sessionStorage, {
+      borrowerBarcode: borrower,
+      copyBarcodes: this.copyBarcodes(),
+    });
+    if (!saved) {
+      if (status) status.textContent = 'The handoff could not be saved, so circulation will open for manual scanning.';
+      if (this.window?.location) this.window.location.href = handoff.href || '/scan2borrow/staff/circulation';
+      return;
+    }
+    if (this.window?.location) this.window.location.href = handoff.href || '/scan2borrow/staff/circulation';
+  }
+
+  copyBarcodes() {
+    return (this.root.querySelector?.('#aide-copy-barcodes')?.value || '')
       .split(/\r?\n|,/)
       .map((value) => value.trim())
       .filter(Boolean);
-    const status = this.root.querySelector?.('[data-aide-scan-status]');
-    if (!borrower) {
-      if (status) status.textContent = 'Scan or enter a borrower ID first.';
-      return;
-    }
-    this.root.querySelectorAll?.('[data-aide-scan-step]').forEach((step) => step.classList.toggle('is-active', step.dataset.aideScanStep === 'copies'));
-    this.renderScanReview(copies);
-    if (status) status.textContent = 'Borrower staged. Add copy barcodes or continue at the circulation desk.';
   }
 
   activityRows(response = {}) {

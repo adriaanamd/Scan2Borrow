@@ -1,4 +1,8 @@
 import { BarcodeScannerComponent } from '../../../../app/shared/components/barcode-scanner/barcode-scanner.component.js';
+import {
+  clearCirculationHandoff,
+  readCirculationHandoff,
+} from '../../services/circulation-handoff.service.js';
 
 export class CirculationPage {
   constructor(root = globalThis.document, { service, document = root, window = globalThis.window } = {}) {
@@ -26,6 +30,7 @@ export class CirculationPage {
     this.boundStaticAction = (event) => this.onStaticAction(event);
     this.staticActionButtons = [];
     this.bound = false;
+    this.handoffPromise = Promise.resolve(null);
   }
 
   start() {
@@ -42,7 +47,27 @@ export class CirculationPage {
     this.setMode(this.mode);
     this.renderBorrowCopies();
     this.renderReturnLoans();
+    this.handoffPromise = this.applyCirculationHandoff();
     return this;
+  }
+
+  async applyCirculationHandoff() {
+    const handoff = readCirculationHandoff(this.window?.sessionStorage);
+    if (!handoff) return null;
+
+    const data = await this.lookupStudent(handoff.borrowerBarcode);
+    if (!data?.borrower) return null;
+
+    handoff.copyBarcodes.forEach((barcode) => this.addBorrowCopy(barcode));
+    clearCirculationHandoff(this.window?.sessionStorage);
+    const count = handoff.copyBarcodes.length;
+    this.showStatus(
+      count > 0
+        ? `${data.borrower.name || 'Borrower'} loaded from the aide desk. ${count} copy${count === 1 ? '' : 'ies'} ready for review.`
+        : `${data.borrower.name || 'Borrower'} loaded from the aide desk. Scan copies to continue.`,
+      'success',
+    );
+    return data;
   }
 
   createScanners() {

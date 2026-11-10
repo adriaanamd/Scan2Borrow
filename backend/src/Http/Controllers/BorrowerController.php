@@ -52,6 +52,44 @@ final readonly class BorrowerController
         ]);
     }
 
+    public function notifications(ServerRequest $request): JsonResponse
+    {
+        $identity = $this->borrower();
+        if ($identity === null) {
+            return $this->unauthorized();
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $this->portal->notifications($identity->userId())]);
+    }
+
+    public function notificationAction(ServerRequest $request): JsonResponse
+    {
+        $identity = $this->borrower();
+        if ($identity === null) {
+            return $this->unauthorized();
+        }
+        try {
+            $this->csrf->assertValid($this->value($request->body(), 'csrf'));
+        } catch (InvalidArgumentException $exception) {
+            return new JsonResponse(419, ['ok' => false, 'errors' => [$exception->getMessage()]]);
+        }
+
+        $action = $this->value($request->body(), 'action');
+        if ($action === 'read') {
+            $notificationId = $this->positiveInt($request->body()['notification_id'] ?? null);
+            if ($notificationId < 1) {
+                return new JsonResponse(422, ['ok' => false, 'errors' => ['A valid notification ID is required.']]);
+            }
+            $this->portal->markNotificationRead($identity->userId(), $notificationId);
+        } elseif ($action === 'read_all') {
+            $this->portal->markAllNotificationsRead($identity->userId());
+        } else {
+            return new JsonResponse(422, ['ok' => false, 'errors' => ['Unsupported notification action.']]);
+        }
+
+        return new JsonResponse(200, ['ok' => true, 'data' => $this->portal->notifications($identity->userId())]);
+    }
+
     public function history(ServerRequest $request): JsonResponse
     {
         $identity = $this->borrower();

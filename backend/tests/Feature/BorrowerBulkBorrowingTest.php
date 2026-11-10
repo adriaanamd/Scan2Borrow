@@ -103,6 +103,9 @@ final class BulkBorrowingPortalRepository implements BorrowerPortalRepositoryInt
 {
     public function dashboard(int $userId): array { return []; }
     public function activity(int $userId): array { return []; }
+    public function notifications(int $userId): array { return ['notifications' => [], 'unread_count' => 0]; }
+    public function markNotificationRead(int $userId, int $notificationId): void {}
+    public function markAllNotificationsRead(int $userId): void {}
     public function recentActivity(int $userId): array { return []; }
     public function history(int $userId): array { return []; }
     public function receipt(int $userId, string $transactionCode): ?array { return null; }

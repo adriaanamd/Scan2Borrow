@@ -157,4 +157,34 @@ final class PdoBorrowerPortalRepositoryTest extends TestCase
         self::assertCount(1, $returnRequests);
         self::assertSame('Return Verification Pending', $returnRequests[0]['status']);
     }
+
+    public function testNotificationsAreLatestTwentyAndScopedToTheBorrower(): void
+    {
+        $this->pdo->exec('CREATE TABLE notifications (id INTEGER PRIMARY KEY, user_id INTEGER, type TEXT, title TEXT, message TEXT, related_id INTEGER, is_read INTEGER, created_at TEXT)');
+        $this->pdo->exec("INSERT INTO notifications VALUES
+            (1, 1, 'borrow_approved', 'Borrowing request approved', 'Clean Code', 44, 0, '2026-11-10 12:00:00'),
+            (2, 1, 'renewal_approved', 'Renewal approved', 'Refactoring', 45, 1, '2026-11-09 12:00:00'),
+            (3, 2, 'borrow_approved', 'Borrowing request approved', 'Other account', 46, 0, '2026-11-11 12:00:00')");
+
+        $result = (new PdoBorrowerPortalRepository($this->pdo))->notifications(1);
+
+        self::assertSame(1, $result['unread_count']);
+        self::assertCount(2, $result['notifications']);
+        self::assertSame(1, $result['notifications'][0]['id']);
+        self::assertNotContains('Other account', array_column($result['notifications'], 'message'));
+    }
+
+    public function testNotificationReadActionsCannotChangeAnotherBorrower(): void
+    {
+        $this->pdo->exec('CREATE TABLE notifications (id INTEGER PRIMARY KEY, user_id INTEGER, type TEXT, title TEXT, message TEXT, related_id INTEGER, is_read INTEGER, created_at TEXT)');
+        $this->pdo->exec("INSERT INTO notifications VALUES (1, 1, 'borrow_approved', 'Approved', 'Mine', 1, 0, '2026-11-10'), (2, 2, 'borrow_approved', 'Approved', 'Other', 2, 0, '2026-11-10')");
+        $repository = new PdoBorrowerPortalRepository($this->pdo);
+
+        $repository->markNotificationRead(1, 2);
+        self::assertSame(0, (int) $this->pdo->query('SELECT is_read FROM notifications WHERE id = 2')->fetchColumn());
+
+        $repository->markAllNotificationsRead(1);
+        self::assertSame(1, (int) $this->pdo->query('SELECT is_read FROM notifications WHERE id = 1')->fetchColumn());
+        self::assertSame(0, (int) $this->pdo->query('SELECT is_read FROM notifications WHERE id = 2')->fetchColumn());
+    }
 }

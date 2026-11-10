@@ -94,6 +94,42 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
         return $rows;
     }
 
+    public function notifications(int $userId): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT id, type, title, message, related_id, is_read, created_at
+             FROM notifications
+             WHERE user_id = :user_id
+             ORDER BY created_at DESC, id DESC
+             LIMIT 20'
+        );
+        $statement->execute(['user_id' => $userId]);
+        $rows = array_map(static function (array $row): array {
+            $row['id'] = (int) $row['id'];
+            $row['related_id'] = $row['related_id'] === null ? null : (int) $row['related_id'];
+            $row['is_read'] = (int) $row['is_read'];
+
+            return $row;
+        }, $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        $unread = $this->pdo->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :user_id AND is_read = 0');
+        $unread->execute(['user_id' => $userId]);
+
+        return ['notifications' => $rows, 'unread_count' => (int) $unread->fetchColumn()];
+    }
+
+    public function markNotificationRead(int $userId, int $notificationId): void
+    {
+        $statement = $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE id = :id AND user_id = :user_id');
+        $statement->execute(['id' => $notificationId, 'user_id' => $userId]);
+    }
+
+    public function markAllNotificationsRead(int $userId): void
+    {
+        $statement = $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE user_id = :user_id AND is_read = 0');
+        $statement->execute(['user_id' => $userId]);
+    }
+
     /** @return list<array<string, mixed>> */
     public function recentActivity(int $userId): array
     {

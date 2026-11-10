@@ -389,15 +389,25 @@ final class PdoStaffRepositoryTest extends TestCase
         $repository = new PdoStaffRepository($this->pdo);
 
         self::assertSame(['Computer Science', 'English', 'Mathematics'], $repository->reportCategories());
-        self::assertSame(['TX-2'], array_column($repository->report('borrowed', '2026-08-01', '2026-08-31', 'English')['data'], 0));
-        self::assertSame([], $repository->report('borrowed', '', '', 'Does Not Exist')['data']);
-        self::assertCount(3, $repository->report('borrowed', '', '', '')['data']);
+        /** @var array{data: list<list<mixed>>} $filteredBorrowed */
+        $filteredBorrowed = $repository->report('borrowed', '2026-08-01', '2026-08-31', 'English');
+        self::assertSame(['TX-2'], array_column($filteredBorrowed['data'], 0));
+        /** @var array{data: list<list<mixed>>} $invalidCategory */
+        $invalidCategory = $repository->report('borrowed', '', '', 'Does Not Exist');
+        self::assertSame([], $invalidCategory['data']);
+        /** @var array{data: list<list<mixed>>} $allCategories */
+        $allCategories = $repository->report('borrowed', '', '', '');
+        self::assertCount(3, $allCategories['data']);
 
         $this->pdo->exec("UPDATE borrowing SET return_date = '2026-08-25', status = 'Returned' WHERE id = 2");
-        self::assertSame(['TX-2'], array_column($repository->report('returned', '', '', 'English')['data'], 0));
+        /** @var array{data: list<list<mixed>>} $returned */
+        $returned = $repository->report('returned', '', '', 'English');
+        self::assertSame(['TX-2'], array_column($returned['data'], 0));
 
         $this->pdo->exec("UPDATE borrowing SET status = 'Overdue' WHERE id = 3");
-        self::assertSame(['TX-3'], array_column($repository->report('overdue', '', '', 'Mathematics')['data'], 0));
+        /** @var array{data: list<list<mixed>>} $overdue */
+        $overdue = $repository->report('overdue', '', '', 'Mathematics');
+        self::assertSame(['TX-3'], array_column($overdue['data'], 0));
     }
 
     public function testNormalizedReportsFilterInventoryByBookTitleCategory(): void
@@ -419,10 +429,15 @@ final class PdoStaffRepositoryTest extends TestCase
         $repository = new PdoStaffRepository($pdo);
 
         self::assertSame(['Computer Science', 'English'], $repository->reportCategories());
+        /** @var array{data: list<list<mixed>>} $filtered */
         $filtered = $repository->report('inventory', '', '', 'Computer Science');
         self::assertCount(1, $filtered['data']);
         self::assertSame('Clean Code', $filtered['data'][0][1]);
-        self::assertCount(2, $repository->report('inventory', '', '', '')['data']);
-        self::assertSame([], $repository->report('inventory', '', '', 'Mathematics')['data']);
+        /** @var array{data: list<list<mixed>>} $allCategories */
+        $allCategories = $repository->report('inventory', '', '', '');
+        self::assertCount(2, $allCategories['data']);
+        /** @var array{data: list<list<mixed>>} $invalidCategory */
+        $invalidCategory = $repository->report('inventory', '', '', 'Mathematics');
+        self::assertSame([], $invalidCategory['data']);
     }
 }

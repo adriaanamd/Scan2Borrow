@@ -672,4 +672,3 @@ git push origin master
 ~~~
 
 Expected: feature commits plus the approved design/plan history are pushed to origin/master; inspect the resulting GitHub Actions run when available, otherwise state remote CI is unverified.
-

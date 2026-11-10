@@ -5,6 +5,26 @@
 -- ============================================================================
 USE `scan2borrow_2.0`;
 
+CREATE TABLE IF NOT EXISTS `contact_notification_deliveries` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `recipient_type` ENUM('user','visitor') NOT NULL,
+    `recipient_id` INT NOT NULL,
+    `event_type` ENUM('borrow_requested','borrow_approved') NOT NULL,
+    `borrowing_reference` VARCHAR(100) NOT NULL,
+    `channel` ENUM('email','sms') NOT NULL,
+    `destination` VARCHAR(150) DEFAULT NULL,
+    `subject` VARCHAR(255) DEFAULT NULL,
+    `message` TEXT NOT NULL,
+    `status` ENUM('pending','sent','failed','skipped') NOT NULL DEFAULT 'pending',
+    `attempts` INT NOT NULL DEFAULT 0,
+    `last_error` VARCHAR(500) DEFAULT NULL,
+    `sent_at` DATETIME DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_contact_delivery_event` (`recipient_type`, `recipient_id`, `event_type`, `borrowing_reference`, `channel`),
+    KEY `idx_contact_delivery_status` (`status`, `created_at`)
+) ENGINE=InnoDB;
+
 ALTER TABLE `books`
     ADD COLUMN `deleted_at` DATETIME DEFAULT NULL AFTER `status`;
 

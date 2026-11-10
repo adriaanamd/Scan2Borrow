@@ -29,6 +29,7 @@ DROP TABLE IF EXISTS `visitor_borrowing`;
 DROP TABLE IF EXISTS `visitors`;
 DROP TABLE IF EXISTS `otp_codes`;
 DROP TABLE IF EXISTS `sms_logs`;
+DROP TABLE IF EXISTS `contact_notification_deliveries`;
 DROP TABLE IF EXISTS `notifications`;
 DROP TABLE IF EXISTS `book_title_keywords`;
 DROP TABLE IF EXISTS `book_keywords`;
@@ -426,6 +427,26 @@ CREATE TABLE `sms_logs` (
     CONSTRAINT `fk_sms_borrowing` FOREIGN KEY (`borrowing_id`) REFERENCES `borrowing`(`id`) ON DELETE CASCADE,
     INDEX `idx_borrowing_type` (`borrowing_id`, `type`),
     INDEX `idx_user_created` (`user_id`, `created_at`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `contact_notification_deliveries` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `recipient_type` ENUM('user','visitor') NOT NULL,
+    `recipient_id` INT NOT NULL,
+    `event_type` ENUM('borrow_requested','borrow_approved') NOT NULL,
+    `borrowing_reference` VARCHAR(100) NOT NULL,
+    `channel` ENUM('email','sms') NOT NULL,
+    `destination` VARCHAR(150) DEFAULT NULL,
+    `subject` VARCHAR(255) DEFAULT NULL,
+    `message` TEXT NOT NULL,
+    `status` ENUM('pending','sent','failed','skipped') NOT NULL DEFAULT 'pending',
+    `attempts` INT NOT NULL DEFAULT 0,
+    `last_error` VARCHAR(500) DEFAULT NULL,
+    `sent_at` DATETIME DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_contact_delivery_event` (`recipient_type`, `recipient_id`, `event_type`, `borrowing_reference`, `channel`),
+    KEY `idx_contact_delivery_status` (`status`, `created_at`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `otp_codes` (

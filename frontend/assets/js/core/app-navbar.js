@@ -9,6 +9,15 @@ class AppNavbar {
     this.backdrop = null;
     this.previousBodyOverflow = "";
     this.responsiveBound = false;
+    this.notificationRoot = null;
+    this.notificationToggle = null;
+    this.notificationPanel = null;
+    this.notificationBadge = null;
+    this.notificationList = null;
+    this.notificationPath = "";
+    this.notificationCsrf = "";
+    this.handleNotificationToggle = null;
+    this.handleNotificationClick = null;
     this.handleKeydown = this.handleKeydown.bind(this);
     this.handleToggleClick = this.toggleDrawer.bind(this);
     this.handleBackdropClick = this.closeDrawer.bind(this);
@@ -23,6 +32,7 @@ class AppNavbar {
     if (initialRole) {
       this.render(initialRole);
       this.setupResponsiveControls();
+      this.setupBorrowerNotifications(initialRole);
       this.setActiveLink();
       return;
     }
@@ -31,6 +41,7 @@ class AppNavbar {
     this.cacheRole(role);
     this.render(role);
     this.setupResponsiveControls();
+    this.setupBorrowerNotifications(role);
     this.setActiveLink();
   }
 
@@ -104,6 +115,150 @@ class AppNavbar {
     } catch {
       // Storage may be unavailable in private browsing or restricted frames.
     }
+  }
+
+  setupBorrowerNotifications(role) {
+    if (!["student", "teacher"].includes(role) || this.notificationRoot) return;
+
+    const app = this.root.closest?.(".app");
+    const topbar = app?.querySelector?.(".topbar") || this.document?.querySelector?.(".topbar");
+    if (!topbar || !this.document?.createElement) return;
+
+    this.notificationPath = "/scan2borrow/api/" + role + "/notifications";
+    this.notificationCsrf = this.document.querySelector?.('meta[name="csrf"]')?.content || "";
+    const wrapper = this.document.createElement("div");
+    wrapper.className = "borrower-notifications";
+    wrapper.innerHTML = [
+      '<button type="button" class="borrower-notifications__toggle" aria-expanded="false" aria-controls="borrower-notifications-panel">',
+      '<span aria-hidden="true">&#128276;</span><span class="borrower-notifications__label">Notifications</span>',
+      '<span class="borrower-notifications__badge" hidden>0</span></button>',
+      '<section id="borrower-notifications-panel" class="borrower-notifications__panel" hidden aria-label="Notifications">',
+      '<div class="borrower-notifications__header"><strong>Notifications</strong>',
+      '<button type="button" data-notification-action="read-all">Mark all as read</button></div>',
+      '<div class="borrower-notifications__list"><p class="borrower-notifications__empty">No notifications yet.</p></div></section>',
+    ].join("");
+    topbar.appendChild(wrapper);
+    this.notificationRoot = wrapper;
+    this.notificationToggle = wrapper.querySelector?.(".borrower-notifications__toggle") || null;
+    this.notificationPanel = wrapper.querySelector?.(".borrower-notifications__panel") || null;
+    this.notificationBadge = wrapper.querySelector?.(".borrower-notifications__badge") || null;
+    this.notificationList = wrapper.querySelector?.(".borrower-notifications__list") || null;
+    if (!this.notificationToggle || !this.notificationPanel || !this.notificationList) return;
+
+    this.handleNotificationToggle = () => this.toggleNotifications();
+    this.handleNotificationClick = (event) => this.handleNotificationAction(event);
+    this.notificationToggle.addEventListener("click", this.handleNotificationToggle);
+    wrapper.addEventListener("click", this.handleNotificationClick);
+  }
+
+  toggleNotifications() {
+    if (this.notificationPanel?.hidden) {
+      this.openNotifications();
+      return;
+    }
+
+    this.closeNotifications();
+  }
+
+  async openNotifications() {
+    if (!this.notificationPanel) return;
+    this.notificationPanel.hidden = false;
+    this.notificationToggle?.setAttribute("aria-expanded", "true");
+    await this.loadNotifications();
+  }
+
+  closeNotifications() {
+    if (!this.notificationPanel) return;
+    this.notificationPanel.hidden = true;
+    this.notificationToggle?.setAttribute("aria-expanded", "false");
+  }
+
+  async loadNotifications() {
+    if (!this.notificationPath || !this.notificationList) return;
+
+    try {
+      const response = await this.window.fetch(this.notificationPath, {
+        headers: { Accept: "application/json", "X-Requested-With": "fetch" },
+      });
+      const payload = await response.json();
+      this.renderNotifications(payload.ok === true ? payload.data : { notifications: [], unread_count: 0 });
+    } catch {
+      this.renderNotifications({ notifications: [], unread_count: 0, error: true });
+    }
+  }
+
+  renderNotifications(data = {}) {
+    const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+    const unreadCount = Number(data.unread_count) || 0;
+    if (this.notificationBadge) {
+      this.notificationBadge.textContent = String(unreadCount);
+      this.notificationBadge.hidden = unreadCount < 1;
+    }
+    if (!this.notificationList) return;
+
+    if (typeof this.notificationList.replaceChildren === "function") {
+      this.notificationList.replaceChildren();
+    } else {
+      this.notificationList.innerHTML = "";
+    }
+
+    if (notifications.length === 0) {
+      const empty = this.document.createElement("p");
+      empty.className = "borrower-notifications__empty";
+      empty.textContent = data.error ? "Notifications are temporarily unavailable." : "No notifications yet.";
+      this.notificationList.appendChild(empty);
+      return;
+    }
+
+    notifications.forEach((notification) => {
+      const row = this.document.createElement("button");
+      row.type = "button";
+      row.className = "borrower-notification";
+      row.dataset.notificationId = String(notification.id || "");
+      row.classList.toggle("is-unread", Number(notification.is_read) !== 1);
+
+      const title = this.document.createElement("span");
+      title.className = "borrower-notification__title";
+      title.textContent = String(notification.title || "Notification");
+      const message = this.document.createElement("span");
+      message.className = "borrower-notification__message";
+      message.textContent = String(notification.message || "");
+      const time = this.document.createElement("span");
+      time.className = "borrower-notification__time";
+      time.textContent = String(notification.created_at || "");
+      row.append(title, message, time);
+      this.notificationList.appendChild(row);
+    });
+  }
+
+  handleNotificationAction(event) {
+    const target = event.target?.closest?.("[data-notification-action]");
+    if (target?.dataset.notificationAction === "read-all") {
+      this.markAllNotificationsRead();
+      return;
+    }
+    const row = event.target?.closest?.("[data-notification-id]");
+    const notificationId = row?.dataset.notificationId || "";
+    if (notificationId !== "") this.markNotificationRead(notificationId);
+  }
+
+  async postNotificationAction(action, notificationId = "") {
+    const values = { csrf: this.notificationCsrf, action };
+    if (notificationId !== "") values.notification_id = String(notificationId);
+    await this.window.fetch(this.notificationPath, {
+      method: "POST",
+      headers: { Accept: "application/json", "X-Requested-With": "fetch" },
+      body: new URLSearchParams(values),
+    });
+    await this.loadNotifications();
+  }
+
+  async markNotificationRead(notificationId) {
+    await this.postNotificationAction("read", notificationId);
+  }
+
+  async markAllNotificationsRead() {
+    await this.postNotificationAction("read_all");
   }
 
   renderBorrower(role) {
@@ -315,11 +470,20 @@ class AppNavbar {
   destroy() {
     this.toggle?.removeEventListener("click", this.handleToggleClick);
     this.backdrop?.removeEventListener("click", this.handleBackdropClick);
+    this.notificationToggle?.removeEventListener("click", this.handleNotificationToggle);
+    this.notificationRoot?.removeEventListener?.("click", this.handleNotificationClick);
+    this.notificationRoot?.remove?.();
     this.root.removeEventListener?.("click", this.handleNavigationClick);
     this.document?.removeEventListener?.("keydown", this.handleKeydown);
     this.closeDrawer();
     this.toggle = null;
     this.backdrop = null;
+    this.notificationRoot = null;
+    this.notificationToggle = null;
+    this.notificationPanel = null;
+    this.notificationBadge = null;
+    this.notificationList = null;
+    this.notificationPath = "";
     this.responsiveBound = false;
   }
 }

@@ -7,7 +7,7 @@ export class ReportsPage {
     this.pageSize = 10;
     this.currentPage = 1;
     this.report = { label: 'Library Report', headers: [], data: [] };
-    this.filters = { type: 'borrowed', from: '', to: '' };
+    this.filters = { type: 'borrowed', from: '', to: '', category: '' };
     this.isPrintMode = false;
     this.reportReady = false;
     this.eventsBound = false;
@@ -20,7 +20,7 @@ export class ReportsPage {
 
   async load() {
     const query = new URLSearchParams(this.window?.location?.search || '');
-    const filters = { type: query.get('type') || 'borrowed', from: query.get('from') || '', to: query.get('to') || '' };
+    const filters = { type: query.get('type') || 'borrowed', from: query.get('from') || '', to: query.get('to') || '', category: query.get('category') || '' };
     this.filters = filters;
     this.currentPage = 1;
     this.isPrintMode = query.has('print');
@@ -36,6 +36,9 @@ export class ReportsPage {
       ].map(([value, label]) => `<option value="${value}"${value === filters.type ? ' selected' : ''}>${label}</option>`).join('');
     }
 
+    const categorySelect = this.root.querySelector?.('select[name="category"]');
+    if (categorySelect) this.setCategoryOptions(categorySelect, [], filters.category);
+
     for (const field of ['from', 'to']) {
       const input = this.root.querySelector?.(`input[name="${field}"]`);
       if (input) {
@@ -49,7 +52,9 @@ export class ReportsPage {
       if (!response) return response;
 
       this.report = response.data?.report || {};
-      this.render(this.report, filters.from, filters.to);
+      const categories = Array.isArray(response.data?.categories) ? response.data.categories : [];
+      if (categorySelect) this.setCategoryOptions(categorySelect, categories, filters.category);
+      this.render(this.report, filters.from, filters.to, filters.category);
       const exportLink = this.root.querySelector?.('#export-report-link');
       if (exportLink && this.service?.exportUrl) exportLink.href = this.service.exportUrl(filters);
       const printLink = this.root.querySelector?.('#generate-report-link');
@@ -62,7 +67,7 @@ export class ReportsPage {
       return response;
     } catch (error) {
       this.report = { label: 'Library Report', headers: [], data: [] };
-      this.render(this.report, filters.from, filters.to);
+      this.render(this.report, filters.from, filters.to, filters.category);
       this.reportReady = false;
       const documentNode = this.root.querySelector?.('#staff-report-document');
       if (documentNode) documentNode.dataset.reportReady = 'false';
@@ -72,7 +77,7 @@ export class ReportsPage {
     }
   }
 
-  render(report, from = '', to = '') {
+  render(report, from = '', to = '', category = '') {
     const table = this.root.querySelector?.('#staff-report-table');
     const documentNode = this.root.querySelector?.('#staff-report-document');
     if (!table || !documentNode) return;
@@ -84,6 +89,7 @@ export class ReportsPage {
 
     this.text('staff-report-title', this.report.label);
     this.text('staff-report-period', this.reportPeriod(from, to));
+    this.text('staff-report-category', category || 'All Categories');
     this.text('staff-report-count', `${rows.length} record${rows.length === 1 ? '' : 's'}`);
     this.text('staff-report-generated', new Date().toLocaleString());
     this.text('staff-report-status', rows.length ? `${rows.length} records loaded` : 'No records found');
@@ -177,6 +183,14 @@ export class ReportsPage {
     if (button) button.disabled = !available;
   }
 
+  setCategoryOptions(select, categories, selected) {
+    const options = [['', 'All Categories'], ...categories
+      .filter((category) => typeof category === 'string' && category.trim() !== '')
+      .map((category) => [category.trim(), category.trim()])];
+    select.innerHTML = options.map(([value, label]) => `<option value="${this.escapeHtml(value)}"${value === selected ? ' selected' : ''}>${this.escapeHtml(label)}</option>`).join('');
+    select.value = selected;
+  }
+
   async downloadPdf() {
     if (!this.reportReady) return;
     const button = this.root.querySelector?.('#download-report-pdf');
@@ -195,8 +209,9 @@ export class ReportsPage {
       pdf.text?.(this.report.label, 40, 36);
       pdf.setFontSize?.(10);
       pdf.text?.(this.reportPeriod(this.filters.from, this.filters.to), 40, 52);
+      pdf.text?.(`Category: ${this.filters.category || 'All Categories'}`, 40, 66);
       pdf.autoTable({
-        startY: 68,
+        startY: 82,
         head: [this.report.headers.map((header) => String(header))],
         body: this.report.data.map((values) => this.report.headers.map((_, index) => String((Array.isArray(values) ? values[index] : '') ?? ''))),
         styles: { fontSize: 8, cellPadding: 4 },
@@ -215,6 +230,7 @@ export class ReportsPage {
     const parts = [
       'scan2borrow',
       this.filters.type,
+      this.filters.category ? `category-${this.filters.category}` : 'all-categories',
       this.filters.from || 'all-dates',
       this.filters.to ? `to-${this.filters.to}` : '',
     ].filter(Boolean).map((value) => String(value).replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase());
@@ -245,5 +261,15 @@ export class ReportsPage {
   text(id, value) {
     const node = this.root.querySelector?.(`#${id}`);
     if (node) node.textContent = String(value ?? '');
+  }
+
+  escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;',
+    }[character]));
   }
 }

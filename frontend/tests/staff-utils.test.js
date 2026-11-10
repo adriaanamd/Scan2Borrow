@@ -41,10 +41,10 @@ function reportsFixture({ rows, query = '?type=overdue', service, jspdf } = {}) 
   nodes.set('tbody', makeNode());
   for (const selector of [
     '#staff-report-document', '#staff-report-title', '#staff-report-period', '#staff-report-count',
-    '#staff-report-generated', '#staff-report-status', '#export-report-link', '#generate-report-link',
+    '#staff-report-category', '#staff-report-generated', '#staff-report-status', '#export-report-link', '#generate-report-link',
     '#download-report-pdf', '#staff-report-pagination', '#staff-report-range',
     '#staff-report-previous', '#staff-report-next', 'select[name="type"]',
-    'input[name="from"]', 'input[name="to"]',
+    'select[name="category"]', 'input[name="from"]', 'input[name="to"]',
   ]) nodes.set(selector, makeNode());
 
   const created = [];
@@ -53,7 +53,7 @@ function reportsFixture({ rows, query = '?type=overdue', service, jspdf } = {}) 
   const defaultService = {
     async load(filters) {
       calls.push(filters);
-      return { data: { report: { label: 'Overdue Books', headers: ['Title'], data: rows || [] } } };
+      return { data: { report: { label: 'Overdue Books', headers: ['Title'], data: rows || [] }, categories: ['Computer Science', 'English'] } };
     },
     exportUrl(filters) { return `/export?${filters.type}`; },
     printUrl(filters) { return `/print?${filters.type}`; },
@@ -77,12 +77,12 @@ test('staff utility services preserve report filters, export/print flags, and no
   };
   const reports = new StaffReportService({ api });
   const notifications = new StaffNotificationService({ api, window: { setInterval: () => 1, clearInterval() {} } });
-  await reports.load({ type: 'overdue', from: '2026-01-01', to: '2026-08-29' });
-  assert.equal(reports.exportUrl({ type: 'overdue', from: '2026-01-01' }), '/scan2borrow/api/staff/reports/export?type=overdue&from=2026-01-01');
-  assert.equal(reports.printUrl({ type: 'overdue' }), '/scan2borrow/staff/reports?type=overdue&print=1');
+  await reports.load({ type: 'overdue', from: '2026-01-01', to: '2026-08-29', category: 'English' });
+  assert.equal(reports.exportUrl({ type: 'overdue', from: '2026-01-01', category: 'English' }), '/scan2borrow/api/staff/reports/export?type=overdue&from=2026-01-01&category=English');
+  assert.equal(reports.printUrl({ type: 'overdue', category: 'English' }), '/scan2borrow/staff/reports?type=overdue&print=1&category=English');
   await notifications.load({ action: 'pending_approvals' });
   assert.deepEqual(calls, [
-    { method: 'GET', path: '/scan2borrow/api/staff/reports', params: { type: 'overdue', from: '2026-01-01', to: '2026-08-29' } },
+    { method: 'GET', path: '/scan2borrow/api/staff/reports', params: { type: 'overdue', from: '2026-01-01', to: '2026-08-29', category: 'English' } },
     { method: 'GET', path: '/scan2borrow/api/staff/notifications', params: { action: 'pending_approvals' } },
   ]);
   notifications.stop();
@@ -123,11 +123,13 @@ test('reports page renders data, preserves links, and prints after report readin
   nodes.set('#staff-report-title', makeNode());
   nodes.set('#staff-report-period', makeNode());
   nodes.set('#staff-report-count', makeNode());
+  nodes.set('#staff-report-category', makeNode());
   nodes.set('#staff-report-generated', makeNode());
   nodes.set('#staff-report-status', makeNode());
   nodes.set('#export-report-link', makeNode());
   nodes.set('#generate-report-link', makeNode());
   nodes.set('select[name="type"]', makeNode());
+  nodes.set('select[name="category"]', makeNode());
   nodes.set('input[name="from"]', makeNode());
   nodes.set('input[name="to"]', makeNode());
 
@@ -182,6 +184,31 @@ test('reports page paginates fetched rows and shows the complete result range', 
   assert.equal(fixture.nodes.get('#staff-report-next').disabled, true);
 });
 
+test('reports page renders category options and preserves the selected category across report links', async () => {
+  let loadedFilters;
+  const fixture = reportsFixture({
+    query: '?type=borrowed&category=Computer%20Science',
+    service: {
+      async load(filters) {
+        loadedFilters = filters;
+        return { data: { report: { label: 'Borrowed Books', headers: ['Title'], data: [['Clean Code']] }, categories: ['Computer Science', 'English'] }, filters };
+      },
+      exportUrl(filters) { return `/export?type=${filters.type}&category=${encodeURIComponent(filters.category)}`; },
+      printUrl(filters) { return `/print?type=${filters.type}&category=${encodeURIComponent(filters.category)}`; },
+    },
+  });
+
+  await fixture.page.start();
+
+  assert.match(fixture.nodes.get('select[name="category"]').innerHTML, /All Categories/);
+  assert.match(fixture.nodes.get('select[name="category"]').innerHTML, /value="Computer Science" selected/);
+  assert.equal(fixture.nodes.get('select[name="category"]').value, 'Computer Science');
+  assert.equal(fixture.nodes.get('#staff-report-category').textContent, 'Computer Science');
+  assert.deepEqual(loadedFilters, { type: 'borrowed', from: '', to: '', category: 'Computer Science' });
+  assert.equal(fixture.nodes.get('#export-report-link').href, '/export?type=borrowed&category=Computer%20Science');
+  assert.equal(fixture.nodes.get('#generate-report-link').href, '/print?type=borrowed&category=Computer%20Science');
+});
+
 test('reports page resets pagination when filters load a new dataset', async () => {
   const firstRows = Array.from({ length: 25 }, (_, index) => [`Book ${index + 1}`]);
   const secondRows = Array.from({ length: 3 }, (_, index) => [`New book ${index + 1}`]);
@@ -208,8 +235,8 @@ test('reports page resets pagination when filters load a new dataset', async () 
 
   assert.equal(fixture.nodes.get('#staff-report-range').textContent, '1–3 of 3');
   assert.deepEqual(calls, [
-    { type: 'overdue', from: '2026-01-01', to: '' },
-    { type: 'overdue', from: '2026-02-01', to: '' },
+    { type: 'overdue', from: '2026-01-01', to: '', category: '' },
+    { type: 'overdue', from: '2026-02-01', to: '', category: '' },
   ]);
 });
 

@@ -18,6 +18,8 @@ final class StaffReportsContractTest extends TestCase
             'id="staff-report-document"',
             'id="staff-report-title"',
             'id="staff-report-period"',
+            'id="staff-report-category-filter"',
+            'name="category"',
             'id="staff-report-generated"',
             'id="staff-report-table"',
         ] as $marker) {
@@ -33,7 +35,7 @@ final class StaffReportsContractTest extends TestCase
     {
         $source = $this->read('frontend/features/staff/pages/reports/reports.page.js');
 
-        self::assertStringContainsString('render(response.data?.report || {}, filters.from, filters.to)', $source);
+        self::assertStringContainsString('this.render(this.report, filters.from, filters.to, filters.category)', $source);
         self::assertStringContainsString('await this.printReportWhenReady();', $source);
         self::assertStringContainsString('requestAnimationFrame', $source);
         self::assertStringContainsString('staff-report-document', $source);
@@ -46,7 +48,7 @@ final class StaffReportsContractTest extends TestCase
         $notification = file_get_contents($root . DIRECTORY_SEPARATOR . 'notification.service.js');
         self::assertIsString($report);
         self::assertIsString($notification);
-        foreach (['/api/staff/reports', '/api/staff/reports/export', "print: '1'", 'type', 'from', 'to'] as $marker) self::assertStringContainsString($marker, $report);
+        foreach (['/api/staff/reports', '/api/staff/reports/export', "print: '1'", 'type', 'from', 'to', 'category'] as $marker) self::assertStringContainsString($marker, $report);
         foreach (['/api/staff/notifications', '/api/staff/notifications/viewed', '/api/staff/notify', 'notification_id', 'notification_type'] as $marker) self::assertStringContainsString($marker, $notification);
     }
 

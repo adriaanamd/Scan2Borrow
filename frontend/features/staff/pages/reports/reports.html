@@ -52,7 +52,7 @@
 
           <div class="table-card mb-4">
             <form method="GET" class="row g-2 align-items-end">
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label">Report Type</label>
                 <select
                   name="type"
@@ -64,10 +64,17 @@
               </div>
 
               <div class="col-md-3">
+                <label class="form-label" for="staff-report-category-filter">Category</label>
+                <select id="staff-report-category-filter" name="category" class="form-select" onchange="this.form.submit()">
+                  <option value="">All Categories</option>
+                </select>
+              </div>
+
+              <div class="col-md-2">
                 <label class="form-label">From</label>
                 <input type="date" name="from" class="form-control" value="" />
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <label class="form-label">To</label>
                 <input type="date" name="to" class="form-control" value="" />
               </div>
@@ -95,6 +102,10 @@
               <div>
                 <dt>Period</dt>
                 <dd id="staff-report-period">All available dates</dd>
+              </div>
+              <div>
+                <dt>Category</dt>
+                <dd id="staff-report-category">All Categories</dd>
               </div>
               <div>
                 <dt>Total records</dt>

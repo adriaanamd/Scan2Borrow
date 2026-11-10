@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Infrastructure;
 
+use App\Application\DTO\BorrowerContactNotification;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Infrastructure\Persistence\PdoStaffRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
 use App\Infrastructure\Persistence\PdoCirculationNotificationRepository;
@@ -218,6 +220,34 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertStringContainsString('"Clean Code"', $row['message']);
         self::assertSame(1, (int) $row['related_id']);
         self::assertSame(0, (int) $row['is_read']);
+    }
+
+    public function testNormalizedApprovalDispatchesContactNotificationAfterCommit(): void
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $contactNotifications = new RecordingBorrowerContactNotifications($pdo);
+        $repository = new PdoStaffRepository($pdo, null, new PdoCirculationNotificationRepository($pdo), $contactNotifications);
+
+        $repository->approveBorrowing(1, 99);
+
+        self::assertCount(1, $contactNotifications->events);
+        self::assertTrue($contactNotifications->wasOutsideTransaction);
+        self::assertSame('user', $contactNotifications->events[0]->recipientType);
+        self::assertSame('borrow_approved', $contactNotifications->events[0]->eventType);
+        self::assertSame('TX-PENDING', $contactNotifications->events[0]->borrowingReference);
+        self::assertSame([['title' => 'Clean Code', 'quantity' => 1]], $contactNotifications->events[0]->titles);
+        self::assertSame('2026-09-10', $contactNotifications->events[0]->dueDate);
+    }
+
+    public function testRejectedApprovalDoesNotDispatchContactNotification(): void
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $contactNotifications = new RecordingBorrowerContactNotifications($pdo);
+        $repository = new PdoStaffRepository($pdo, null, new PdoCirculationNotificationRepository($pdo), $contactNotifications);
+
+        $repository->rejectBorrowing(1, 99);
+
+        self::assertSame([], $contactNotifications->events);
     }
 
     public function testNormalizedBulkApprovalListsDistinctTitlesInOneNotification(): void
@@ -439,5 +469,23 @@ final class PdoStaffRepositoryTest extends TestCase
         /** @var array{data: list<list<mixed>>} $invalidCategory */
         $invalidCategory = $repository->report('inventory', '', '', 'Mathematics');
         self::assertSame([], $invalidCategory['data']);
+    }
+}
+
+final class RecordingBorrowerContactNotifications implements BorrowerContactNotificationInterface
+{
+    /** @var list<BorrowerContactNotification> */
+    public array $events = [];
+
+    public bool $wasOutsideTransaction = false;
+
+    public function __construct(private readonly PDO $pdo)
+    {
+    }
+
+    public function dispatch(BorrowerContactNotification $notification): void
+    {
+        $this->wasOutsideTransaction = !$this->pdo->inTransaction();
+        $this->events[] = $notification;
     }
 }

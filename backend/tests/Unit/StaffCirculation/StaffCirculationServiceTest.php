@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\StaffCirculation;
 
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\Services\ClockInterface;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Application\StaffCirculation\StaffCirculationBorrowRequest;
 use App\Application\StaffCirculation\StaffCirculationRepositoryInterface;
 use App\Application\StaffCirculation\StaffCirculationReturnRequest;
@@ -115,6 +117,26 @@ final class StaffCirculationServiceTest extends TestCase
         self::assertSame(19, $repository->borrowed['staff_id'] ?? null);
     }
 
+    public function testBorrowDispatchesApprovedContactNotification(): void
+    {
+        $repository = new FakeStaffCirculationRepository();
+        $notifications = $this->createMock(BorrowerContactNotificationInterface::class);
+        $notifications->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(static fn (BorrowerContactNotification $event): bool =>
+                $event->recipientType === 'user'
+                && $event->recipientId === 7
+                && $event->eventType === 'borrow_approved'
+                && $event->titles === [['title' => 'Clean Code', 'quantity' => 1]]
+                && $event->dueDate === '2026-09-04'
+            ));
+        $service = $this->service($repository, $notifications);
+
+        $result = $service->borrow(19, new StaffCirculationBorrowRequest('STU-001', ['COPY-001']));
+
+        self::assertTrue($result->successful());
+    }
+
     public function testBorrowReturnsRepositoryValidationErrors(): void
     {
         $repository = new FakeStaffCirculationRepository();
@@ -155,13 +177,14 @@ final class StaffCirculationServiceTest extends TestCase
         self::assertSame(['COPY-001'], $repository->returned['copy_barcodes'] ?? null);
     }
 
-    private function service(FakeStaffCirculationRepository $repository): StaffCirculationService
+    private function service(FakeStaffCirculationRepository $repository, ?BorrowerContactNotificationInterface $notifications = null): StaffCirculationService
     {
         return new StaffCirculationService(
             $repository,
             new \App\Domain\Borrowing\BorrowingPolicy(3, 7, 30, false),
             new StaffCirculationFixedClock(),
             20.0,
+            $notifications,
         );
     }
 }
@@ -247,6 +270,7 @@ final class FakeStaffCirculationRepository implements StaffCirculationRepository
             'transaction_code' => $transactionCode,
             'borrowed' => count($bookBarcodes),
             'due_date' => $dueDate->format('Y-m-d'),
+            'items' => [['title' => 'Clean Code', 'quantity' => 1]],
         ];
     }
 

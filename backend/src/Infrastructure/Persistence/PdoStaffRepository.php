@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence;
 
+use App\Application\DTO\BorrowerContactNotification;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Domain\Audit\AuditEvent;
 use App\Domain\Audit\AuditEventType;
 use DateTimeImmutable;
@@ -16,6 +18,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         private readonly PDO $pdo,
         private readonly ?AuditEventRepositoryInterface $audit = null,
         private readonly ?CirculationNotificationRepositoryInterface $notifications = null,
+        private readonly ?BorrowerContactNotificationInterface $contactNotifications = null,
     )
     {
     }
@@ -911,7 +914,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             $status = $approve ? 'approved' : 'rejected';
             if ($this->hasTable('borrowing_transactions')) {
                 $copyStatement = $this->pdo->prepare(
-                    'SELECT c.id, c.barcode, bt.user_id, t.title, bi.id AS item_id, c.status FROM borrowing_items bi '
+                    'SELECT c.id, c.barcode, bt.user_id, bt.transaction_code, bt.due_date, t.title, bi.id AS item_id, c.status FROM borrowing_items bi '
                     . 'JOIN borrowing_transactions bt ON bt.id = bi.transaction_id '
                     . 'JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id '
                     . 'WHERE bi.transaction_id = :transaction_id'
@@ -972,10 +975,13 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                     ));
                 }
                 $this->pdo->commit();
+                if ($approve) {
+                    $this->notifyApprovedContact($copies, $borrowingId);
+                }
                 return;
             }
             $borrowerStatement = $this->pdo->prepare(
-                'SELECT b.user_id, b.book_id, books.title FROM borrowing b '
+                'SELECT b.user_id, b.book_id, b.transaction_code, b.due_date, books.title FROM borrowing b '
                 . 'JOIN books ON books.id = b.book_id WHERE b.id = :id LIMIT 1'
             );
             $borrowerStatement->execute(['id' => $borrowingId]);
@@ -1010,6 +1016,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 $this->notifyApprovedBorrower([$approvalContext], $borrowingId);
             }
             $this->pdo->commit();
+            if ($approve) {
+                $this->notifyApprovedContact([$approvalContext], $borrowingId);
+            }
         } catch (\Throwable $exception) {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
@@ -1050,6 +1059,52 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             'Your borrowing request was approved. You borrowed: ' . implode(', ', $quotedTitles) . '.',
             $borrowingId,
         );
+    }
+
+    /** @param list<array<string, mixed>> $copies */
+    private function notifyApprovedContact(array $copies, int $borrowingId): void
+    {
+        if ($this->contactNotifications === null) {
+            return;
+        }
+
+        $userId = 0;
+        $reference = '';
+        $dueDate = null;
+        $counts = [];
+        foreach ($copies as $copy) {
+            if ($userId < 1 && is_numeric($copy['user_id'] ?? null)) {
+                $userId = (int) $copy['user_id'];
+            }
+            if ($reference === '') {
+                $reference = $this->string($copy['transaction_code'] ?? null);
+            }
+            if ($dueDate === null) {
+                $candidateDueDate = $this->string($copy['due_date'] ?? null);
+                $dueDate = $candidateDueDate !== '' ? $candidateDueDate : null;
+            }
+            $title = $this->string($copy['title'] ?? null);
+            if ($title !== '') {
+                $counts[$title] = ($counts[$title] ?? 0) + 1;
+            }
+        }
+        if ($userId < 1 || $counts === []) {
+            return;
+        }
+
+        $titles = [];
+        foreach ($counts as $title => $quantity) {
+            $titles[] = ['title' => $title, 'quantity' => $quantity];
+        }
+
+        $this->contactNotifications->dispatch(new BorrowerContactNotification(
+            'user',
+            $userId,
+            'borrow_approved',
+            $reference !== '' ? $reference : (string) $borrowingId,
+            $titles,
+            $dueDate,
+        ));
     }
 
     private function count(string $sql): int

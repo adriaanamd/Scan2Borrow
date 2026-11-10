@@ -81,7 +81,9 @@ final class PdoContactNotificationDeliveryRepositoryTest extends TestCase
 
         self::assertIsInt($first);
         self::assertNull($duplicate);
-        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM contact_notification_deliveries')->fetchColumn());
+        $countStatement = $this->pdo->query('SELECT COUNT(*) FROM contact_notification_deliveries');
+        self::assertNotFalse($countStatement);
+        self::assertSame(1, (int) $countStatement->fetchColumn());
     }
 
     public function testMarksDeliverySentAndFailed(): void
@@ -95,7 +97,9 @@ final class PdoContactNotificationDeliveryRepositoryTest extends TestCase
         $repository->markSent($sentId, new DateTimeImmutable('2026-11-10 12:00:00'));
         $repository->markFailed($failedId, 'Provider timed out');
 
-        $rows = $this->pdo->query('SELECT status, attempts, last_error, sent_at FROM contact_notification_deliveries ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+        $rowsStatement = $this->pdo->query('SELECT status, attempts, last_error, sent_at FROM contact_notification_deliveries ORDER BY id');
+        self::assertNotFalse($rowsStatement);
+        $rows = $rowsStatement->fetchAll(PDO::FETCH_ASSOC);
         self::assertSame('sent', $rows[0]['status']);
         self::assertSame('1', (string) $rows[0]['attempts']);
         self::assertSame('2026-11-10 12:00:00', $rows[0]['sent_at']);

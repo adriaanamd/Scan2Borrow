@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\StaffCirculation;
 
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\Services\ClockInterface;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Domain\Auth\Role;
 use App\Domain\Borrowing\BorrowingPolicy;
 use DateTimeImmutable;
@@ -18,6 +20,7 @@ final class StaffCirculationService
         private readonly BorrowingPolicy $policy,
         private readonly ClockInterface $clock,
         private readonly float $finePerDay = 20.0,
+        private readonly ?BorrowerContactNotificationInterface $contactNotifications = null,
     ) {
     }
 
@@ -100,6 +103,14 @@ final class StaffCirculationService
 
         $data['transaction_code'] = $data['transaction_code'] ?? $transactionCode;
         $data['due_date'] = $data['due_date'] ?? $dueDate->format('Y-m-d');
+        $this->contactNotifications?->dispatch(new BorrowerContactNotification(
+            'user',
+            $borrowerId,
+            'borrow_approved',
+            is_string($data['transaction_code']) ? $data['transaction_code'] : $transactionCode,
+            $this->groupedTitles($data['items'] ?? []),
+            is_string($data['due_date']) ? $data['due_date'] : $dueDate->format('Y-m-d'),
+        ));
 
         return StaffCirculationResult::success('Borrowing transaction approved.', $data);
     }
@@ -221,5 +232,37 @@ final class StaffCirculationService
     private function string(mixed $value): string
     {
         return is_string($value) ? trim($value) : '';
+    }
+
+    /**
+     * @param mixed $items
+     * @return list<array{title: string, quantity: int}>
+     */
+    private function groupedTitles(mixed $items): array
+    {
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $counts = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $title = $this->string($item['title'] ?? null);
+            if ($title === '') {
+                continue;
+            }
+            $quantity = is_numeric($item['quantity'] ?? null) ? max(1, (int) $item['quantity']) : 1;
+            $counts[$title] = ($counts[$title] ?? 0) + $quantity;
+        }
+
+        /** @var list<array{title: string, quantity: int}> $titles */
+        $titles = [];
+        foreach ($counts as $title => $quantity) {
+            $titles[] = ['title' => $title, 'quantity' => $quantity];
+        }
+
+        return $titles;
     }
 }

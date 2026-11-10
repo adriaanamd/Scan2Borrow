@@ -428,4 +428,3 @@ git merge --no-ff feat/library-aide-workspace -m "Merge library aide workspace"
 ~~~
 
 Confirm only approved feature/spec/plan files are present and no package-lock.json, PHPMailer junction, uploads, or unrelated user files are staged. After merging, rerun npm test and the PHP 8.5.12 Composer quality gate from the main checkout. Report any pre-existing baseline failures explicitly; do not claim the merge is green without fresh output.
-

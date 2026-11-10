@@ -31,6 +31,10 @@ final class InstallSchemaContractTest extends TestCase
             'CREATE TABLE `renewal_requests`',
             'CREATE TABLE `audit_events`',
             'CREATE TABLE `courses`',
+            "ENUM('system_admin','library_aide')",
+            "'ADMIN001'",
+            "'LIBRARY001'",
+            "'library_aide'",
         ] as $marker) {
             self::assertStringContainsString($marker, $sql, "Installer missing marker: {$marker}");
         }

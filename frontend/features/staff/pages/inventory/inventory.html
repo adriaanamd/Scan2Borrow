@@ -41,8 +41,8 @@
           <div class="page-head">
             <div>
               <p>
-                Manage your library collection. Add, edit, archive and restore
-                books without leaving the page.
+                Manage your library collection. Add, edit, and review copy status
+                without leaving the page.
               </p>
             </div>
             <button id="btn-add" class="btn btn-accent">
@@ -86,13 +86,13 @@
               style="display: none"
             >
               <strong><span id="inv-bulkcount">0</span> selected</strong>
-              <button class="btn btn-warning btn-sm" data-bulk="archive">
+              <button class="btn btn-warning btn-sm" data-bulk="archive" data-system-admin-only>
                 Archive selected
               </button>
               <button class="btn btn-success btn-sm" data-bulk="restore">
                 Restore selected
               </button>
-              <button class="btn btn-outline-danger btn-sm" data-bulk="delete">
+              <button class="btn btn-outline-danger btn-sm" data-bulk="delete" data-system-admin-only>
                 Delete selected
               </button>
             </div>

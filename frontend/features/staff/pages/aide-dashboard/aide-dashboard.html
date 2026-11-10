@@ -75,6 +75,10 @@
                 </div>
                 <label for="aide-copy-barcodes">Copy barcodes <span>(optional for handoff)</span></label>
                 <textarea id="aide-copy-barcodes" name="copy_barcodes" rows="2" placeholder="One barcode per line"></textarea>
+                <div data-aide-scan-review class="aide-scan-review" aria-live="polite">
+                  <span class="aide-scan-review__label">Review list</span>
+                  <span class="aide-scan-review__empty">No copies staged yet.</span>
+                </div>
                 <p data-aide-scan-status class="aide-inline-status" role="status">Scan a borrower ID to begin.</p>
                 <a data-aide-open-circulation class="aide-button aide-button--blue" href="/scan2borrow/staff/circulation">Continue at circulation desk <span aria-hidden="true">&#8594;</span></a>
               </form>

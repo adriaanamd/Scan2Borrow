@@ -45,7 +45,22 @@ export class InventoryPage {
     this.coverPreviewWrap = this.$("cover-preview-wrap");
     this.coverObjectUrl = null;
     this.searchTimer = null;
+    this.isLibraryAide = false;
     this.bindEvents();
+    this.initialize();
+  }
+
+  async initialize() {
+    try {
+      const response = await fetch("/scan2borrow/api/auth/session", {
+        headers: { Accept: "application/json" },
+      });
+      const payload = await response.json();
+      this.isLibraryAide = payload.ok === true && payload.data?.access_profile === "library_aide";
+    } catch {
+      this.isLibraryAide = false;
+    }
+    this.updateSystemAdminControls();
     this.load();
   }
 
@@ -195,18 +210,14 @@ export class InventoryPage {
         ? '<button class="btn btn-success btn-sm" data-act="restore" data-id="' +
           titleId +
           '">Restore</button> ' +
-          '<button class="btn btn-outline-danger btn-sm" data-act="delete" data-id="' +
-          titleId +
-          '">Delete</button>'
+          (this.isLibraryAide ? "" : '<button class="btn btn-outline-danger btn-sm" data-act="delete" data-id="' + titleId + '">Delete</button>')
         : '<button class="btn btn-outline-primary btn-sm" data-act="edit" data-id="' +
           titleId +
           '">Edit</button> ' +
           '<button class="btn btn-outline-secondary btn-sm" data-act="copies" data-id="' +
           titleId +
           '">Copies</button> ' +
-          '<button class="btn btn-outline-warning btn-sm" data-act="archive" data-id="' +
-          titleId +
-          '">Archive</button>';
+          (this.isLibraryAide ? "" : '<button class="btn btn-outline-warning btn-sm" data-act="archive" data-id="' + titleId + '">Archive</button>');
       const cell = (content, className, style) => {
         const element = document.createElement("td");
         if (className) element.className = className;
@@ -317,6 +328,12 @@ export class InventoryPage {
     this.renderSortIndicators();
   }
 
+  updateSystemAdminControls() {
+    document.querySelectorAll("[data-system-admin-only]").forEach((control) => {
+      control.hidden = this.isLibraryAide;
+    });
+  }
+
   renderPager(page, pages) {
     this.pager.innerHTML = "";
     if (pages <= 1) return;
@@ -360,7 +377,9 @@ export class InventoryPage {
       const action = button.getAttribute("data-bulk");
       const showInArchived = action === "restore" || action === "delete";
       button.style.display =
-        this.state.archived === showInArchived ? "" : "none";
+        this.isLibraryAide && (action === "archive" || action === "delete")
+          ? "none"
+          : this.state.archived === showInArchived ? "" : "none";
     });
   }
 

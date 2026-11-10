@@ -19,7 +19,10 @@ export class AideDashboardPage {
     }
     this.renderStats(this.dashboard.stats);
     this.renderActivity([]);
-    return this.load();
+    const loaded = this.load();
+    this.dashboardService?.startPolling?.((response) => this.renderActivity(this.activityRows(response)));
+    this.notificationService?.start?.((response) => this.renderActivity(this.activityRows(response)));
+    return loaded;
   }
 
   async load() {
@@ -30,7 +33,7 @@ export class AideDashboardPage {
       this.renderActivity(this.dashboard.pending);
       this.hideError();
       const notifications = await this.notificationService.load();
-      const rows = notifications?.notifications || notifications?.data || [];
+      const rows = this.activityRows(notifications);
       if (Array.isArray(rows) && rows.length > 0) this.renderActivity(rows);
     } catch (error) {
       this.showError(error?.message || 'Desk activity is temporarily unavailable.');
@@ -72,13 +75,35 @@ export class AideDashboardPage {
     const next = event.target?.closest?.('[data-aide-scan-next]');
     if (!next) return;
     const borrower = this.root.querySelector?.('#aide-borrower-barcode')?.value?.trim() || '';
+    const copies = (this.root.querySelector?.('#aide-copy-barcodes')?.value || '')
+      .split(/\r?\n|,/)
+      .map((value) => value.trim())
+      .filter(Boolean);
     const status = this.root.querySelector?.('[data-aide-scan-status]');
     if (!borrower) {
       if (status) status.textContent = 'Scan or enter a borrower ID first.';
       return;
     }
     this.root.querySelectorAll?.('[data-aide-scan-step]').forEach((step) => step.classList.toggle('is-active', step.dataset.aideScanStep === 'copies'));
+    this.renderScanReview(copies);
     if (status) status.textContent = 'Borrower staged. Add copy barcodes or continue at the circulation desk.';
+  }
+
+  activityRows(response = {}) {
+    const data = response?.data || response || {};
+    if (Array.isArray(response?.notifications)) return response.notifications;
+    if (Array.isArray(data.notifications)) return data.notifications;
+    if (Array.isArray(data.pending)) return data.pending;
+    return [];
+  }
+
+  renderScanReview(copies = []) {
+    const mount = this.root.querySelector?.('[data-aide-scan-review]');
+    if (!mount) return;
+    const items = copies.length === 0
+      ? '<span class="aide-scan-review__empty">No copies staged yet.</span>'
+      : copies.map((copy) => `<span class="aide-scan-review__item">${this.escape(copy)}</span>`).join('');
+    mount.innerHTML = `<span class="aide-scan-review__label">Review list</span>${items}`;
   }
 
   showError(message) {

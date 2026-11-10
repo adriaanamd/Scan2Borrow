@@ -114,6 +114,11 @@
 .aide-button--blue { background: var(--aide-blue); color: #fff; margin-top: 8px; }
 .aide-button:hover { filter: brightness(1.12); color: #fff; }
 .aide-inline-status { color: var(--aide-muted); font-size: 12px; margin: 4px 0 0; }
+.aide-scan-review { border-left: 2px solid var(--aide-blue); display: grid; gap: 5px; margin-top: 8px; padding: 8px 12px; }
+.aide-scan-review__label { color: var(--aide-ink); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.aide-scan-review__empty,
+.aide-scan-review__item { color: var(--aide-muted); font-size: 12px; }
+.aide-scan-review__item { color: var(--aide-ink); }
 
 .aide-activity { min-height: 220px; padding-top: 20px; }
 .aide-activity__row { border-top: 1px solid var(--aide-rule); display: flex; gap: 15px; justify-content: space-between; padding: 14px 0; }

@@ -8,6 +8,7 @@ use App\Application\Services\AuthenticationService;
 use App\Application\Services\BookQueryService;
 use App\Application\Services\BookArchiveService;
 use App\Application\Services\BorrowerNotificationService;
+use App\Application\Services\BorrowerContactNotificationService;
 use App\Application\Services\BookMutationService;
 use App\Application\Services\BorrowingService;
 use App\Application\Services\CsrfService;
@@ -73,6 +74,7 @@ use App\Http\Documentation\ApiEndpointCatalog;
 use App\Infrastructure\Database\DatabaseConfig;
 use App\Infrastructure\Database\PdoConnectionFactory;
 use App\Infrastructure\Persistence\PdoUserRepository;
+use App\Infrastructure\Persistence\PdoContactNotificationDeliveryRepository;
 use App\Infrastructure\Persistence\PdoBookRepository;
 use App\Infrastructure\Persistence\PdoBarcodePrintRepository;
 use App\Infrastructure\Persistence\PdoAuditEventRepository;
@@ -147,6 +149,11 @@ final class ApplicationFactory
             new \App\Application\Services\BarcodePrintService(new PdoBarcodePrintRepository($pdo, $auditRepository)),
             $csrf,
         );
+        $contactNotifications = new BorrowerContactNotificationService(
+            new PdoContactNotificationDeliveryRepository($pdo),
+            new SmtpEmailSender(),
+            SmsSenderFactory::create(),
+        );
         $borrowings = new PdoBorrowingRepository($pdo, $auditRepository);
         $holds = new \App\Infrastructure\Persistence\PdoHoldRepository($pdo);
         $reservationAvailability = new ReservationAvailabilityService(
@@ -164,6 +171,7 @@ final class ApplicationFactory
             new BorrowingPolicy(3, 7, 30, false),
             new SystemClock(),
             20.0,
+            $contactNotifications,
         );
         $reservationService = new ReservationService($holds);
         $renewalRepository = new \App\Infrastructure\Persistence\PdoRenewalRepository($pdo);
@@ -183,7 +191,7 @@ final class ApplicationFactory
         $borrowerController = new BorrowerController(
             $sessions,
             $csrf,
-            new BorrowingService($borrowings, new BorrowingPolicy(3, 7, 30, true), new SystemClock()),
+            new BorrowingService($borrowings, new BorrowingPolicy(3, 7, 30, true), new SystemClock(), $contactNotifications),
             new ReturnService($borrowings),
             new PdoBorrowerPortalRepository($pdo),
         );
@@ -206,7 +214,7 @@ final class ApplicationFactory
         $guestBorrowing = new GuestBorrowingController(
             $guestIdentity,
             new \App\Application\Services\GuestPortalService(new PdoGuestPortalRepository($pdo)),
-            new \App\Application\Services\GuestBorrowingService(new PdoGuestBorrowingRepository($pdo), new PdoVisitorNotificationRepository($pdo), 3),
+            new \App\Application\Services\GuestBorrowingService(new PdoGuestBorrowingRepository($pdo), new PdoVisitorNotificationRepository($pdo), 3, $contactNotifications),
             $csrf,
         );
         $visitorDetails = new PdoVisitorDetailsRepository($pdo);
@@ -230,6 +238,7 @@ final class ApplicationFactory
             $pdo,
             $auditRepository,
             new \App\Infrastructure\Persistence\PdoCirculationNotificationRepository($pdo),
+            $contactNotifications,
         );
         $staffController = new StaffController(
             $sessions,
@@ -238,6 +247,7 @@ final class ApplicationFactory
             new \App\Application\Services\GuestApprovalService(
                 new \App\Infrastructure\Persistence\PdoGuestApprovalRepository($pdo),
                 new \App\Infrastructure\Persistence\PdoVisitorNotificationRepository($pdo),
+                $contactNotifications,
             ),
             new LocalPhotoStorage(dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads', '/scan2borrow/uploads'),
             new BorrowerNotificationService(

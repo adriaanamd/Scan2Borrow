@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\DTO\GuestBorrowRequest;
 use App\Application\DTO\GuestBorrowingResult;
 use App\Application\DTO\GuestReturnVerificationRequest;
@@ -18,6 +19,7 @@ final class GuestBorrowingService
         private readonly GuestBorrowingRepositoryInterface $borrowings,
         private readonly VisitorNotificationRepositoryInterface $notifications,
         private readonly int $maximumActiveLoans,
+        private readonly ?BorrowerContactNotificationInterface $contactNotifications = null,
     ) {
     }
 
@@ -43,9 +45,18 @@ final class GuestBorrowingService
             return GuestBorrowingResult::failure('You have reached the borrowing limit.');
         }
 
-        $borrowingId = $this->borrowings->createPending($request, $visitor->id());
+        $created = $this->borrowings->createPending($request, $visitor->id());
+        $borrowingId = $created['id'];
         $this->notifications->notifyVisitor($visitor->id(), 'Borrow request submitted', 'Your request is now pending staff approval.');
         $this->notifications->notifyStaff($borrowingId, 'Guest requested to borrow a book.');
+        $this->contactNotifications?->dispatch(new BorrowerContactNotification(
+            'visitor',
+            $visitor->id(),
+            'borrow_requested',
+            (string) $borrowingId,
+            [['title' => $created['title'], 'quantity' => 1]],
+            $created['due_date'],
+        ));
 
         return GuestBorrowingResult::success($borrowingId, GuestBorrowingStatus::PENDING);
     }

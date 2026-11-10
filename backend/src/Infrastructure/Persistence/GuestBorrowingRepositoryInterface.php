@@ -12,7 +12,8 @@ interface GuestBorrowingRepositoryInterface
 
     public function activeCount(int $visitorId): int;
 
-    public function createPending(GuestBorrowRequest $request, int $visitorId): int;
+    /** @return array{id: int, title: string, due_date: string} */
+    public function createPending(GuestBorrowRequest $request, int $visitorId): array;
 
     public function findReleasedByBarcode(int $visitorId, string $bookBarcode): ?int;
 

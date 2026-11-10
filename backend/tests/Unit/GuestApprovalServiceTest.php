@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\Services\GuestApprovalService;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Infrastructure\Persistence\GuestApprovalRepositoryInterface;
 use App\Infrastructure\Persistence\VisitorNotificationRepositoryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -18,10 +20,14 @@ final class GuestApprovalServiceTest extends TestCase
     /** @var VisitorNotificationRepositoryInterface&MockObject */
     private VisitorNotificationRepositoryInterface $notifications;
 
+    /** @var BorrowerContactNotificationInterface&MockObject */
+    private BorrowerContactNotificationInterface $contactNotifications;
+
     protected function setUp(): void
     {
         $this->requests = $this->createMock(GuestApprovalRepositoryInterface::class);
         $this->notifications = $this->createMock(VisitorNotificationRepositoryInterface::class);
+        $this->contactNotifications = $this->createMock(BorrowerContactNotificationInterface::class);
     }
 
     public function testApproveReleasesRequestAndNotifiesVisitor(): void
@@ -31,8 +37,18 @@ final class GuestApprovalServiceTest extends TestCase
         ]);
         $this->requests->expects(self::once())->method('approve')->with(41, 'Keep the cover visible.');
         $this->notifications->expects(self::once())->method('notifyVisitor')->with(7, 'Borrow request approved', self::stringContains('Clean Code'));
+        $this->contactNotifications->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(static fn (BorrowerContactNotification $event): bool =>
+                $event->recipientType === 'visitor'
+                && $event->recipientId === 7
+                && $event->eventType === 'borrow_approved'
+                && $event->borrowingReference === '41'
+                && $event->titles === [['title' => 'Clean Code', 'quantity' => 1]]
+                && $event->dueDate === '2026-09-04'
+            ));
 
-        $result = (new GuestApprovalService($this->requests, $this->notifications))->approve(41, 'Keep the cover visible.');
+        $result = (new GuestApprovalService($this->requests, $this->notifications, $this->contactNotifications))->approve(41, 'Keep the cover visible.');
 
         self::assertTrue($result->isSuccessful());
         self::assertSame('Released', $result->status());

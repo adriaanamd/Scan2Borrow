@@ -7,6 +7,7 @@ namespace Tests\Unit\Infrastructure;
 use App\Application\DTO\GuestBorrowRequest;
 use App\Infrastructure\Persistence\PdoGuestBorrowingRepository;
 use App\Infrastructure\Persistence\PdoGuestPortalRepository;
+use DateTimeImmutable;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -42,7 +43,10 @@ final class PdoGuestRepositoriesTest extends TestCase
         $repository = new PdoGuestBorrowingRepository($this->pdo);
 
         self::assertTrue($repository->isBookAvailable(12));
-        $id = $repository->createPending(new GuestBorrowRequest(12, 'GOV-7', 'photo-data'), 7);
+        $created = $repository->createPending(new GuestBorrowRequest(12, 'GOV-7', 'photo-data'), 7);
+        $id = $created['id'];
+        self::assertSame('Clean Code', $created['title']);
+        self::assertSame((new DateTimeImmutable('today'))->modify('+7 days')->format('Y-m-d'), $created['due_date']);
         self::assertSame(1, $repository->activeCount(7));
 
         $repository->markReturnVerification($id, 'return-photo');

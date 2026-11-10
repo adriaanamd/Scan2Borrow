@@ -6,6 +6,8 @@ namespace Tests\Unit;
 
 use App\Application\DTO\GuestBorrowRequest;
 use App\Application\DTO\GuestReturnVerificationRequest;
+use App\Application\DTO\BorrowerContactNotification;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Application\Services\GuestBorrowingService;
 use App\Domain\Guest\GuestBorrowingStatus;
 use App\Domain\Guest\VisitorAccount;
@@ -24,11 +26,15 @@ final class GuestBorrowingServiceTest extends TestCase
     /** @var VisitorNotificationRepositoryInterface&MockObject */
     private VisitorNotificationRepositoryInterface $notifications;
 
+    /** @var BorrowerContactNotificationInterface&MockObject */
+    private BorrowerContactNotificationInterface $contactNotifications;
+
     protected function setUp(): void
     {
         $this->visitor = new VisitorAccount(7, 'GOV-777', 'Active', 'Visitor One');
         $this->borrowings = $this->createMock(GuestBorrowingRepositoryInterface::class);
         $this->notifications = $this->createMock(VisitorNotificationRepositoryInterface::class);
+        $this->contactNotifications = $this->createMock(BorrowerContactNotificationInterface::class);
     }
 
     public function testRequestRequiresMatchingGovernmentIdAndVerificationPhoto(): void
@@ -51,11 +57,21 @@ final class GuestBorrowingServiceTest extends TestCase
         $this->borrowings->expects(self::once())->method('createPending')->with(
             self::callback(static fn (GuestBorrowRequest $request): bool => $request->bookId() === 12 && $request->governmentIdBarcode() === 'GOV-777' && $request->verificationPhoto() === 'photo-data'),
             7,
-        )->willReturn(41);
+        )->willReturn(['id' => 41, 'title' => 'Clean Code', 'due_date' => '2026-09-04']);
         $this->notifications->expects(self::once())->method('notifyVisitor')->with(7, 'Borrow request submitted', self::stringContains('pending staff approval'));
         $this->notifications->expects(self::once())->method('notifyStaff')->with(41, self::stringContains('requested to borrow'));
+        $this->contactNotifications->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(static fn (BorrowerContactNotification $event): bool =>
+                $event->recipientType === 'visitor'
+                && $event->recipientId === 7
+                && $event->eventType === 'borrow_requested'
+                && $event->borrowingReference === '41'
+                && $event->titles === [['title' => 'Clean Code', 'quantity' => 1]]
+                && $event->dueDate === '2026-09-04'
+            ));
 
-        $service = new GuestBorrowingService($this->borrowings, $this->notifications, 3);
+        $service = new GuestBorrowingService($this->borrowings, $this->notifications, 3, $this->contactNotifications);
         $result = $service->submitRequest($this->visitor, new GuestBorrowRequest(12, 'GOV-777', 'photo-data'));
 
         self::assertTrue($result->isSuccessful());

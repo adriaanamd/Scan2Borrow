@@ -33,21 +33,26 @@ final class PdoGuestBorrowingRepository implements GuestBorrowingRepositoryInter
         return (int) $statement->fetchColumn();
     }
 
-    public function createPending(GuestBorrowRequest $request, int $visitorId): int
+    public function createPending(GuestBorrowRequest $request, int $visitorId): array
     {
+        $titleStatement = $this->pdo->prepare('SELECT title FROM books WHERE id = :id LIMIT 1');
+        $titleStatement->execute(['id' => $request->bookId()]);
+        $titleValue = $titleStatement->fetchColumn();
+        $title = is_string($titleValue) ? trim($titleValue) : '';
+        $borrowDate = new \DateTimeImmutable('today');
+        $dueDate = $borrowDate->modify('+7 days')->format('Y-m-d');
         $statement = $this->pdo->prepare(
             "INSERT INTO visitor_borrowing (visitor_id, book_id, borrow_date, due_date, request_status, verification_photo, requested_at) VALUES (:visitor_id, :book_id, :borrow_date, :due_date, 'Pending', :verification_photo, CURRENT_TIMESTAMP)"
         );
-        $borrowDate = new \DateTimeImmutable('today');
         $statement->execute([
             'visitor_id' => $visitorId,
             'book_id' => $request->bookId(),
             'borrow_date' => $borrowDate->format('Y-m-d'),
-            'due_date' => $borrowDate->modify('+7 days')->format('Y-m-d'),
+            'due_date' => $dueDate,
             'verification_photo' => $request->verificationPhoto(),
         ]);
 
-        return (int) $this->pdo->lastInsertId();
+        return ['id' => (int) $this->pdo->lastInsertId(), 'title' => $title, 'due_date' => $dueDate];
     }
 
     public function findReleasedByBarcode(int $visitorId, string $bookBarcode): ?int

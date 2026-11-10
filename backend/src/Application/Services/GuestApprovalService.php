@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\DTO\GuestReviewResult;
 use App\Infrastructure\Persistence\GuestApprovalRepositoryInterface;
 use App\Infrastructure\Persistence\VisitorNotificationRepositoryInterface;
@@ -13,6 +14,7 @@ final class GuestApprovalService
     public function __construct(
         private readonly GuestApprovalRepositoryInterface $requests,
         private readonly VisitorNotificationRepositoryInterface $notifications,
+        private readonly ?BorrowerContactNotificationInterface $contactNotifications = null,
     ) {
     }
 
@@ -30,6 +32,14 @@ final class GuestApprovalService
             'Borrow request approved',
             sprintf('"%s" has been approved and released.', $title),
         );
+        $this->contactNotifications?->dispatch(new BorrowerContactNotification(
+            'visitor',
+            $request['visitor_id'],
+            'borrow_approved',
+            (string) $request['id'],
+            [['title' => $title, 'quantity' => 1]],
+            is_string($request['due_date'] ?? null) ? $request['due_date'] : null,
+        ));
 
         return GuestReviewResult::success('Released', "Approved \u{2014} the guest can now view and print their receipt.");
     }

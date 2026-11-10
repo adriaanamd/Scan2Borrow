@@ -71,7 +71,7 @@ final class GuestBorrowingControllerTest extends TestCase
         $this->sessionStore->method('get')->willReturn($csrfToken);
         $this->borrowingRepository->method('isBookAvailable')->willReturn(true);
         $this->borrowingRepository->method('activeCount')->willReturn(0);
-        $this->borrowingRepository->method('createPending')->willReturn(19);
+        $this->borrowingRepository->method('createPending')->willReturn(['id' => 19, 'title' => 'Clean Code', 'due_date' => '2026-09-04']);
         $this->notificationRepository->expects(self::once())->method('notifyVisitor');
         $this->notificationRepository->expects(self::once())->method('notifyStaff');
         $controller = $this->controller(new VisitorAccount(7, 'GOV-777', 'Active', 'Visitor One'));

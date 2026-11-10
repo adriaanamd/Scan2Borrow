@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Routing;
 
+use App\Domain\Auth\StaffAccessProfile;
+
 final readonly class PageRoute
 {
     /**
@@ -15,6 +17,7 @@ final readonly class PageRoute
         private array $roles = [],
         private bool $guestOnly = false,
         private bool $redirectAuthenticated = false,
+        private ?StaffAccessProfile $requiredProfile = null,
     ) {
     }
 
@@ -49,5 +52,10 @@ final readonly class PageRoute
     public function redirectsAuthenticated(): bool
     {
         return $this->redirectAuthenticated;
+    }
+
+    public function requiredProfile(): ?StaffAccessProfile
+    {
+        return $this->requiredProfile;
     }
 }

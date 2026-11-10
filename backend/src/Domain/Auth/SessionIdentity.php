@@ -10,6 +10,7 @@ final readonly class SessionIdentity
         private int $userId,
         private Role $role,
         private string $sessionId,
+        private ?StaffAccessProfile $accessProfile = null,
     ) {
     }
 
@@ -26,5 +27,10 @@ final readonly class SessionIdentity
     public function sessionId(): string
     {
         return $this->sessionId;
+    }
+
+    public function accessProfile(): ?StaffAccessProfile
+    {
+        return $this->accessProfile;
     }
 }

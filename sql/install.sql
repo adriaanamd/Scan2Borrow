@@ -84,6 +84,7 @@ CREATE TABLE `users` (
     `email`         VARCHAR(120) DEFAULT NULL,
     `contact_no`    VARCHAR(30)  DEFAULT NULL,
     `role`          ENUM('admin','librarian','student','teacher') NOT NULL DEFAULT 'student',
+    `access_profile` ENUM('system_admin','library_aide') DEFAULT NULL,
     `password_hash` VARCHAR(255) DEFAULT NULL,   -- staff only; borrowers log in by barcode
     `photo`         MEDIUMTEXT   DEFAULT NULL,    -- ID photo stored as a base64 data URI
     `status`        ENUM('active','inactive') NOT NULL DEFAULT 'active',
@@ -606,10 +607,19 @@ CREATE TABLE `audit_events` (
 --   Login barcode: ADMIN001
 --   Password:      admin123   (CHANGE THIS after first login)
 INSERT INTO `users`
-    (barcode, firstname, middlename, lastname, course, year_level, email, contact_no, role, password_hash, status)
+    (barcode, firstname, middlename, lastname, course, year_level, email, contact_no, role, password_hash, status, access_profile)
 VALUES
     ('ADMIN001', 'Library', '', 'Administrator', NULL, NULL, 'admin@scan2borrow.local', NULL, 'admin',
-     '$2y$10$PO07qZD2aFvEM44Lm1A6zOaYyntI/8ZH2Wq7emzRfdq/7hN4D0xB.', 'active');
+     '$2y$10$PO07qZD2aFvEM44Lm1A6zOaYyntI/8ZH2Wq7emzRfdq/7hN4D0xB.', 'active', 'system_admin');
+
+-- Library aide account.
+--   Login barcode: LIBRARY001
+--   Temporary password: library123 (CHANGE THIS after first login)
+INSERT INTO `users`
+    (barcode, firstname, middlename, lastname, course, year_level, email, contact_no, role, password_hash, status, access_profile)
+VALUES
+    ('LIBRARY001', 'Library', '', 'Aide', NULL, NULL, 'library@scan2borrow.local', NULL, 'admin',
+     '$2y$12$6wjeleYKh0lntzDAIf7fuOhQN3KG9.tIQjd1x42uAnW3ECy2nUmSe', 'active', 'library_aide');
 
 -- Sample students (log in by scanning their ID barcode).
 INSERT INTO `users`

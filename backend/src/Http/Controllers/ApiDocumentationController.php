@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Application\Services\SessionService;
-use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Http\Documentation\ApiEndpointCatalog;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
@@ -15,6 +15,7 @@ final readonly class ApiDocumentationController
     public function __construct(
         private SessionService $sessions,
         private ApiEndpointCatalog $catalog,
+        private ?StaffAccessPolicy $access = null,
     ) {
     }
 
@@ -24,7 +25,7 @@ final readonly class ApiDocumentationController
         if ($identity === null) {
             return new JsonResponse(401, ['ok' => false, 'errors' => ['Authentication required.']]);
         }
-        if ($identity->role() !== Role::ADMIN) {
+        if (!($this->access ?? new StaffAccessPolicy())->isSystemAdmin($identity)) {
             return new JsonResponse(403, ['ok' => false, 'errors' => ['Administrator access required.']]);
         }
 

@@ -93,12 +93,16 @@ final class AuthenticationService implements AuthenticationServiceInterface
 
         $this->users->recordLoginSuccess($user->id(), $barcode);
 
-        return $this->completeLogin($user, '/staff/dashboard');
+        $redirect = $user->accessProfile() === \App\Domain\Auth\StaffAccessProfile::LIBRARY_AIDE
+            ? '/staff/aide/dashboard'
+            : '/staff/dashboard';
+
+        return $this->completeLogin($user, $redirect);
     }
 
     private function completeLogin(UserAccount $user, string $redirect): AuthenticationResult
     {
-        $this->sessions->login(new Principal($user->id(), $user->role()));
+        $this->sessions->login(new Principal($user->id(), $user->role(), $user->accessProfile()));
 
         return AuthenticationResult::success($redirect);
     }

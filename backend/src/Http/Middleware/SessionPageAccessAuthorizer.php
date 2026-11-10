@@ -7,6 +7,8 @@ namespace App\Http\Middleware;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\AuthorizationPolicy;
 use App\Domain\Auth\Principal;
+use App\Domain\Auth\StaffAccessPolicy;
+use App\Domain\Auth\StaffAccessProfile;
 use App\Http\Requests\ServerRequest;
 use App\Http\Routing\PageAccessAuthorizerInterface;
 use App\Http\Routing\PageRoute;
@@ -17,6 +19,7 @@ final class SessionPageAccessAuthorizer implements PageAccessAuthorizerInterface
         private readonly SessionService $sessions,
         private readonly AuthorizationPolicy $policy,
         private readonly AuthorizationMiddleware $middleware,
+        private readonly ?StaffAccessPolicy $access = null,
     ) {
     }
 
@@ -26,14 +29,19 @@ final class SessionPageAccessAuthorizer implements PageAccessAuthorizerInterface
             return !$route->redirectsAuthenticated() || $this->principal() === null;
         }
 
-        return $this->policy->allows(
-            $this->principal(),
+        $principal = $this->principal();
+        if (!$this->policy->allows(
+            $principal,
             array_map(
                 static fn (string $role): \App\Domain\Auth\Role => \App\Domain\Auth\Role::from($role),
                 $route->allowedRoles(),
             ),
             $route->requiresGuest(),
-        );
+        )) {
+            return false;
+        }
+
+        return $this->profileAllows($principal, $route->requiredProfile());
     }
 
     public function denialLocation(ServerRequest $request, PageRoute $route): string
@@ -49,11 +57,24 @@ final class SessionPageAccessAuthorizer implements PageAccessAuthorizerInterface
     {
         $identity = $this->sessions->current();
         if ($identity !== null) {
-            return new Principal($identity->userId(), $identity->role());
+            return new Principal($identity->userId(), $identity->role(), $identity->accessProfile());
         }
 
         $guestId = $this->sessions->currentGuestId();
 
         return $guestId === null ? null : new Principal($guestId, \App\Domain\Auth\Role::GUEST);
+    }
+
+    private function profileAllows(?Principal $principal, ?StaffAccessProfile $requiredProfile): bool
+    {
+        if ($requiredProfile === null) {
+            return true;
+        }
+
+        $access = $this->access ?? new StaffAccessPolicy();
+
+        return $requiredProfile === StaffAccessProfile::SYSTEM_ADMIN
+            ? $access->isSystemAdmin($principal)
+            : $access->isLibraryAide($principal);
     }
 }

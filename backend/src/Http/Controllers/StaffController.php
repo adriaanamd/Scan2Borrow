@@ -14,7 +14,7 @@ use App\Application\Services\SessionService;
 use App\Application\StaffCirculation\StaffCirculationBorrowRequest;
 use App\Application\StaffCirculation\StaffCirculationReturnRequest;
 use App\Application\StaffCirculation\StaffCirculationService;
-use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
 use App\Http\Responses\ResponseInterface;
@@ -33,6 +33,7 @@ final readonly class StaffController
         private ?ProfileChangeRequestService $profileChanges = null,
         private ?ReturnApprovalService $returnApprovals = null,
         private ?StaffCirculationService $circulation = null,
+        private ?StaffAccessPolicy $access = null,
     ) {
     }
 
@@ -518,16 +519,17 @@ final readonly class StaffController
 
     private function isStaff(): bool
     {
-        $identity = $this->sessions->current();
-
-        return $identity !== null && in_array($identity->role(), [Role::ADMIN, Role::LIBRARIAN], true);
+        return $this->accessPolicy()->isStaff($this->sessions->current());
     }
 
     private function isAdmin(): bool
     {
-        $identity = $this->sessions->current();
+        return $this->accessPolicy()->isSystemAdmin($this->sessions->current());
+    }
 
-        return $identity !== null && $identity->role() === Role::ADMIN;
+    private function accessPolicy(): StaffAccessPolicy
+    {
+        return $this->access ?? new StaffAccessPolicy();
     }
 
     /** @param array<string, mixed> $data */

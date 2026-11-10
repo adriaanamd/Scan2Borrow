@@ -14,6 +14,7 @@ final class SchemaContractTest extends TestCase
         foreach ([
             'CREATE TABLE `users`',
             '`barcode`', '`department`', '`position`', '`role`', "ENUM('admin','librarian','student','teacher')",
+            "ENUM('system_admin','library_aide')",
             'CREATE TABLE `books`', '`isbn`', '`cover_file`', '`status`', "ENUM('Available','Borrowed','Reserved','Lost','Damaged')",
             'CREATE TABLE `borrowing`', '`transaction_code`', '`fine_amount`', "ENUM('Pending','Borrowed','Returned','Overdue')",
             'CREATE TABLE `profile_change_requests`', '`original_values`', '`requested_values`', '`reviewed_by`',
@@ -75,7 +76,7 @@ final class SchemaContractTest extends TestCase
     {
         foreach ([
             'upgrade.sql', 'upgrade_add_teacher_fields.sql', 'upgrade_approval_system.sql',
-            'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql',
+            'upgrade_borrowing_control.sql', 'upgrade_notification_system.sql', 'upgrade_library_aide_access.sql',
             'upgrade_pending_status.sql', 'upgrade_security.sql', 'upgrade_bulk_borrowing.sql', 'sample_books_import.sql',
             'upgrade_return_approval.sql', 'upgrade_barcode_printing.sql', 'upgrade_copy_audit_trail.sql',
             'upgrade_profile_change_requests.sql', 'upgrade_approval_status_sync.sql', 'upgrade_search_recommendations.sql',

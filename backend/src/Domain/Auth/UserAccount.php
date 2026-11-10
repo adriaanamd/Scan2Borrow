@@ -14,6 +14,7 @@ final readonly class UserAccount
         private ?string $passwordHash = null,
         private int $failedAttempts = 0,
         private bool $isLocked = false,
+        private ?StaffAccessProfile $accessProfile = null,
     ) {
     }
 
@@ -52,6 +53,11 @@ final readonly class UserAccount
         return $this->isLocked;
     }
 
+    public function accessProfile(): ?StaffAccessProfile
+    {
+        return $this->accessProfile;
+    }
+
     public function withFailedAttempts(int $attempts): self
     {
         return new self(
@@ -62,6 +68,7 @@ final readonly class UserAccount
             $this->passwordHash,
             $attempts,
             $this->isLocked,
+            $this->accessProfile,
         );
     }
 
@@ -75,6 +82,7 @@ final readonly class UserAccount
             $this->passwordHash,
             $this->failedAttempts,
             true,
+            $this->accessProfile,
         );
     }
 }

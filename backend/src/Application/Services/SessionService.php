@@ -40,7 +40,12 @@ final class SessionService
         $this->store->remove(self::GUEST_ID_KEY);
         $this->store->set(
             self::IDENTITY_KEY,
-            new SessionIdentity($principal->id(), $principal->role(), $this->store->id()),
+            new SessionIdentity(
+                $principal->id(),
+                $principal->role(),
+                $this->store->id(),
+                $principal->accessProfile(),
+            ),
         );
     }
 

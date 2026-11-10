@@ -5,6 +5,7 @@ class AppNavbar {
     this.document = options.document || root.ownerDocument || globalThis.document;
     this.roleHint = root.dataset.navbarRole || "session";
     this.renderedRole = "";
+    this.renderedAccessProfile = "";
     this.toggle = null;
     this.backdrop = null;
     this.previousBodyOverflow = "";
@@ -25,28 +26,28 @@ class AppNavbar {
   }
 
   async start() {
-    const cachedRole = this.roleHint === "session" ? this.cachedRole() : "";
-    const initialRole = this.roleHint === "session"
-      ? (this.roleMatchesCurrentPath(cachedRole) ? cachedRole : "")
-      : this.roleHint;
-    if (initialRole) {
-      this.render(initialRole);
+    const cachedIdentity = this.roleHint === "session" ? this.cachedIdentity() : null;
+    const initialIdentity = this.roleHint === "session"
+      ? (this.identityMatchesCurrentPath(cachedIdentity) ? cachedIdentity : null)
+      : { role: this.roleHint, access_profile: "" };
+    if (initialIdentity?.role) {
+      this.renderIdentity(initialIdentity);
       this.setupResponsiveControls();
-      this.setupBorrowerNotifications(initialRole);
+      this.setupBorrowerNotifications(initialIdentity.role);
       this.setActiveLink();
       return;
     }
 
-    const role = await this.resolveRole();
-    this.cacheRole(role);
-    this.render(role);
+    const identity = await this.resolveIdentity();
+    this.cacheIdentity(identity);
+    this.renderIdentity(identity);
     this.setupResponsiveControls();
-    this.setupBorrowerNotifications(role);
+    this.setupBorrowerNotifications(identity.role);
     this.setActiveLink();
   }
 
-  async resolveRole() {
-    if (this.roleHint === "guest") return "guest";
+  async resolveIdentity() {
+    if (this.roleHint === "guest") return { role: "guest", access_profile: "" };
 
     try {
       const response = await this.window.fetch("/scan2borrow/api/auth/session", {
@@ -54,18 +55,33 @@ class AppNavbar {
       });
       const payload = await response.json();
       if (payload.ok === true && payload.data?.role) {
-        return payload.data.role;
+        return {
+          role: payload.data.role,
+          access_profile: payload.data.access_profile || "",
+        };
       }
     } catch {
       // The protected page can still use its known role hint if the session
       // request is temporarily unavailable.
     }
 
-    return this.roleHint === "session" ? "" : this.roleHint;
+    return {
+      role: this.roleHint === "session" ? "" : this.roleHint,
+      access_profile: "",
+    };
   }
 
-  render(role) {
+  async resolveRole() {
+    return (await this.resolveIdentity()).role;
+  }
+
+  renderIdentity(identity = {}) {
+    this.render(identity.role || "", identity.access_profile || "");
+  }
+
+  render(role, accessProfile = "") {
     this.renderedRole = role;
+    this.renderedAccessProfile = accessProfile;
     switch (role) {
       case "student":
         this.renderBorrower("student");
@@ -74,7 +90,9 @@ class AppNavbar {
         this.renderBorrower("teacher");
         break;
       case "admin":
-        this.renderStaff(true);
+        accessProfile === "library_aide"
+          ? this.renderLibraryAide()
+          : this.renderStaff(true);
         break;
       case "librarian":
         this.renderStaff(false);
@@ -95,6 +113,21 @@ class AppNavbar {
     }
   }
 
+  cachedAccessProfile() {
+    try {
+      return this.window.sessionStorage?.getItem("scan2borrow.nav.access_profile") || "";
+    } catch {
+      return "";
+    }
+  }
+
+  cachedIdentity() {
+    return {
+      role: this.cachedRole(),
+      access_profile: this.cachedAccessProfile(),
+    };
+  }
+
   roleMatchesCurrentPath(role) {
     if (!role) return false;
     const path = this.window.location.pathname.replace(/\/$/, "");
@@ -108,10 +141,35 @@ class AppNavbar {
     return true;
   }
 
+  identityMatchesCurrentPath(identity) {
+    if (!identity?.role) return false;
+    const path = this.window.location.pathname.replace(/\/$/, "");
+    if (path.includes("/staff/aide/")) {
+      return identity.role === "admin" && identity.access_profile === "library_aide";
+    }
+    if (path.includes("/admin/")) {
+      return identity.role === "admin" && identity.access_profile !== "library_aide";
+    }
+    return this.roleMatchesCurrentPath(identity.role);
+  }
+
   cacheRole(role) {
     if (!role || role === "guest") return;
     try {
       this.window.sessionStorage?.setItem("scan2borrow.nav.role", role);
+    } catch {
+      // Storage may be unavailable in private browsing or restricted frames.
+    }
+  }
+
+  cacheIdentity(identity = {}) {
+    this.cacheRole(identity.role || "");
+    if (!identity.role || identity.role === "guest") return;
+    try {
+      this.window.sessionStorage?.setItem(
+        "scan2borrow.nav.access_profile",
+        identity.access_profile || "",
+      );
     } catch {
       // Storage may be unavailable in private browsing or restricted frames.
     }
@@ -347,6 +405,34 @@ class AppNavbar {
           <span class="nav-icon">&#128081;</span>Staff
         </a>
         ${apiDocs}
+        ${this.logoutLink()}
+      </nav>`;
+  }
+
+  renderLibraryAide() {
+    this.root.innerHTML = `
+      <div class="sidebar-brand">
+        <span class="brand-mark">&#128218;</span><span>Scan2Borrow</span>
+      </div>
+      <nav class="sidebar-nav" aria-label="Library aide navigation">
+        <a href="/scan2borrow/staff/aide/dashboard" data-nav-path="/scan2borrow/staff/aide/dashboard">
+          <span class="nav-icon">&#9632;</span>Dashboard
+        </a>
+        <a href="/scan2borrow/staff/circulation" data-nav-path="/scan2borrow/staff/circulation">
+          <span class="nav-icon">&#128179;</span>Circulation
+        </a>
+        <a href="/scan2borrow/staff/students" data-nav-path="/scan2borrow/staff/students">
+          <span class="nav-icon">&#128100;</span>Borrowers
+        </a>
+        <a href="/scan2borrow/staff/books" data-nav-path="/scan2borrow/staff/books">
+          <span class="nav-icon">&#128218;</span>Inventory
+        </a>
+        <a href="/scan2borrow/staff/reports" data-nav-path="/scan2borrow/staff/reports">
+          <span class="nav-icon">&#128203;</span>Reports
+        </a>
+        <a href="/scan2borrow/staff/notify" data-nav-path="/scan2borrow/staff/notify">
+          <span class="nav-icon">&#128276;</span>Notifications
+        </a>
         ${this.logoutLink()}
       </nav>`;
   }

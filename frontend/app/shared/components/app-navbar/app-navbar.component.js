@@ -16,26 +16,30 @@ export class AppNavbarComponent {
   }
 
   async start() {
-    const role = await this.resolveRole();
-    this.render(role);
+    const identity = await this.resolveIdentity();
+    this.render(identity.role, identity.access_profile);
     this.setupResponsiveControls();
     this.setActiveLink();
   }
 
-  async resolveRole() {
-    if (this.roleHint === 'guest') return 'guest';
+  async resolveIdentity() {
+    if (this.roleHint === 'guest') return { role: 'guest', access_profile: '' };
 
     try {
       const identity = this.session?.current?.() || await this.session?.load?.();
-      if (identity?.role) return identity.role;
+      if (identity?.role) return identity;
     } catch {
       // The protected page can still use its known role hint if the session request is unavailable.
     }
 
-    return this.roleHint === 'session' ? '' : this.roleHint;
+    return { role: this.roleHint === 'session' ? '' : this.roleHint, access_profile: '' };
   }
 
-  render(role) {
+  async resolveRole() {
+    return (await this.resolveIdentity()).role;
+  }
+
+  render(role, accessProfile = '') {
     switch (role) {
       case 'student':
         this.renderBorrower('student');
@@ -44,7 +48,7 @@ export class AppNavbarComponent {
         this.renderBorrower('teacher');
         break;
       case 'admin':
-        this.renderStaff(true);
+        accessProfile === 'library_aide' ? this.renderLibraryAide() : this.renderStaff(true);
         break;
       case 'librarian':
         this.renderStaff(false);
@@ -105,6 +109,19 @@ export class AppNavbarComponent {
         <a href="/scan2borrow/staff/guest-requests" data-nav-path="/scan2borrow/staff/guest-requests"><span class="nav-icon">&#128203;</span>Guest Requests</a>
         <a href="/scan2borrow/admin/staff" data-nav-path="/scan2borrow/admin/staff"><span class="nav-icon">&#128081;</span>Staff</a>
         ${apiDocs}
+        ${this.logoutLink()}
+      </nav>`;
+  }
+
+  renderLibraryAide() {
+    this.root.innerHTML = `${this.renderBrand()}
+      <nav class="sidebar-nav" aria-label="Library aide navigation">
+        <a href="/scan2borrow/staff/aide/dashboard" data-nav-path="/scan2borrow/staff/aide/dashboard"><span class="nav-icon">&#9632;</span>Dashboard</a>
+        <a href="/scan2borrow/staff/circulation" data-nav-path="/scan2borrow/staff/circulation"><span class="nav-icon">&#128179;</span>Circulation</a>
+        <a href="/scan2borrow/staff/students" data-nav-path="/scan2borrow/staff/students"><span class="nav-icon">&#128100;</span>Borrowers</a>
+        <a href="/scan2borrow/staff/books" data-nav-path="/scan2borrow/staff/books"><span class="nav-icon">&#128218;</span>Inventory</a>
+        <a href="/scan2borrow/staff/reports" data-nav-path="/scan2borrow/staff/reports"><span class="nav-icon">&#128203;</span>Reports</a>
+        <a href="/scan2borrow/staff/notify" data-nav-path="/scan2borrow/staff/notify"><span class="nav-icon">&#128276;</span>Notifications</a>
         ${this.logoutLink()}
       </nav>`;
   }

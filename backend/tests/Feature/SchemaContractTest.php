@@ -86,6 +86,17 @@ final class SchemaContractTest extends TestCase
         }
     }
 
+    public function testBorrowerApprovalNotificationSchemaIsAvailable(): void
+    {
+        $install = $this->readSql('install.sql');
+        self::assertStringContainsString("'borrow_approved'", $install);
+
+        $migration = $this->readSql('upgrade_borrower_approval_notifications.sql');
+        self::assertStringContainsString('MODIFY COLUMN', $migration);
+        self::assertStringContainsString('information_schema.COLUMNS', $migration);
+        self::assertStringContainsString("'borrow_approved'", $migration);
+    }
+
     public function testReturnApprovalMigrationDefinesPendingAndDecisionMetadata(): void
     {
         $base = $this->readSql('database.sql');

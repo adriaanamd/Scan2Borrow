@@ -226,7 +226,11 @@ final class ApplicationFactory
             new GuestProfileCompletionService($otp, $visitorDetails),
         );
         $courseController = new CourseController($sessions, $csrf, $courseService);
-        $staffRepository = new \App\Infrastructure\Persistence\PdoStaffRepository($pdo, $auditRepository);
+        $staffRepository = new \App\Infrastructure\Persistence\PdoStaffRepository(
+            $pdo,
+            $auditRepository,
+            new \App\Infrastructure\Persistence\PdoCirculationNotificationRepository($pdo),
+        );
         $staffController = new StaffController(
             $sessions,
             $staffRepository,

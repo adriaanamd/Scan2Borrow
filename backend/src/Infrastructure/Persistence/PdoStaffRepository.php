@@ -15,6 +15,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
     public function __construct(
         private readonly PDO $pdo,
         private readonly ?AuditEventRepositoryInterface $audit = null,
+        private readonly ?CirculationNotificationRepositoryInterface $notifications = null,
     )
     {
     }
@@ -861,7 +862,8 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             $status = $approve ? 'approved' : 'rejected';
             if ($this->hasTable('borrowing_transactions')) {
                 $copyStatement = $this->pdo->prepare(
-                    'SELECT c.id, c.barcode, t.title, bi.id AS item_id, c.status FROM borrowing_items bi '
+                    'SELECT c.id, c.barcode, bt.user_id, t.title, bi.id AS item_id, c.status FROM borrowing_items bi '
+                    . 'JOIN borrowing_transactions bt ON bt.id = bi.transaction_id '
                     . 'JOIN book_copies c ON c.id = bi.copy_id JOIN book_titles t ON t.id = c.title_id '
                     . 'WHERE bi.transaction_id = :transaction_id'
                 );
@@ -893,6 +895,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 $this->pdo->prepare("UPDATE book_copies SET status = :status, due_date = CASE WHEN :approve = 1 THEN due_date ELSE NULL END WHERE id IN (SELECT copy_id FROM borrowing_items WHERE transaction_id = :transaction_id)")
                     ->execute(['status' => $copyStatus, 'approve' => $approve ? 1 : 0, 'transaction_id' => $borrowingId]);
                 $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE related_id = :id AND user_id = :staff_id')->execute(['id' => $borrowingId, 'staff_id' => $staffId]);
+                if ($approve) {
+                    $this->notifyApprovedBorrower($copies, $borrowingId);
+                }
                 foreach ($copies as $copy) {
                     $copyId = (int) ($copy['id'] ?? 0);
                     if ($copyId < 1 || $this->audit === null) {
@@ -916,9 +921,16 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 $this->pdo->commit();
                 return;
             }
+            $borrowerStatement = $this->pdo->prepare(
+                'SELECT b.user_id, b.book_id, books.title FROM borrowing b '
+                . 'JOIN books ON books.id = b.book_id WHERE b.id = :id LIMIT 1'
+            );
+            $borrowerStatement->execute(['id' => $borrowingId]);
+            /** @var array<string, mixed>|false $approvalContext */
+            $approvalContext = $borrowerStatement->fetch(PDO::FETCH_ASSOC);
             $statement = $this->pdo->prepare(
                 'UPDATE borrowing SET approval_status = :approval_status, status = CASE WHEN :is_approved = 1 THEN \'Borrowed\' ELSE status END,
-                 approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id'
+                 approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id AND approval_status = \'pending\''
             );
             $statement->execute([
                 'approval_status' => $status,
@@ -926,16 +938,21 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 'staff_id' => $staffId,
                 'id' => $borrowingId,
             ]);
+            if ($statement->rowCount() < 1) {
+                $this->pdo->commit();
+                return;
+            }
             if ($approve) {
-                $bookStatement = $this->pdo->prepare('SELECT book_id FROM borrowing WHERE id = :id LIMIT 1');
-                $bookStatement->execute(['id' => $borrowingId]);
-                $bookId = $bookStatement->fetchColumn();
+                $bookId = is_array($approvalContext) ? ($approvalContext['book_id'] ?? null) : null;
                 if (!is_numeric($bookId)) {
                     throw new RuntimeException('Borrowing record was not found.');
                 }
                 $this->pdo->prepare("UPDATE books SET status = 'Borrowed' WHERE id = :book_id")->execute(['book_id' => (int) $bookId]);
             }
             $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE related_id = :id AND user_id = :staff_id')->execute(['id' => $borrowingId, 'staff_id' => $staffId]);
+            if ($approve && is_array($approvalContext)) {
+                $this->notifyApprovedBorrower([$approvalContext], $borrowingId);
+            }
             $this->pdo->commit();
         } catch (\Throwable $exception) {
             if ($this->pdo->inTransaction()) {
@@ -943,6 +960,40 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             }
             throw new RuntimeException('Borrowing decision could not be saved.', 0, $exception);
         }
+    }
+
+    /** @param list<array<string, mixed>> $copies */
+    private function notifyApprovedBorrower(array $copies, int $borrowingId): void
+    {
+        if ($this->notifications === null) {
+            return;
+        }
+
+        $userId = 0;
+        $titles = [];
+        foreach ($copies as $copy) {
+            $candidateUserId = $copy['user_id'] ?? null;
+            if ($userId < 1 && is_numeric($candidateUserId)) {
+                $userId = (int) $candidateUserId;
+            }
+            $title = $this->string($copy['title'] ?? null);
+            if ($title !== '') {
+                $titles[] = $title;
+            }
+        }
+        $titles = array_values(array_unique($titles));
+        if ($userId < 1 || $titles === []) {
+            return;
+        }
+
+        $quotedTitles = array_map(static fn (string $title): string => '"' . $title . '"', $titles);
+        $this->notifications->notifyBorrower(
+            $userId,
+            'borrow_approved',
+            'Borrowing request approved',
+            'Your borrowing request was approved. You borrowed: ' . implode(', ', $quotedTitles) . '.',
+            $borrowingId,
+        );
     }
 
     private function count(string $sql): int

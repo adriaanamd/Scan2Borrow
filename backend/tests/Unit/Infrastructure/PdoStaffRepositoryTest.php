@@ -6,6 +6,7 @@ namespace Tests\Unit\Infrastructure;
 
 use App\Infrastructure\Persistence\PdoStaffRepository;
 use App\Infrastructure\Persistence\PdoBorrowerPortalRepository;
+use App\Infrastructure\Persistence\PdoCirculationNotificationRepository;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -143,6 +144,16 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame('Borrowed', $book->fetchColumn());
     }
 
+    public function testLegacyTeacherApprovalCreatesTheSameNotificationType(): void
+    {
+        $this->pdo->exec("UPDATE users SET role = 'teacher' WHERE id = 2");
+        $repository = new PdoStaffRepository($this->pdo, null, new PdoCirculationNotificationRepository($this->pdo));
+
+        $repository->approveBorrowing(1, 1);
+
+        self::assertSame('borrow_approved', $this->pdo->query('SELECT type FROM notifications WHERE user_id = 2')->fetchColumn());
+    }
+
     private function normalizedApprovalFixture(): PDO
     {
         $pdo = new PDO('sqlite::memory:');
@@ -158,6 +169,16 @@ final class PdoStaffRepositoryTest extends TestCase
         $pdo->exec("INSERT INTO book_copies VALUES (1, 1, 'COPY-1', 'Reserved', '2026-09-10', '2', NULL)");
         $pdo->exec("INSERT INTO borrowing_transactions VALUES (1, 'TX-PENDING', 2, NULL, 'pending', '2026-09-03 10:00:00', '2026-09-10', NULL, 'Pending', 0, '2026-09-03 10:00:00', NULL, NULL)");
         $pdo->exec("INSERT INTO borrowing_items VALUES (1, 1, 1, NULL, 'Pending', 0)");
+
+        return $pdo;
+    }
+
+    private function normalizedBulkApprovalFixture(): PDO
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $pdo->exec("INSERT INTO book_titles VALUES (2, 'Refactoring', 'Martin Fowler', 'Computer Science', '2026-08-02')");
+        $pdo->exec("INSERT INTO book_copies VALUES (2, 2, 'COPY-2', 'Reserved', '2026-09-10', '2', NULL)");
+        $pdo->exec("INSERT INTO borrowing_items VALUES (2, 1, 2, NULL, 'Pending', 0)");
 
         return $pdo;
     }
@@ -180,6 +201,47 @@ final class PdoStaffRepositoryTest extends TestCase
 
         $dashboard = (new PdoBorrowerPortalRepository($pdo))->dashboard(2);
         self::assertSame('Borrowed', $dashboard['current_loans'][0]['status']);
+    }
+
+    public function testNormalizedApprovalCreatesOneBorrowerNotification(): void
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $repository = new PdoStaffRepository($pdo, null, new PdoCirculationNotificationRepository($pdo));
+
+        $repository->approveBorrowing(1, 99);
+
+        $row = $pdo->query('SELECT user_id, type, title, message, related_id, is_read FROM notifications WHERE user_id = 2')->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
+        self::assertSame(2, (int) $row['user_id']);
+        self::assertSame('borrow_approved', $row['type']);
+        self::assertSame('Borrowing request approved', $row['title']);
+        self::assertStringContainsString('"Clean Code"', $row['message']);
+        self::assertSame(1, (int) $row['related_id']);
+        self::assertSame(0, (int) $row['is_read']);
+    }
+
+    public function testNormalizedBulkApprovalListsDistinctTitlesInOneNotification(): void
+    {
+        $pdo = $this->normalizedBulkApprovalFixture();
+        $repository = new PdoStaffRepository($pdo, null, new PdoCirculationNotificationRepository($pdo));
+
+        $repository->approveBorrowing(1, 99);
+
+        $rows = $pdo->query("SELECT message FROM notifications WHERE user_id = 2 AND type = 'borrow_approved'")->fetchAll(PDO::FETCH_COLUMN);
+        self::assertCount(1, $rows);
+        self::assertStringContainsString('"Clean Code"', (string) $rows[0]);
+        self::assertStringContainsString('"Refactoring"', (string) $rows[0]);
+    }
+
+    public function testRepeatedApprovalDoesNotDuplicateBorrowerNotification(): void
+    {
+        $pdo = $this->normalizedApprovalFixture();
+        $repository = new PdoStaffRepository($pdo, null, new PdoCirculationNotificationRepository($pdo));
+
+        $repository->approveBorrowing(1, 99);
+        $repository->approveBorrowing(1, 99);
+
+        self::assertSame(1, (int) $pdo->query("SELECT COUNT(*) FROM notifications WHERE type = 'borrow_approved'")->fetchColumn());
     }
 
     public function testNormalizedPendingBorrowingsIncludeBorrowerPhoto(): void

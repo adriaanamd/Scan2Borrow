@@ -402,7 +402,7 @@ CREATE TABLE `visitor_security_logs` (
 CREATE TABLE `notifications` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT NOT NULL COMMENT 'Staff member who receives the notification',
-    `type` ENUM('borrow_request','overdue_alert','return_alert','hold_available','renewal_approved','renewal_rejected') NOT NULL DEFAULT 'borrow_request',
+    `type` ENUM('borrow_request','overdue_alert','return_alert','hold_available','renewal_approved','renewal_rejected','borrow_approved') NOT NULL DEFAULT 'borrow_request',
     `title` VARCHAR(200) NOT NULL,
     `message` TEXT NOT NULL,
     `related_id` INT DEFAULT NULL COMMENT 'ID of related borrowing request',

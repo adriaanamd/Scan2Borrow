@@ -43,7 +43,7 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         return $row === false ? null : $row;
     }
 
-    /** @return array{transaction_code: string, copy_count: int, title_count: int} */
+    /** @return array{transaction_code: string, copy_count: int, title_count: int, titles: list<array{title: string, quantity: int}>} */
     public function createBulkTransaction(
         BulkBorrowRequest $request,
         DateTimeImmutable $dueDate,
@@ -53,7 +53,7 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
     ): array {
         $this->pdo->beginTransaction();
         try {
-            /** @var list<array{id: int, title_id: int}> $copies */
+            /** @var list<array<string, mixed>> $copies */
             $copies = [];
             foreach ($request->items as $item) {
                 $copies = array_merge($copies, $this->allocateCopies($item));
@@ -109,6 +109,7 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
                 'transaction_code' => $transactionCode,
                 'copy_count' => count($copies),
                 'title_count' => count($request->items),
+                'titles' => $this->groupedTitles($copies),
             ];
         } catch (\Throwable $exception) {
             if ($this->pdo->inTransaction()) {
@@ -118,7 +119,7 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         }
     }
 
-    /** @return list<array{id: int, title_id: int}> */
+    /** @return list<array<string, mixed>> */
     private function allocateCopies(BulkBorrowItem $item): array
     {
         $requestedBarcodes = array_values(array_unique(array_filter(
@@ -388,7 +389,10 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
         ));
     }
 
-    /** @param array<string, mixed> $row @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
     private function copyContext(array $row): array
     {
         return [
@@ -399,6 +403,30 @@ final class PdoBorrowingRepository implements BorrowingRepositoryInterface, Retu
             'title' => $this->stringValue($row['title'] ?? null),
             'author' => $this->stringValue($row['author'] ?? null),
         ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $copies
+     * @return list<array{title: string, quantity: int}>
+     */
+    private function groupedTitles(array $copies): array
+    {
+        $counts = [];
+        foreach ($copies as $copy) {
+            $title = $this->stringValue($copy['title'] ?? null);
+            if ($title === '') {
+                continue;
+            }
+            $counts[$title] = ($counts[$title] ?? 0) + 1;
+        }
+
+        /** @var list<array{title: string, quantity: int}> $titles */
+        $titles = [];
+        foreach ($counts as $title => $quantity) {
+            $titles[] = ['title' => $title, 'quantity' => $quantity];
+        }
+
+        return $titles;
     }
 
     private function setBookStatus(int $bookId, string $status): void

@@ -25,7 +25,7 @@ interface BorrowingRepositoryInterface
         string $approvalStatus,
     ): int;
 
-    /** @return array{transaction_code: string, copy_count: int, title_count: int} */
+    /** @return array{transaction_code: string, copy_count: int, title_count: int, titles: list<array{title: string, quantity: int}>} */
     public function createBulkTransaction(
         BulkBorrowRequest $request,
         DateTimeImmutable $dueDate,

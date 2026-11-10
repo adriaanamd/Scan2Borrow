@@ -6,6 +6,7 @@ namespace App\Application\Services;
 
 use App\Application\DTO\BorrowRequest;
 use App\Application\DTO\BulkBorrowRequest;
+use App\Application\DTO\BorrowerContactNotification;
 use App\Domain\Auth\Role;
 use App\Domain\Borrowing\BorrowingPolicy;
 use App\Domain\Borrowing\BorrowingResult;
@@ -20,6 +21,7 @@ final class BorrowingService
         private readonly BorrowingRepositoryInterface $repository,
         private readonly BorrowingPolicy $policy,
         private readonly ClockInterface $clock,
+        private readonly ?BorrowerContactNotificationInterface $contactNotifications = null,
     ) {
     }
 
@@ -71,6 +73,16 @@ final class BorrowingService
         );
 
         $title = is_string($book['title'] ?? null) ? $book['title'] : '';
+        $this->dispatchContactNotification(
+            new BorrowerContactNotification(
+                'user',
+                $request->userId,
+                $approvalValue === 'approved' ? 'borrow_approved' : 'borrow_requested',
+                $transactionCode,
+                [['title' => $title, 'quantity' => 1]],
+                $dueDate->format('Y-m-d'),
+            ),
+        );
         $message = $this->policy->requiresApproval()
             ? 'Request submitted for "' . $title . '". Awaiting staff approval.'
             : 'You borrowed "' . $title . '". Due ' . $dueDate->format('M d, Y') . '.';
@@ -128,6 +140,17 @@ final class BorrowingService
             $approvalStatus,
         );
 
+        $this->dispatchContactNotification(
+            new BorrowerContactNotification(
+                'user',
+                $request->userId,
+                $approvalStatus === 'approved' ? 'borrow_approved' : 'borrow_requested',
+                $created['transaction_code'],
+                $created['titles'],
+                $dueDate->format('Y-m-d'),
+            ),
+        );
+
         $message = $this->policy->requiresApproval()
             ? $created['copy_count'] . ' book(s) requested. Awaiting staff approval.'
             : $created['copy_count'] . ' book(s) borrowed. Due ' . $dueDate->format('M d, Y') . '.';
@@ -138,6 +161,11 @@ final class BorrowingService
             $created['copy_count'],
             $created['title_count'],
         );
+    }
+
+    private function dispatchContactNotification(BorrowerContactNotification $notification): void
+    {
+        $this->contactNotifications?->dispatch($notification);
     }
 
     private function dueDate(BorrowRequest $request): DateTimeImmutable|BorrowingResult

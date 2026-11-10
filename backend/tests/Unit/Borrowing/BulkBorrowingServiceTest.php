@@ -6,7 +6,9 @@ namespace Tests\Unit\Borrowing;
 
 use App\Application\DTO\BulkBorrowItem;
 use App\Application\DTO\BulkBorrowRequest;
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\Services\BorrowingService;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Application\Services\ClockInterface;
 use App\Domain\Auth\Role;
 use App\Domain\Borrowing\BorrowingPolicy;
@@ -71,12 +73,36 @@ final class BulkBorrowingServiceTest extends TestCase
         self::assertSame('Preferred return date cannot exceed 30 days.', $result->message());
     }
 
-    private function service(BorrowingRepositoryInterface $repository): BorrowingService
+    public function testBulkRequestDispatchesGroupedTitles(): void
+    {
+        $repository = new BulkBorrowingFakeRepository();
+        $notifications = $this->createMock(BorrowerContactNotificationInterface::class);
+        $notifications->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(static fn (BorrowerContactNotification $event): bool =>
+                $event->eventType === 'borrow_requested'
+                && $event->titles === [
+                    ['title' => 'Clean Code', 'quantity' => 2],
+                    ['title' => 'Algorithms', 'quantity' => 1],
+                ]
+            ));
+
+        $result = $this->service($repository, $notifications)->bulkBorrow(new BulkBorrowRequest(
+            7,
+            Role::STUDENT,
+            [new BulkBorrowItem(12, 2), new BulkBorrowItem(18, 1)],
+        ));
+
+        self::assertTrue($result->successful());
+    }
+
+    private function service(BorrowingRepositoryInterface $repository, ?BorrowerContactNotificationInterface $notifications = null): BorrowingService
     {
         return new BorrowingService(
             $repository,
             new BorrowingPolicy(3, 7, 30, true),
             new BulkBorrowingFixedClock(),
+            $notifications,
         );
     }
 }
@@ -113,12 +139,20 @@ final class BulkBorrowingFakeRepository implements BorrowingRepositoryInterface
         return 0;
     }
 
-    /** @return array{transaction_code: string, copy_count: int, title_count: int} */
+    /** @return array{transaction_code: string, copy_count: int, title_count: int, titles: list<array{title: string, quantity: int}>} */
     public function createBulkTransaction(BulkBorrowRequest $request, DateTimeImmutable $dueDate, string $transactionCode, string $status, string $approvalStatus): array
     {
         $this->createdItems = $request->items;
         $this->createdTotal = array_sum(array_map(static fn (BulkBorrowItem $item): int => $item->quantity, $request->items));
 
-        return ['transaction_code' => $transactionCode, 'copy_count' => $this->createdTotal, 'title_count' => count($this->createdItems)];
+        return [
+            'transaction_code' => $transactionCode,
+            'copy_count' => $this->createdTotal,
+            'title_count' => count($this->createdItems),
+            'titles' => [
+                ['title' => 'Clean Code', 'quantity' => 2],
+                ['title' => 'Algorithms', 'quantity' => 1],
+            ],
+        ];
     }
 }

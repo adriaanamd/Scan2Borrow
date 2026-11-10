@@ -137,7 +137,7 @@ final class NotificationActionRepository implements BorrowingRepositoryInterface
     public function findBook(string $barcode): ?array { return null; }
     public function activeApprovedCount(int $userId): int { return 0; }
     public function createLoan(int $userId, int $bookId, string $transactionCode, DateTimeImmutable $dueDate, string $status, string $approvalStatus): int { return 0; }
-    public function createBulkTransaction(BulkBorrowRequest $request, DateTimeImmutable $dueDate, string $transactionCode, string $status, string $approvalStatus): array { return ['transaction_code' => $transactionCode, 'copy_count' => 0, 'title_count' => 0]; }
+    public function createBulkTransaction(BulkBorrowRequest $request, DateTimeImmutable $dueDate, string $transactionCode, string $status, string $approvalStatus): array { return ['transaction_code' => $transactionCode, 'copy_count' => 0, 'title_count' => 0, 'titles' => []]; }
     public function activeByTransaction(int $userId, string $transactionCode): array { return []; }
     public function activeByBook(int $userId, int $bookId): ?LoanRecord { return null; }
     public function findBookByBarcode(string $barcode): ?array { return null; }

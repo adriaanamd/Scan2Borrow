@@ -6,7 +6,9 @@ namespace Tests\Unit\Borrowing;
 
 use App\Application\DTO\BorrowRequest;
 use App\Application\DTO\BulkBorrowRequest;
+use App\Application\DTO\BorrowerContactNotification;
 use App\Application\Services\BorrowingService;
+use App\Application\Services\BorrowerContactNotificationInterface;
 use App\Application\Services\ClockInterface;
 use App\Domain\Auth\Role;
 use App\Domain\Borrowing\BorrowingPolicy;
@@ -58,12 +60,47 @@ final class BorrowingServiceTest extends TestCase
         self::assertSame('2026-09-04', $repository->dueDate?->format('Y-m-d'));
     }
 
-    private function service(FakeBorrowingRepository $repository): BorrowingService
+    public function testSuccessfulRequestDispatchesBorrowerContactNotification(): void
+    {
+        $repository = new FakeBorrowingRepository();
+        $notifications = $this->createMock(BorrowerContactNotificationInterface::class);
+        $notifications->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(static fn (BorrowerContactNotification $event): bool =>
+                $event->recipientType === 'user'
+                && $event->recipientId === 1
+                && $event->eventType === 'borrow_requested'
+                && $event->borrowingReference === $repository->createdTransactionCode
+                && $event->titles === [['title' => 'Clean Code', 'quantity' => 1]]
+                && $event->dueDate === '2026-09-04'
+            ));
+
+        $result = $this->service($repository, $notifications)->borrow(new BorrowRequest(1, Role::STUDENT, 'BK-1'));
+
+        self::assertTrue($result->successful());
+    }
+
+    public function testImmediateApprovalDispatchesApprovedEvent(): void
+    {
+        $repository = new FakeBorrowingRepository();
+        $notifications = $this->createMock(BorrowerContactNotificationInterface::class);
+        $notifications->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(static fn (BorrowerContactNotification $event): bool => $event->eventType === 'borrow_approved'));
+
+        $result = $this->service($repository, $notifications, false)->borrow(new BorrowRequest(1, Role::STUDENT, 'BK-1'));
+
+        self::assertTrue($result->successful());
+        self::assertSame('approved', $repository->createdApproval);
+    }
+
+    private function service(FakeBorrowingRepository $repository, ?BorrowerContactNotificationInterface $notifications = null, bool $requiresApproval = true): BorrowingService
     {
         return new BorrowingService(
             $repository,
-            new BorrowingPolicy(3, 7, 30, true),
+            new BorrowingPolicy(3, 7, 30, $requiresApproval),
             new BorrowingFixedClock(),
+            $notifications,
         );
     }
 }
@@ -86,6 +123,8 @@ final class FakeBorrowingRepository implements BorrowingRepositoryInterface
 
     public string $createdApproval = '';
 
+    public string $createdTransactionCode = '';
+
     public ?DateTimeImmutable $dueDate = null;
 
     public function findBook(string $barcode): ?array
@@ -106,6 +145,7 @@ final class FakeBorrowingRepository implements BorrowingRepositoryInterface
     {
         $this->createdStatus = $status;
         $this->createdApproval = $approvalStatus;
+        $this->createdTransactionCode = $transactionCode;
         $this->dueDate = $dueDate;
 
         return 1;
@@ -113,6 +153,11 @@ final class FakeBorrowingRepository implements BorrowingRepositoryInterface
 
     public function createBulkTransaction(BulkBorrowRequest $request, DateTimeImmutable $dueDate, string $transactionCode, string $status, string $approvalStatus): array
     {
-        return ['transaction_code' => $transactionCode, 'copy_count' => 1, 'title_count' => count($request->items)];
+        return [
+            'transaction_code' => $transactionCode,
+            'copy_count' => 1,
+            'title_count' => count($request->items),
+            'titles' => [['title' => 'Clean Code', 'quantity' => 1]],
+        ];
     }
 }

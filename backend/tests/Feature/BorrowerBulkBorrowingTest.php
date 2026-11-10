@@ -90,7 +90,7 @@ final class BulkBorrowingControllerRepository implements BorrowingRepositoryInte
     public function createLoan(int $userId, int $bookId, string $transactionCode, DateTimeImmutable $dueDate, string $status, string $approvalStatus): int { return 0; }
     public function createBulkTransaction(\App\Application\DTO\BulkBorrowRequest $request, DateTimeImmutable $dueDate, string $transactionCode, string $status, string $approvalStatus): array
     {
-        return ['transaction_code' => $transactionCode, 'copy_count' => 3, 'title_count' => 2];
+        return ['transaction_code' => $transactionCode, 'copy_count' => 3, 'title_count' => 2, 'titles' => []];
     }
     public function activeByTransaction(int $userId, string $transactionCode): array { return []; }
     public function findBookByBarcode(string $barcode): ?array { return null; }

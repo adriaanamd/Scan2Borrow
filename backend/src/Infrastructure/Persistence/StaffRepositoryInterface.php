@@ -21,7 +21,10 @@ interface StaffRepositoryInterface
     public function overdue(): array;
 
     /** @return array<string, mixed> */
-    public function report(string $type, string $from, string $to): array;
+    public function report(string $type, string $from, string $to, string $category): array;
+
+    /** @return list<string> */
+    public function reportCategories(): array;
 
     /** @return list<array<string, mixed>> */
     public function guestRequests(): array;

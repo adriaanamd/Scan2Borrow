@@ -212,7 +212,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         return $rows;
     }
 
-    public function report(string $type, string $from, string $to): array
+    public function report(string $type, string $from, string $to, string $category): array
     {
         $labels = [
             'borrowed' => 'Borrowed Books',
@@ -221,10 +221,17 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             'inventory' => 'Inventory Status',
         ];
         $type = isset($labels[$type]) ? $type : 'borrowed';
+        $category = trim($category);
 
         if ($type === 'inventory') {
             if ($this->hasTable('book_copies')) {
-                $statement = $this->pdo->query(
+                $parameters = [];
+                $where = ['c.deleted_at IS NULL'];
+                $categoryPredicate = $this->categoryPredicate('t.category_name', $category, $parameters);
+                if ($categoryPredicate !== '') {
+                    $where[] = $categoryPredicate;
+                }
+                $statement = $this->pdo->prepare(
                     "SELECT GROUP_CONCAT(c.barcode) AS barcodes, t.title, t.author, t.category_name,
                             COUNT(c.id) AS quantity,
                             SUM(CASE WHEN c.status = 'Available' THEN 1 ELSE 0 END) AS available_quantity,
@@ -235,8 +242,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                                  ELSE 'Reserved' END AS status,
                             CONCAT('Floor ', MIN(c.floor_no), ' / ', MIN(c.section_name), ' / Shelf ', MIN(c.shelf_no)) AS location
                      FROM book_titles t JOIN book_copies c ON c.title_id = t.id
-                     WHERE c.deleted_at IS NULL GROUP BY t.id, t.title, t.author, t.category_name ORDER BY t.title ASC"
+                     WHERE " . implode(' AND ', $where) . " GROUP BY t.id, t.title, t.author, t.category_name ORDER BY t.title ASC"
                 );
+                $statement->execute($parameters);
                 $rows = $statement === false ? [] : $statement->fetchAll(PDO::FETCH_ASSOC);
                 $data = [];
                 foreach ($rows as $row) {
@@ -256,11 +264,18 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 return ['label' => $labels[$type], 'headers' => ['Barcode(s)', 'Title', 'Author', 'Category', 'Quantity', 'Available', 'Borrowed', 'Reserved', 'Status', 'Location'], 'data' => $data];
             }
 
-            $statement = $this->pdo->query(
+            $parameters = [];
+            $where = ['b.deleted_at IS NULL'];
+            $categoryPredicate = $this->categoryPredicate('b.category_name', $category, $parameters);
+            if ($categoryPredicate !== '') {
+                $where[] = $categoryPredicate;
+            }
+            $statement = $this->pdo->prepare(
                 "SELECT barcode, title, author, category_name, 1 AS quantity, status,
                         CONCAT('Floor ', floor_no, ' / ', section_name, ' / Shelf ', shelf_no) AS location
-                 FROM books WHERE deleted_at IS NULL ORDER BY title ASC"
+                 FROM books WHERE " . implode(' AND ', $where) . " ORDER BY title ASC"
             );
+            $statement->execute($parameters);
             $rows = $statement === false ? [] : $statement->fetchAll(PDO::FETCH_ASSOC);
             $data = [];
             foreach ($rows as $row) {
@@ -297,6 +312,10 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             if ($to !== '') {
                 $where[] = 'DATE(' . $dateColumn . ') <= :to_date';
                 $parameters['to_date'] = $to;
+            }
+            $categoryPredicate = $this->categoryPredicate('t.category_name', $category, $parameters);
+            if ($categoryPredicate !== '') {
+                $where[] = $categoryPredicate;
             }
             $statement = $this->pdo->prepare(
                 'SELECT bt.transaction_code, CONCAT(u.firstname, \' \', u.lastname) AS borrower, u.barcode AS id_barcode,
@@ -347,6 +366,10 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             $where[] = 'DATE(' . $dateColumn . ') <= :to_date';
             $parameters['to_date'] = $to;
         }
+        $categoryPredicate = $this->categoryPredicate('b.category_name', $category, $parameters);
+        if ($categoryPredicate !== '') {
+            $where[] = $categoryPredicate;
+        }
 
         $statement = $this->pdo->prepare(
             'SELECT br.transaction_code, CONCAT(u.firstname, \' \', u.lastname) AS borrower, u.barcode AS id_barcode,
@@ -373,6 +396,32 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
 
         return ['label' => $labels[$type], 'headers' => ['Code', 'Borrower', 'ID', 'Book', 'Quantity', 'Borrowed', 'Due', 'Returned', 'Status', 'Fine'], 'data' => $data];
+    }
+
+    /** @return list<string> */
+    public function reportCategories(): array
+    {
+        $statement = $this->pdo->query(
+            $this->hasTable('book_copies')
+            ? "SELECT DISTINCT COALESCE(NULLIF(TRIM(t.category_name), ''), 'Uncategorized') AS category
+               FROM book_titles t
+               WHERE EXISTS (SELECT 1 FROM book_copies c WHERE c.title_id = t.id AND c.deleted_at IS NULL)
+               ORDER BY category ASC"
+            : "SELECT DISTINCT COALESCE(NULLIF(TRIM(category_name), ''), 'Uncategorized') AS category
+               FROM books WHERE deleted_at IS NULL ORDER BY category ASC"
+        );
+        if ($statement === false) {
+            return [];
+        }
+
+        $categories = [];
+        while (($category = $statement->fetchColumn()) !== false) {
+            if (is_string($category) && trim($category) !== '') {
+                $categories[] = trim($category);
+            }
+        }
+
+        return array_values(array_unique($categories));
     }
 
     public function guestRequests(): array
@@ -1011,6 +1060,18 @@ final class PdoStaffRepository implements StaffRepositoryInterface
         }
 
         return (int) $statement->fetchColumn();
+    }
+
+    /** @param array<string, mixed> $parameters */
+    private function categoryPredicate(string $column, string $category, array &$parameters): string
+    {
+        if ($category === '') {
+            return '';
+        }
+
+        $parameters['category'] = $category;
+
+        return "COALESCE(NULLIF(TRIM({$column}), ''), 'Uncategorized') = :category";
     }
 
     private function hasTable(string $table): bool

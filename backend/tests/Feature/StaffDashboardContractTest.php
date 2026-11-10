@@ -49,7 +49,8 @@ final class StaffDashboardContractTest extends TestCase
             public function borrowerDetails(int $userId): ?array { return null; }
             public function updateBorrowerPhoto(int $userId, string $photoPath): void {}
             public function overdue(): array { return []; }
-            public function report(string $type, string $from, string $to): array { return []; }
+            public function report(string $type, string $from, string $to, string $category): array { return []; }
+            public function reportCategories(): array { return []; }
             public function guestRequests(): array { return []; }
             public function staffAccounts(): array { return []; }
             public function borrowerCandidates(string $search): array { return []; }

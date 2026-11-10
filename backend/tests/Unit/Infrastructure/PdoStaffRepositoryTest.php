@@ -376,4 +376,53 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame('BEeD', $top[1]['course']);
         self::assertSame(0, $top[1]['borrower_count']);
     }
+
+    public function testLegacyReportsExposeCategoriesAndComposeCategoryWithDateAndStatusFilters(): void
+    {
+        $this->pdo->exec("INSERT INTO books (id, barcode, title, author, category_name, status, deleted_at, floor_no, section_name, shelf_no, created_at) VALUES
+            (2, 'BK-2', 'English Grammar', 'Author Two', 'English', 'Available', NULL, '1', 'ENG', 'A2', '2026-08-01'),
+            (3, 'BK-3', 'Math Basics', 'Author Three', 'Mathematics', 'Available', NULL, '1', 'MATH', 'A3', '2026-08-01')");
+        $this->pdo->exec("INSERT INTO borrowing (id, transaction_code, user_id, book_id, approval_status, borrow_date, due_date, return_date, status, fine_amount) VALUES
+            (2, 'TX-2', 2, 2, 'approved', '2026-08-21', '2026-08-28', NULL, 'Borrowed', 0),
+            (3, 'TX-3', 2, 3, 'approved', '2026-09-01', '2026-09-08', NULL, 'Borrowed', 0)");
+
+        $repository = new PdoStaffRepository($this->pdo);
+
+        self::assertSame(['Computer Science', 'English', 'Mathematics'], $repository->reportCategories());
+        self::assertSame(['TX-2'], array_column($repository->report('borrowed', '2026-08-01', '2026-08-31', 'English')['data'], 0));
+        self::assertSame([], $repository->report('borrowed', '', '', 'Does Not Exist')['data']);
+        self::assertCount(3, $repository->report('borrowed', '', '', '')['data']);
+
+        $this->pdo->exec("UPDATE borrowing SET return_date = '2026-08-25', status = 'Returned' WHERE id = 2");
+        self::assertSame(['TX-2'], array_column($repository->report('returned', '', '', 'English')['data'], 0));
+
+        $this->pdo->exec("UPDATE borrowing SET status = 'Overdue' WHERE id = 3");
+        self::assertSame(['TX-3'], array_column($repository->report('overdue', '', '', 'Mathematics')['data'], 0));
+    }
+
+    public function testNormalizedReportsFilterInventoryByBookTitleCategory(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec('CREATE TABLE book_titles (id INTEGER PRIMARY KEY, title TEXT, author TEXT, category_name TEXT, created_at TEXT)');
+        $pdo->exec('CREATE TABLE book_copies (id INTEGER PRIMARY KEY, title_id INTEGER, barcode TEXT, status TEXT, deleted_at TEXT, floor_no TEXT, section_name TEXT, shelf_no TEXT)');
+        $pdo->exec("INSERT INTO book_titles VALUES
+            (1, 'Clean Code', 'Martin', 'Computer Science', '2026-08-01'),
+            (2, 'English Grammar', 'Author Two', 'English', '2026-08-01'),
+            (3, 'Deleted Title', 'Author Three', 'Mathematics', '2026-08-01')");
+        $pdo->exec("INSERT INTO book_copies VALUES
+            (1, 1, 'COPY-1', 'Available', NULL, '2', 'IT', 'A1'),
+            (2, 1, 'COPY-2', 'Borrowed', NULL, '2', 'IT', 'A1'),
+            (3, 2, 'COPY-3', 'Available', NULL, '1', 'ENG', 'A2'),
+            (4, 3, 'COPY-4', 'Available', '2026-09-01', '1', 'MATH', 'A3')");
+
+        $repository = new PdoStaffRepository($pdo);
+
+        self::assertSame(['Computer Science', 'English'], $repository->reportCategories());
+        $filtered = $repository->report('inventory', '', '', 'Computer Science');
+        self::assertCount(1, $filtered['data']);
+        self::assertSame('Clean Code', $filtered['data'][0][1]);
+        self::assertCount(2, $repository->report('inventory', '', '', '')['data']);
+        self::assertSame([], $repository->report('inventory', '', '', 'Mathematics')['data']);
+    }
 }

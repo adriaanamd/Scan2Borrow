@@ -100,6 +100,7 @@ final class BorrowerNotificationContractTest extends TestCase
         );
     }
 
+    /** @param array<string, mixed> $body */
     private function request(string $method, string $path, array $body = []): ServerRequest
     {
         $_SERVER['REQUEST_METHOD'] = $method;

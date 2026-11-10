@@ -104,13 +104,13 @@ final class PdoBorrowerPortalRepository implements BorrowerPortalRepositoryInter
              LIMIT 20'
         );
         $statement->execute(['user_id' => $userId]);
-        $rows = array_map(static function (array $row): array {
+        $rows = array_values(array_map(static function (array $row): array {
             $row['id'] = (int) $row['id'];
             $row['related_id'] = $row['related_id'] === null ? null : (int) $row['related_id'];
             $row['is_read'] = (int) $row['is_read'];
 
             return $row;
-        }, $statement->fetchAll(PDO::FETCH_ASSOC));
+        }, $statement->fetchAll(PDO::FETCH_ASSOC)));
 
         $unread = $this->pdo->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :user_id AND is_read = 0');
         $unread->execute(['user_id' => $userId]);

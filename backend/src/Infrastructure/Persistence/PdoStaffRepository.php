@@ -899,11 +899,15 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                     $this->notifyApprovedBorrower($copies, $borrowingId);
                 }
                 foreach ($copies as $copy) {
-                    $copyId = (int) ($copy['id'] ?? 0);
+                    $copyIdValue = $copy['id'] ?? null;
+                    $copyId = is_numeric($copyIdValue) ? (int) $copyIdValue : 0;
                     if ($copyId < 1 || $this->audit === null) {
                         continue;
                     }
-                    $fromStatus = $this->string($copy['status'] ?? null) ?: 'Reserved';
+                    $fromStatus = $this->string($copy['status'] ?? null);
+                    if ($fromStatus === '') {
+                        $fromStatus = 'Reserved';
+                    }
                     $this->audit->record(new AuditEvent(
                         $copyId,
                         $staffId,
@@ -912,7 +916,7 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                         $approve ? 'Borrowed' : 'Available',
                         $approve ? null : 'Borrow request rejected by staff.',
                         $borrowingId,
-                        (int) ($copy['item_id'] ?? 0),
+                        is_numeric($copy['item_id'] ?? null) ? (int) $copy['item_id'] : 0,
                         null,
                         ['barcode' => $this->string($copy['barcode'] ?? null), 'title' => $this->string($copy['title'] ?? null)],
                         new DateTimeImmutable(),
@@ -928,6 +932,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
             $borrowerStatement->execute(['id' => $borrowingId]);
             /** @var array<string, mixed>|false $approvalContext */
             $approvalContext = $borrowerStatement->fetch(PDO::FETCH_ASSOC);
+            if ($approvalContext === false) {
+                $approvalContext = [];
+            }
             $statement = $this->pdo->prepare(
                 'UPDATE borrowing SET approval_status = :approval_status, status = CASE WHEN :is_approved = 1 THEN \'Borrowed\' ELSE status END,
                  approved_at = CURRENT_TIMESTAMP, approved_by = :staff_id WHERE id = :id AND approval_status = \'pending\''
@@ -943,14 +950,14 @@ final class PdoStaffRepository implements StaffRepositoryInterface
                 return;
             }
             if ($approve) {
-                $bookId = is_array($approvalContext) ? ($approvalContext['book_id'] ?? null) : null;
+                $bookId = $approvalContext['book_id'] ?? null;
                 if (!is_numeric($bookId)) {
                     throw new RuntimeException('Borrowing record was not found.');
                 }
                 $this->pdo->prepare("UPDATE books SET status = 'Borrowed' WHERE id = :book_id")->execute(['book_id' => (int) $bookId]);
             }
             $this->pdo->prepare('UPDATE notifications SET is_read = 1 WHERE related_id = :id AND user_id = :staff_id')->execute(['id' => $borrowingId, 'staff_id' => $staffId]);
-            if ($approve && is_array($approvalContext)) {
+            if ($approve) {
                 $this->notifyApprovedBorrower([$approvalContext], $borrowingId);
             }
             $this->pdo->commit();

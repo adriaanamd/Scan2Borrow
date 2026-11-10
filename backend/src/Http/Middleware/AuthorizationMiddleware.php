@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Domain\Auth\AuthorizationPolicy;
 use App\Domain\Auth\Principal;
 use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Http\RequestContext;
 use App\Http\Responses\RedirectResponse;
 
@@ -14,6 +15,7 @@ final class AuthorizationMiddleware
 {
     public function __construct(
         private readonly AuthorizationPolicy $policy,
+        private readonly ?StaffAccessPolicy $access = null,
     ) {
     }
 
@@ -36,6 +38,10 @@ final class AuthorizationMiddleware
     {
         if ($principal === null) {
             return '/login';
+        }
+
+        if ($principal->role() === Role::ADMIN && $this->access?->isLibraryAide($principal)) {
+            return '/staff/aide/dashboard';
         }
 
         return match ($principal->role()) {

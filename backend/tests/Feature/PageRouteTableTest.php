@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Http\Routing\PageRouteTable;
+use App\Domain\Auth\StaffAccessProfile;
 use PHPUnit\Framework\TestCase;
 
 final class PageRouteTableTest extends TestCase
@@ -31,6 +32,10 @@ final class PageRouteTableTest extends TestCase
         self::assertSame(['admin', 'librarian'], $table->forPath('/staff/barcodes/print')->allowedRoles());
         self::assertSame(['admin'], $table->forPath('/admin/staff')->allowedRoles());
         self::assertSame(['admin'], $table->forPath('/admin/api-docs')->allowedRoles());
+        self::assertSame(['admin'], $table->forPath('/staff/aide/dashboard')->allowedRoles());
+        self::assertSame(StaffAccessProfile::LIBRARY_AIDE, $table->forPath('/staff/aide/dashboard')->requiredProfile());
+        self::assertSame(StaffAccessProfile::SYSTEM_ADMIN, $table->forPath('/admin/staff')->requiredProfile());
+        self::assertSame(StaffAccessProfile::SYSTEM_ADMIN, $table->forPath('/admin/api-docs')->requiredProfile());
     }
 
     public function testEveryPageRouteResolvesToFeatureOwnedTemplate(): void

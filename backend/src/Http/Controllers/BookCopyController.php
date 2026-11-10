@@ -8,7 +8,7 @@ use App\Application\DTO\BookCopyMutationRequest;
 use App\Application\Validators\BookCopyMutationValidator;
 use App\Application\Services\CsrfService;
 use App\Application\Services\SessionService;
-use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Domain\Book\BookStatus;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
@@ -22,6 +22,7 @@ final readonly class BookCopyController
         private BookAdministrationRepositoryInterface $books,
         private BookCopyMutationValidator $validator,
         private CsrfService $csrf,
+        private ?StaffAccessPolicy $access = null,
     ) {
     }
 
@@ -47,14 +48,18 @@ final readonly class BookCopyController
         if (!$this->isStaff()) {
             return $this->unauthorized();
         }
+        $body = $request->body();
+        $action = $this->string($body, 'action');
+        if (in_array($action, ['archive', 'restore', 'delete'], true)
+            && !($this->access ?? new StaffAccessPolicy())->canMutateInventory($this->sessions->current(), $action)) {
+            return $this->unauthorized();
+        }
         try {
-            $this->csrf->assertValid($this->string($request->body(), 'csrf'));
+            $this->csrf->assertValid($this->string($body, 'csrf'));
         } catch (InvalidArgumentException $exception) {
             return new JsonResponse(419, ['ok' => false, 'message' => $exception->getMessage()]);
         }
 
-        $body = $request->body();
-        $action = $this->string($body, 'action');
         try {
             if ($action === 'update') {
                 $copyRequest = $this->copyRequest($body, $this->sessions->current()?->userId() ?? 0);
@@ -86,7 +91,7 @@ final readonly class BookCopyController
     {
         $identity = $this->sessions->current();
 
-        return $identity !== null && in_array($identity->role(), [Role::ADMIN, Role::LIBRARIAN], true);
+        return ($this->access ?? new StaffAccessPolicy())->isStaff($this->sessions->current());
     }
 
     private function unauthorized(): JsonResponse

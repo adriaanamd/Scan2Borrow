@@ -32,6 +32,7 @@ use App\Application\Services\SystemClock;
 use App\Application\Services\SessionService;
 use App\Application\StaffCirculation\StaffCirculationService;
 use App\Domain\Auth\AuthorizationPolicy;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Domain\Borrowing\BorrowingPolicy;
 use App\Application\Validators\BookMutationValidator;
 use App\Http\Controllers\AuthController;
@@ -104,6 +105,7 @@ final class ApplicationFactory
 
         $pdo = (new PdoConnectionFactory())->create(DatabaseConfig::fromEnvironment());
         $sessions = new SessionService(new NativeSessionStore());
+        $accessPolicy = new StaffAccessPolicy();
         $csrf = new CsrfService(new NativeSessionStore());
         $otp = new OtpService(new PdoOtpRepository($pdo), new SystemClock(), SmsSenderFactory::create(), new SmtpEmailSender());
         $courseRepository = new PdoCourseRepository($pdo);
@@ -127,12 +129,14 @@ final class ApplicationFactory
             new BookMutationService(new BookMutationValidator(), $bookRepository),
             new BookArchiveService($bookRepository),
             $csrf,
+            $accessPolicy,
         );
         $bookCopyController = new BookCopyController(
             $sessions,
             $bookRepository,
             new \App\Application\Validators\BookCopyMutationValidator(),
             $csrf,
+            $accessPolicy,
         );
         $searchHistoryRepository = new \App\Infrastructure\Persistence\PdoSearchHistoryRepository($pdo);
         $recommendationController = new BorrowerRecommendationController(
@@ -233,7 +237,7 @@ final class ApplicationFactory
             $csrf,
             new GuestProfileCompletionService($otp, $visitorDetails),
         );
-        $courseController = new CourseController($sessions, $csrf, $courseService);
+        $courseController = new CourseController($sessions, $csrf, $courseService, $accessPolicy);
         $staffRepository = new \App\Infrastructure\Persistence\PdoStaffRepository(
             $pdo,
             $auditRepository,
@@ -258,8 +262,9 @@ final class ApplicationFactory
             $profileChangeService,
             $returnApprovalService,
             $staffCirculation,
+            $accessPolicy,
         );
-        $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog());
+        $apiDocumentationController = new ApiDocumentationController($sessions, new ApiEndpointCatalog(), $accessPolicy);
         $apiRouter = new Router(array_merge(
             (new AuthRouteTable())->routes($authController, $registration),
             (new BookRouteTable())->routes($bookController, $bookCopyController),
@@ -282,7 +287,8 @@ final class ApplicationFactory
         $pageController = new PageController(new SessionPageAccessAuthorizer(
             $sessions,
             $policy,
-            new AuthorizationMiddleware($policy),
+            new AuthorizationMiddleware($policy, $accessPolicy),
+            $accessPolicy,
         ), $csrf);
 
         return new Application(

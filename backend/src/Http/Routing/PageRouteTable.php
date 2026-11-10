@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Routing;
 
+use App\Domain\Auth\StaffAccessProfile;
 use App\Http\Exceptions\HttpException;
 
 final class PageRouteTable
@@ -47,6 +48,14 @@ final class PageRouteTable
                 '/staff/dashboard',
                 $featurePath('staff/pages/dashboard/dashboard.html'),
                 ['admin', 'librarian'],
+            ),
+            '/staff/aide/dashboard' => new PageRoute(
+                '/staff/aide/dashboard',
+                $featurePath('staff/pages/aide-dashboard/aide-dashboard.html'),
+                ['admin'],
+                false,
+                false,
+                StaffAccessProfile::LIBRARY_AIDE,
             ),
             '/staff/books' => new PageRoute(
                 '/staff/books',
@@ -217,11 +226,17 @@ final class PageRouteTable
                 '/admin/staff',
                 $featurePath('staff/pages/admin-staff/admin-staff.html'),
                 ['admin'],
+                false,
+                false,
+                StaffAccessProfile::SYSTEM_ADMIN,
             ),
             '/admin/api-docs' => new PageRoute(
                 '/admin/api-docs',
                 $featurePath('staff/pages/api-docs/api-docs.html'),
                 ['admin'],
+                false,
+                false,
+                StaffAccessProfile::SYSTEM_ADMIN,
             ),
         ];
     }

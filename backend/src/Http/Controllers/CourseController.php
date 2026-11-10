@@ -8,8 +8,8 @@ use App\Application\DTO\CreateCourseRequest;
 use App\Application\Services\CourseService;
 use App\Application\Services\CsrfService;
 use App\Application\Services\SessionService;
-use App\Domain\Auth\Role;
 use App\Domain\Course\Course;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
 use InvalidArgumentException;
@@ -21,6 +21,7 @@ final readonly class CourseController
         private SessionService $sessions,
         private CsrfService $csrf,
         private CourseService $courses,
+        private ?StaffAccessPolicy $access = null,
     ) {
     }
 
@@ -87,7 +88,7 @@ final readonly class CourseController
     {
         $identity = $this->sessions->current();
 
-        return $identity !== null && $identity->role() === Role::ADMIN;
+        return ($this->access ?? new StaffAccessPolicy())->isSystemAdmin($identity);
     }
 
     private function unauthorized(): JsonResponse

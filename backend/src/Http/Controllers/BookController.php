@@ -10,6 +10,7 @@ use App\Application\Services\BookQueryService;
 use App\Application\Services\CsrfService;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessPolicy;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
 use App\Domain\Book\BookSearchCriteria;
@@ -23,12 +24,13 @@ final readonly class BookController
         private ?BookMutationService $mutations = null,
         private ?BookArchiveService $archive = null,
         private ?CsrfService $csrf = null,
+        private ?StaffAccessPolicy $access = null,
     ) {
     }
 
     public function inventory(ServerRequest $request): JsonResponse
     {
-        if (!$this->hasRole([Role::ADMIN, Role::LIBRARIAN])) {
+        if (!$this->accessPolicy()->isStaff($this->sessions->current())) {
             return $this->unauthorized();
         }
 
@@ -47,16 +49,21 @@ final readonly class BookController
 
     public function mutate(ServerRequest $request): JsonResponse
     {
-        if (!$this->hasRole([Role::ADMIN, Role::LIBRARIAN]) || $this->mutations === null || $this->csrf === null) {
+        if (!$this->accessPolicy()->isStaff($this->sessions->current()) || $this->mutations === null || $this->csrf === null) {
             return $this->unauthorized();
+        }
+
+        $body = $request->body();
+        $action = $this->string($body, 'action');
+        if (in_array($action, ['archive', 'restore', 'delete'], true)) {
+            if (!$this->accessPolicy()->canMutateInventory($this->sessions->current(), $action)) {
+                return $this->unauthorized();
+            }
         }
         $csrfFailure = $this->csrfFailure($request);
         if ($csrfFailure !== null) {
             return $csrfFailure;
         }
-
-        $body = $request->body();
-        $action = $this->string($body, 'action');
         if (in_array($action, ['archive', 'restore', 'delete'], true)) {
             if ($this->archive === null) {
                 return new JsonResponse(503, ['ok' => false, 'message' => 'Inventory archive service is not configured.']);
@@ -143,6 +150,11 @@ final readonly class BookController
         $identity = $this->sessions->current();
 
         return $identity !== null && in_array($identity->role(), $roles, true);
+    }
+
+    private function accessPolicy(): StaffAccessPolicy
+    {
+        return $this->access ?? new StaffAccessPolicy();
     }
 
     private function unauthorized(): JsonResponse

@@ -6,13 +6,13 @@ namespace App\Domain\Auth;
 
 final class StaffAccessPolicy
 {
-    public function isStaff(?SessionIdentity $identity): bool
+    public function isStaff(Principal|SessionIdentity|null $identity): bool
     {
         return $identity !== null
             && in_array($identity->role(), [Role::ADMIN, Role::LIBRARIAN], true);
     }
 
-    public function isSystemAdmin(?SessionIdentity $identity): bool
+    public function isSystemAdmin(Principal|SessionIdentity|null $identity): bool
     {
         return $identity !== null
             && $identity->role() === Role::ADMIN
@@ -20,19 +20,19 @@ final class StaffAccessPolicy
                 || $identity->accessProfile() === StaffAccessProfile::SYSTEM_ADMIN);
     }
 
-    public function isLibraryAide(?SessionIdentity $identity): bool
+    public function isLibraryAide(Principal|SessionIdentity|null $identity): bool
     {
         return $identity !== null
             && $identity->role() === Role::ADMIN
             && $identity->accessProfile() === StaffAccessProfile::LIBRARY_AIDE;
     }
 
-    public function canUpdateOperationalData(?SessionIdentity $identity): bool
+    public function canUpdateOperationalData(Principal|SessionIdentity|null $identity): bool
     {
         return $this->isStaff($identity);
     }
 
-    public function canMutateInventory(?SessionIdentity $identity, string $action): bool
+    public function canMutateInventory(Principal|SessionIdentity|null $identity, string $action): bool
     {
         if (!$this->isStaff($identity)) {
             return false;

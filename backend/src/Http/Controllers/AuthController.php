@@ -9,6 +9,7 @@ use App\Application\Services\AuthenticationServiceInterface;
 use App\Application\Services\CsrfService;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\SessionIdentity;
+use App\Domain\Auth\Role;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\JsonResponse;
 use App\Http\Responses\RedirectResponse;
@@ -86,7 +87,7 @@ final readonly class AuthController
     }
 
     /**
-     * @return array{authenticated: bool, user_id?: int, role?: string}
+     * @return array{authenticated: bool, user_id?: int, role?: string, access_profile?: string}
      */
     private function sessionData(?SessionIdentity $identity): array
     {
@@ -94,11 +95,18 @@ final readonly class AuthController
             return ['authenticated' => false];
         }
 
-        return [
+        $data = [
             'authenticated' => true,
             'user_id' => $identity->userId(),
             'role' => $identity->role()->value,
         ];
+
+        if (in_array($identity->role(), [Role::ADMIN, Role::LIBRARIAN], true)
+            && $identity->accessProfile() !== null) {
+            $data['access_profile'] = $identity->accessProfile()->value;
+        }
+
+        return $data;
     }
 
     private function submittedToken(ServerRequest $request): string

@@ -9,6 +9,7 @@ final readonly class Principal
     public function __construct(
         private int $id,
         private Role $role,
+        private ?StaffAccessProfile $accessProfile = null,
     ) {
     }
 
@@ -20,5 +21,10 @@ final readonly class Principal
     public function role(): Role
     {
         return $this->role;
+    }
+
+    public function accessProfile(): ?StaffAccessProfile
+    {
+        return $this->accessProfile;
     }
 }

@@ -7,6 +7,7 @@ namespace Tests\Unit\Auth;
 use App\Application\Services\AuthenticationService;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessProfile;
 use App\Domain\Auth\UserAccount;
 use App\Infrastructure\Persistence\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
@@ -89,6 +90,29 @@ final class AuthenticationServiceTest extends TestCase
         $service->loginStaff('ADMIN002', 'wrong');
 
         self::assertSame(0, $repository->lockChecks);
+    }
+
+    public function testLibraryAideStaffLoginUsesTheAideWorkspace(): void
+    {
+        $repository = new FakeUserRepository();
+        $repository->add(new UserAccount(
+            14,
+            'LIBRARY001',
+            Role::ADMIN,
+            'active',
+            password_hash('library123', PASSWORD_DEFAULT),
+            0,
+            false,
+            StaffAccessProfile::LIBRARY_AIDE,
+        ));
+        $sessions = new AuthenticationSessionStore();
+        $service = new AuthenticationService($repository, new SessionService($sessions));
+
+        $result = $service->loginStaff('LIBRARY001', 'library123');
+
+        self::assertTrue($result->successful());
+        self::assertSame('/staff/aide/dashboard', $result->redirectPath());
+        self::assertSame(StaffAccessProfile::LIBRARY_AIDE, $sessions->identity()?->accessProfile());
     }
 }
 

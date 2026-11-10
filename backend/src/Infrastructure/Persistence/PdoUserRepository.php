@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence;
 
 use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessProfile;
 use App\Domain\Auth\UserAccount;
 use DateTimeImmutable;
 use PDO;
@@ -17,7 +18,7 @@ final class PdoUserRepository implements UserRepositoryInterface
 
     public function findByBarcode(string $barcode): ?UserAccount
     {
-        $statement = $this->pdo->prepare('SELECT id, barcode, role, status, password_hash, failed_attempts, locked_until FROM users WHERE barcode = :barcode LIMIT 1');
+        $statement = $this->pdo->prepare('SELECT id, barcode, role, status, password_hash, failed_attempts, locked_until, access_profile FROM users WHERE barcode = :barcode LIMIT 1');
         $statement->execute(['barcode' => $barcode]);
         $row = $statement->fetch();
         if (!is_array($row)) {
@@ -37,6 +38,7 @@ final class PdoUserRepository implements UserRepositoryInterface
             is_string($row['password_hash'] ?? null) ? $row['password_hash'] : null,
             $this->intValue($row['failed_attempts'] ?? 0),
             is_string($row['locked_until'] ?? null) && $row['locked_until'] > date('Y-m-d H:i:s'),
+            is_string($row['access_profile'] ?? null) ? StaffAccessProfile::tryFrom($row['access_profile']) : null,
         );
     }
 

@@ -10,6 +10,7 @@ use App\Application\Services\AuthenticationServiceInterface;
 use App\Application\Services\SessionService;
 use App\Domain\Auth\Principal;
 use App\Domain\Auth\Role;
+use App\Domain\Auth\StaffAccessProfile;
 use App\Http\Controllers\AuthController;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\ResponseInterface;
@@ -55,6 +56,27 @@ final class AuthControllerTest extends TestCase
             [
                 'ok' => true,
                 'data' => ['authenticated' => true, 'user_id' => 33, 'role' => 'teacher'],
+            ],
+            json_decode($response->toString(), true, 512, JSON_THROW_ON_ERROR),
+        );
+    }
+
+    public function testSessionEndpointExposesLibraryAideAccessProfile(): void
+    {
+        $this->store->setPrincipal(new Principal(37, Role::ADMIN, StaffAccessProfile::LIBRARY_AIDE));
+
+        $response = $this->controller->session(ServerRequest::fromGlobals());
+
+        self::assertSame(200, $response->statusCode());
+        self::assertSame(
+            [
+                'ok' => true,
+                'data' => [
+                    'authenticated' => true,
+                    'user_id' => 37,
+                    'role' => 'admin',
+                    'access_profile' => 'library_aide',
+                ],
             ],
             json_decode($response->toString(), true, 512, JSON_THROW_ON_ERROR),
         );

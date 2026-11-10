@@ -10,6 +10,7 @@ use App\Domain\Auth\AuthorizationPolicy;
 use App\Domain\Auth\Principal;
 use App\Domain\Auth\Role;
 use App\Domain\Auth\SessionIdentity;
+use App\Domain\Auth\StaffAccessProfile;
 use App\Infrastructure\Session\SessionStoreInterface;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -56,6 +57,16 @@ final class AuthContractsTest extends TestCase
         self::assertTrue($policy->allows(new Principal(5, Role::GUEST), [], true));
         self::assertFalse($policy->allows(new Principal(6, Role::STUDENT), [Role::TEACHER]));
         self::assertFalse($policy->allows(null, [Role::ADMIN]));
+    }
+
+    public function testSessionLoginPreservesStaffAccessProfile(): void
+    {
+        $store = new InMemorySessionStore();
+        $service = new SessionService($store);
+
+        $service->login(new Principal(28, Role::ADMIN, StaffAccessProfile::LIBRARY_AIDE));
+
+        self::assertSame(StaffAccessProfile::LIBRARY_AIDE, $service->current()?->accessProfile());
     }
 }
 

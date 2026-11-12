@@ -694,6 +694,9 @@ final class PdoStaffRepository implements StaffRepositoryInterface
 
         /** @var array<string, array<string, int>> $categoryCounts */
         $categoryCounts = [];
+        foreach ($this->reportCategories() as $category) {
+            $categoryCounts[$category] = [];
+        }
         $categoryActivityStatement = $this->pdo->prepare(
             $normalized
             ? "SELECT SUBSTR(TRIM(bt.borrow_date), 1, 7) AS month,

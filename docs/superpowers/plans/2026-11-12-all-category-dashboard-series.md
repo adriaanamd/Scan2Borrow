@@ -103,7 +103,7 @@ Keep the existing borrowing query and row loop unchanged so it continues to popu
 Run:
 
 ```powershell
-php backend/vendor/bin/phpunit --configuration=backend/phpunit.xml backend/tests/Unit/Infrastructure/PdoStaffRepositoryTest.php --filter "Dashboard(CategoryTrendIncludesInventoryCategoriesWithoutBorrowing|OverviewIncludesAggregatesAndTopBorrowers|OverviewHandlesEmptyBorrowingData|NormalizedDashboardUsesCopyQuantitiesAcrossStaffMetrics)"
+php backend/vendor/bin/phpunit --configuration=backend/phpunit.xml backend/tests/Unit/Infrastructure/PdoStaffRepositoryTest.php --filter "testDashboardCategoryTrendIncludesInventoryCategoriesWithoutBorrowing|testDashboardIncludesOverviewAggregatesAndTopBorrowers|testDashboardOverviewHandlesEmptyBorrowingData|testNormalizedDashboardUsesCopyQuantitiesAcrossStaffMetrics"
 ```
 
 Expected result: all selected tests pass, including the existing aggregate and normalized-schema coverage. The zero-activity category is sorted after the borrowed category because the existing total-descending/name-ascending sort remains in place.

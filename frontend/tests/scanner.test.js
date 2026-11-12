@@ -62,12 +62,7 @@ test('scanner callbacks receive decoded values after the camera stops', async ()
     createElement() { return { id: '', innerHTML: '', parentNode: null }; },
   };
   const makeRoot = (id) => ({ id, addEventListener() {}, removeEventListener() {} });
-  const makeInput = () => ({
-    value: '',
-    form: null,
-    parentNode: { parentNode: { appendChild(view) { views.set(view.id, view); } } },
-    focus() {},
-  });
+  const makeInput = () => ({ value: '', form: null, parentNode: { parentNode: { appendChild(view) { views.set(view.id, view); } } }, focus() {} });
   const makeButton = () => ({ disabled: false, textContent: '', hasAttribute: () => false });
   const makeScanner = () => ({
     start(_camera, _config, callback) { success = callback; return Promise.resolve(); },

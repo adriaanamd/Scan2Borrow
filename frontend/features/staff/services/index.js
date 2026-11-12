@@ -8,3 +8,4 @@ export { StaffOverdueService } from './overdue.service.js';
 export { StaffReportService } from './report.service.js';
 export { StaffReservationService } from './reservation.service.js';
 export { StaffRenewalService } from './renewal.service.js';
+export { StaffCirculationService } from './staff-circulation.service.js';

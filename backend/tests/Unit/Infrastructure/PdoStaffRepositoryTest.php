@@ -96,6 +96,19 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertLessThanOrEqual(10, count($overview['top_borrowers']));
     }
 
+    public function testDashboardCategoryTrendIncludesInventoryCategoriesWithoutBorrowing(): void
+    {
+        $this->pdo->exec("INSERT INTO books (id, barcode, title, author, category_name, status, floor_no, section_name, shelf_no, created_at) VALUES (2, 'BK-2', 'Mathematics', 'Euler', 'Mathematics', 'Available', '2', 'Math', 'B1', '2026-08-01')");
+
+        $series = (new PdoStaffRepository($this->pdo))->dashboard()['overview']['category_borrowing_activity']['series'];
+
+        self::assertCount(2, $series);
+        self::assertSame('Computer Science', $series[0]['name']);
+        self::assertSame('Mathematics', $series[1]['name']);
+        self::assertCount(12, $series[1]['counts']);
+        self::assertSame(0, array_sum($series[1]['counts']));
+    }
+
     public function testLegacyDashboardRanksDistinctCourseBorrowersAndExcludesPendingRows(): void
     {
         $this->pdo->exec("INSERT INTO users VALUES (3, 'STU-2', 'Katherine', 'Johnson', 'Science', NULL, 'CS', '3', 'katherine@example.test', '09172222222', NULL, 'student', NULL, 'active')");
@@ -130,6 +143,12 @@ final class PdoStaffRepositoryTest extends TestCase
         self::assertSame(0, $overview['loan_status']['borrowed']);
         self::assertSame(0, $overview['loan_status']['overdue']);
         self::assertSame(0, $overview['loan_status']['pending']);
+        self::assertSame([
+            [
+                'name' => 'Computer Science',
+                'counts' => array_fill(0, 12, 0),
+            ],
+        ], $overview['category_borrowing_activity']['series']);
     }
 
     public function testApprovalUpdatesBorrowingAndBookTogether(): void
